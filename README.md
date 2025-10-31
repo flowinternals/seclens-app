@@ -281,6 +281,49 @@ SecLens implements comprehensive security measures:
 - ✅ `.env.local` excluded from git via `.gitignore`
 - ✅ No secrets stored in the repository
 
+## Download Endpoints Architecture
+
+The three download endpoints share robust, centralized utilities to reduce duplication and improve safety.
+
+- Shared utilities in `api/utils/downloadUtils.js`:
+  - `generateFilename` – safe filenames with date stamps
+  - `setDownloadHeaders` – consistent download headers (no sniffing)
+  - `prepareMarkdown` – sanitizes markdown output
+  - `markdownToPlainText` – converts markdown to sanitized plaintext (used by text/PDF)
+  - `handleDownloadError` – standardized, non-sensitive error responses
+- Refactored handlers:
+  - `api/download/markdown.js`
+  - `api/download/text.js`
+  - `api/download/pdf.js`
+
+All outputs are sanitized; headers prevent MIME sniffing; errors are consistent and do not leak internals.
+
+## Error Handling & Logging Policy
+
+- Descriptive but safe errors: client responses include clear messages without exposing internals
+- Environment-aware logging:
+  - Development: detailed logs (messages and stacks) for debugging
+  - Production: generic logs only, no sensitive values, tokens, or headers
+- Standardized server errors for downloads include a stable `code` field for easier client handling
+
+## Environment & Configuration (No Secrets in Logs)
+
+- CORS: Configure allowed origins via `CORS_ALLOWLIST` (comma-separated). Production requires explicit values
+- Keys/Tokens: Use environment variables (never logged or echoed in production)
+- Validation: Required variables are validated at startup; production does not display variable contents
+- Secrets management: Environment variables are sourced from a secure secrets vault/service and injected at runtime. Do not store secrets in the repository; enforce rotation and least-privilege access.
+
+## CI / Security Automation
+
+- Dependency audit: `npm audit` scripts added (`npm run audit`, `npm run audit:fix`)
+- GitHub Actions workflow `security-audit.yml` runs audits on PRs, pushes to main, and weekly schedule
+
+## Rate Limiting (Roadmap)
+
+Current rate limiting is in-memory and suitable for development.
+
+- Planned upgrade: integrate a persistent store (e.g., Vercel KV or Redis) to ensure consistent limits across cold starts and instances
+
 ## API Endpoints
 
 ### `/api/analyze`

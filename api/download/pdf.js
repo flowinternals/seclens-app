@@ -4,25 +4,8 @@
  */
 
 import { corsHeaders } from '../utils/cors.js'
-
-// Sanitize text content
-function sanitizeText(text) {
-  if (!text || typeof text !== 'string') return ''
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;')
-}
-
-// Generate filename with timestamp
-function generateFilename(format, repositoryName = 'report') {
-  const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-  const sanitizedName = repositoryName.replace(/[^a-z0-9]/gi, '_').toLowerCase()
-  return `SecLens_${sanitizedName}_${timestamp}.${format}`
-}
+import { markdownToPlainText, generateFilename, setDownloadHeaders, handleDownloadError } from '../utils/downloadUtils.js'
+import { validateString, validateRepoName } from '../utils/validation.js'
 
 export default async function handler(req, res) {
   const origin = req.headers.origin
@@ -40,9 +23,11 @@ export default async function handler(req, res) {
   try {
     const { report, repository } = req.body
     
-    if (!report || typeof report !== 'string') {
-      return res.status(400).json({ error: 'Report content is required' })
-    }
+    // Validate inputs
+    const reportCheck = validateString(report, { required: true, maxLength: 200000 })
+    if (!reportCheck.valid) return res.status(400).json({ error: reportCheck.error })
+    const repoCheck = validateRepoName(repository?.name || 'report')
+    if (!repoCheck.valid) return res.status(400).json({ error: repoCheck.error })
     
     // Dynamic import for pdf-lib (Vercel serverless functions)
     const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib')
@@ -54,16 +39,7 @@ export default async function handler(req, res) {
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
     
     // Sanitize and convert markdown to plain text for PDF
-    const plainText = report
-      .replace(/^#+\s+/gm, '') // Remove headers
-      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
-      .replace(/\*(.*?)\*/g, '$1') // Remove italic
-      .replace(/`(.*?)`/g, '$1') // Remove inline code
-      .replace(/```[\s\S]*?```/g, '') // Remove code blocks
-      .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Remove links
-      .replace(/^-\s+/gm, '• ') // Convert list items
-    
-    const sanitizedText = sanitizeText(plainText)
+    const sanitizedText = markdownToPlainText(reportCheck.value)
     
     // Add title
     page.drawText('SecLens Security Report', {
@@ -163,17 +139,14 @@ export default async function handler(req, res) {
     
     // Save the PDF
     const pdfBytes = await pdfDoc.save()
-    const filename = generateFilename('pdf', repository?.name || 'report')
+    const filename = generateFilename('pdf', repoCheck.value || 'report')
     
     // Set headers for file download
-    res.setHeader('Content-Type', 'application/pdf')
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    res.setHeader('X-Content-Type-Options', 'nosniff')
+    setDownloadHeaders(res, 'application/pdf', filename)
     
     return res.status(200).send(Buffer.from(pdfBytes))
   } catch (error) {
-    console.error('PDF download error:', error)
-    return res.status(500).json({ error: 'Failed to generate PDF file' })
+    return handleDownloadError(res, 'PDF generation', error)
   }
 }
 

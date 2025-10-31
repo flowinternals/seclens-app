@@ -150,9 +150,9 @@ app.use(cors({
   credentials: true
 }))
 
-// Body parsing middleware
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+// Body parsing middleware with size limits to prevent large payload abuse
+app.use(express.json({ limit: '200kb' }))
+app.use(express.urlencoded({ extended: true, limit: '200kb' }))
 
 // Request logging middleware - sanitized for production
 app.use((req, res, next) => {
