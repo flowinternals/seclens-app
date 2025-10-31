@@ -8,6 +8,7 @@ import { corsHeaders } from './utils/cors.js'
 import { fetchRepositoryContent } from './utils/github.js'
 import { analyzeSecurity } from './utils/openai.js'
 import { sanitizeLogData, sanitizeHeaders } from './utils/sanitizeLog.js'
+import { sanitizeGitHubUrl, validateInput } from './utils/sanitize.js'
 
 export default async function handler(req, res) {
   // Sanitized logging - no sensitive data in production
@@ -43,12 +44,14 @@ export default async function handler(req, res) {
     // Check CORS - allow requests from same origin (no origin header) or allowed origins
     const headers = corsHeaders(origin)
     
-    // If no origin header (same-origin request from proxy), allow it
+    // If no origin header (same-origin request from proxy), allow only in development
     if (!origin) {
-      // Same-origin request (likely from Vite proxy), allow it
-      res.setHeader('Access-Control-Allow-Origin', '*')
+      if (process.env.NODE_ENV === 'development') {
+        // Same-origin request (likely from Vite proxy), allow it in dev only
+        res.setHeader('Access-Control-Allow-Origin', '*')
+      }
       Object.entries(headers).forEach(([key, value]) => {
-        if (key !== 'Access-Control-Allow-Origin' || headers['Access-Control-Allow-Origin']) {
+        if (key !== 'Access-Control-Allow-Origin') {
           res.setHeader(key, value)
         }
       })
@@ -98,29 +101,38 @@ export default async function handler(req, res) {
     // Validate request body
     const { repositoryUrl, githubToken } = req.body
     
-    // Normalize githubToken: empty string becomes undefined
-    const normalizedToken = (githubToken && typeof githubToken === 'string' && githubToken.trim()) 
-      ? githubToken.trim() 
-      : undefined
-    
+    // Validate and sanitize GitHub URL
     if (!repositoryUrl || typeof repositoryUrl !== 'string') {
       return res.status(400).json({ error: 'Repository URL is required' })
     }
     
-    // Sanitize and validate URL
-    const urlPattern = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/
-    if (!urlPattern.test(repositoryUrl.trim())) {
+    const urlValidation = validateInput(repositoryUrl, { maxLength: 500 })
+    if (!urlValidation.valid) {
+      return res.status(400).json({ error: urlValidation.error || 'Invalid repository URL format' })
+    }
+    
+    // Sanitize GitHub URL using utility function
+    const sanitizedUrl = sanitizeGitHubUrl(urlValidation.value)
+    if (!sanitizedUrl) {
       return res.status(400).json({ error: 'Invalid GitHub repository URL format' })
     }
     
-    const sanitizedUrl = repositoryUrl.trim()
+    // Normalize githubToken: empty string becomes undefined
+    const normalizedToken = (githubToken && typeof githubToken === 'string' && githubToken.trim()) 
+      ? githubToken.trim() 
+      : undefined
     
     // Fetch repository content
     let repoData
     try {
       repoData = await fetchRepositoryContent(sanitizedUrl, { githubToken: normalizedToken })
     } catch (error) {
-      console.error('Repository fetch error:', error)
+      // Log error details only in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Repository fetch error:', error.message)
+      } else {
+        console.error('Repository fetch error: Failed to fetch repository')
+      }
       
       // Specific private/permission errors
       const msg = error.message || ''
@@ -152,10 +164,14 @@ export default async function handler(req, res) {
     try {
       report = await analyzeSecurity(repoData)
     } catch (error) {
-      console.error('Security analysis error:', error)
-      console.error('Error name:', error.name)
-      console.error('Error message:', error.message)
-      console.error('Error stack:', error.stack)
+      // Log error details only in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Security analysis error:', error.message)
+        console.error('Error name:', error.name)
+        console.error('Error stack:', error.stack)
+      } else {
+        console.error('Security analysis error: Analysis failed')
+      }
       
       // Generic error messages
       if (error.message.includes('API key')) {
@@ -200,10 +216,14 @@ export default async function handler(req, res) {
     })
     
   } catch (error) {
-    console.error('Unexpected error in analyze handler:', error)
-    console.error('Error name:', error.name)
-    console.error('Error message:', error.message)
-    console.error('Error stack:', error.stack)
+    // Log error details only in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Unexpected error in analyze handler:', error.message)
+      console.error('Error name:', error.name)
+      console.error('Error stack:', error.stack)
+    } else {
+      console.error('Unexpected error in analyze handler')
+    }
     
     // Ensure we send a response even if something goes wrong
     try {
@@ -213,7 +233,9 @@ export default async function handler(req, res) {
         try {
           res.setHeader(key, value)
         } catch (headerError) {
-          console.error('Error setting header:', key, headerError)
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error setting header:', key, headerError.message)
+          }
         }
       })
       
@@ -228,15 +250,19 @@ export default async function handler(req, res) {
         })
       }
     } catch (responseError) {
-      console.error('Error sending error response:', responseError)
-      console.error('Response error stack:', responseError.stack)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error sending error response:', responseError.message)
+        console.error('Response error stack:', responseError.stack)
+      }
       // Last resort - try to send a basic response
       if (!res.headersSent && !responseSent) {
         try {
           responseSent = true
-          res.status(500).json({ error: 'Internal server error', details: error.message })
+          res.status(500).json({ error: 'Internal server error' })
         } catch (finalError) {
-          console.error('Failed to send final error response:', finalError)
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Failed to send final error response:', finalError.message)
+          }
         }
       }
     }

@@ -68,11 +68,14 @@ Format the report in a clear, professional markdown format suitable for develope
     
     return report
   } catch (error) {
-    console.error('OpenAI API error:', error)
-    console.error('Error type:', error.constructor.name)
-    console.error('Error message:', error.message)
-    console.error('Error status:', error.status)
-    console.error('Error response:', error.response)
+    // Log error details only in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('OpenAI API error:', error.message)
+      console.error('Error type:', error.constructor.name)
+      console.error('Error status:', error.status)
+    } else {
+      console.error('OpenAI API error: Request failed')
+    }
     
     if (error.status === 401) {
       throw new Error('Invalid OpenAI API key')

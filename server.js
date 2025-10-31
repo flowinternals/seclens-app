@@ -85,10 +85,23 @@ if (fs.existsSync(envPath)) {
 // Also try loading from current directory (fallback)
 dotenv.config() // Also load from .env if it exists
 
-console.log('Environment check:')
-console.log('  NODE_ENV:', process.env.NODE_ENV || 'not set')
-console.log('  OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? `${process.env.OPENAI_API_KEY.substring(0, 10)}...` : 'NOT SET')
-console.log('  Looking for .env.local at:', envPath)
+// Environment validation (only log in development)
+if (process.env.NODE_ENV === 'development') {
+  console.log('Environment check:')
+  console.log('  NODE_ENV:', process.env.NODE_ENV || 'not set')
+  console.log('  OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET')
+  console.log('  GITHUB_TOKEN:', (process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN) ? 'SET' : 'NOT SET')
+  console.log('  CORS_ALLOWLIST:', process.env.CORS_ALLOWLIST ? 'SET' : 'NOT SET (using defaults)')
+  console.log('  Looking for .env.local at:', envPath)
+} else {
+  // Validate required environment variables in production
+  if (!process.env.OPENAI_API_KEY) {
+    console.error('ERROR: OPENAI_API_KEY is required but not set')
+  }
+  if (!process.env.CORS_ALLOWLIST) {
+    console.error('WARNING: CORS_ALLOWLIST is not set - CORS will be denied for all origins')
+  }
+}
 
 // Set NODE_ENV to development if not set
 if (!process.env.NODE_ENV) {
@@ -397,11 +410,9 @@ async function startServer() {
         console.log(`⚠️  WARNING: OPENAI_API_KEY is not set!`)
       } else {
         console.log(`✓ OPENAI_API_KEY is configured`)
-        console.log(`   Key starts with: ${process.env.OPENAI_API_KEY.substring(0, 10)}...`)
       }
       if (process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN) {
-        const tok = process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN
-        console.log(`✓ GitHub token detected (starts with: ${tok.substring(0, 6)}...)`)
+        console.log(`✓ GitHub token detected`)
       } else {
         console.log('⚠️  GITHUB_TOKEN not set (higher GitHub API limits unavailable)')
       }

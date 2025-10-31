@@ -2,11 +2,25 @@
  * GitHub API client for fetching repository content
  */
 
+import { sanitizeGitHubUrl, isValidGitHubUrl } from './sanitize.js'
+
 export async function fetchRepositoryContent(repoUrl, options = {}) {
   try {
-    console.log('fetchRepositoryContent called with:', { repoUrl, hasOptions: !!options, hasToken: !!(options?.githubToken) })
+    // Validate and sanitize repository URL
+    if (!repoUrl || typeof repoUrl !== 'string') {
+      throw new Error('Repository URL is required')
+    }
     
-    // Extract owner and repo from URL
+    if (!isValidGitHubUrl(repoUrl)) {
+      // Try to sanitize it
+      const sanitized = sanitizeGitHubUrl(repoUrl)
+      if (!sanitized) {
+        throw new Error('Invalid GitHub repository URL format')
+      }
+      repoUrl = sanitized
+    }
+    
+    // Extract owner and repo from URL (already validated)
     const match = repoUrl.match(/github\.com\/([\w.-]+)\/([\w.-]+)/)
     if (!match) {
       throw new Error('Invalid GitHub repository URL')
@@ -19,7 +33,10 @@ export async function fetchRepositoryContent(repoUrl, options = {}) {
       ? options.githubToken.trim()
       : (process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN)
     
-    console.log('Using token:', githubToken ? `${githubToken.substring(0, 6)}...` : 'none')
+    // Log token usage only in development and without revealing token
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Using GitHub token:', githubToken ? 'yes' : 'no')
+    }
 
     // Helper to choose scheme based on token type
     const chooseScheme = (token) => {
@@ -59,10 +76,13 @@ export async function fetchRepositoryContent(repoUrl, options = {}) {
     const repoResponse = await fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}`)
     
     if (!repoResponse.ok) {
-      try {
-        const errText = await repoResponse.text()
-        console.error('GitHub repo metadata error:', repoResponse.status, Object.fromEntries(repoResponse.headers.entries()), errText?.slice(0, 300))
-      } catch {}
+      // Log error details only in development
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          const errText = await repoResponse.text()
+          console.error('GitHub repo metadata error:', repoResponse.status, errText?.slice(0, 300))
+        } catch {}
+      }
       if (repoResponse.status === 404) {
         // 404 for private repos without proper auth; surface clearer message
         const authed = !!githubToken
@@ -96,20 +116,26 @@ export async function fetchRepositoryContent(repoUrl, options = {}) {
     let treeData = null
     if (!contentsResponse.ok) {
       if (contentsResponse.status === 403) {
-        try {
-          const errText2 = await contentsResponse.text()
-          console.error('GitHub tree (main) error:', contentsResponse.status, Object.fromEntries(contentsResponse.headers.entries()), errText2?.slice(0, 300))
-        } catch {}
+        // Log error details only in development
+        if (process.env.NODE_ENV === 'development') {
+          try {
+            const errText2 = await contentsResponse.text()
+            console.error('GitHub tree (main) error:', contentsResponse.status, errText2?.slice(0, 300))
+          } catch {}
+        }
         throw new Error('GitHub API access forbidden. Rate limit may be exceeded or repository may be private.')
       }
       const masterResponse = await fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/git/trees/master?recursive=1`)
       if (masterResponse.ok) {
         treeData = await masterResponse.json()
       } else if (masterResponse.status === 403) {
-        try {
-          const errText3 = await masterResponse.text()
-          console.error('GitHub tree (master) error:', masterResponse.status, Object.fromEntries(masterResponse.headers.entries()), errText3?.slice(0, 300))
-        } catch {}
+        // Log error details only in development
+        if (process.env.NODE_ENV === 'development') {
+          try {
+            const errText3 = await masterResponse.text()
+            console.error('GitHub tree (master) error:', masterResponse.status, errText3?.slice(0, 300))
+          } catch {}
+        }
         throw new Error('GitHub API access forbidden. Rate limit may be exceeded, or repository is private without sufficient token scope.')
       }
     } else {
@@ -159,7 +185,10 @@ export async function fetchRepositoryContent(repoUrl, options = {}) {
             break // Stop fetching more files if rate limited
           }
         } catch (err) {
-          console.error(`Error fetching file ${file.path}:`, err.message)
+          // Log error details only in development
+          if (process.env.NODE_ENV === 'development') {
+            console.error(`Error fetching file ${file.path}:`, err.message)
+          }
         }
       }
     }
@@ -178,7 +207,12 @@ export async function fetchRepositoryContent(repoUrl, options = {}) {
       url: repoUrl
     }
   } catch (error) {
-    console.error('GitHub API error:', error)
+    // Log error details only in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('GitHub API error:', error.message)
+    } else {
+      console.error('GitHub API error: Request failed')
+    }
     throw error
   }
 }
