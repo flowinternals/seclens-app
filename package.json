@@ -8,7 +8,9 @@
     "dev:api": "node server.js",
     "dev:full": "concurrently \"npm run dev\" \"npm run dev:api\"",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "audit": "npm audit",
+    "audit:fix": "npm audit fix"
   },
   "repository": {
     "type": "git",

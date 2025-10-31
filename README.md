@@ -5,8 +5,8 @@ On-demand security analysis for GitHub repositories.
 ## Important Notes
 
 - **Design Documents:** All plans and designs are located in `/Assets/designs/`
-- **Security Secrets:** API keys and secrets are stored in `/Assets/security/secrets/` and should NEVER be committed to the repository
 - **Environment Variables:** All API keys must be set via environment variables, never hardcoded in the codebase
+- **Security:** Never commit secrets or API keys to the repository
 
 ## Features
 
@@ -46,7 +46,7 @@ Before you begin, ensure you have the following:
 - **npm** or **yarn** package manager
 - **Git** for version control
 - **Vercel account** (for deployment)
-- **OpenAI API key** (see `/Assets/security/secrets/openai.txt` for details)
+- **OpenAI API key** (obtain from OpenAI Console)
 - **Google reCAPTCHA v3** site key (for bot protection)
 
 ## Installation
@@ -63,12 +63,33 @@ npm install
 ```
 
 3. Set up environment variables:
-   - Create a `.env.local` file in the root directory (DO NOT commit this file)
-   - Add the following variables (get API key from `/Assets/security/secrets/openai.txt`):
+   - Copy `.env.example` to `.env.local` (DO NOT commit `.env.local`)
+   - Fill in your actual values in `.env.local`:
 ```env
+# Required: OpenAI API Configuration
 OPENAI_API_KEY=your_openai_api_key_here
+
+# Required: reCAPTCHA Configuration (for frontend)
 VITE_RECAPTCHA_SITE_KEY=your_recaptcha_site_key_here
+
+# Required: API URL (for frontend)
 VITE_API_URL=http://localhost:3000
+
+# Optional: GitHub API Token (for higher rate limits)
+GITHUB_TOKEN=your_github_token_here
+# Alternative name for GitHub token
+GITHUB_API_TOKEN=your_github_token_here
+
+# Required for Production: CORS Configuration
+# Comma-separated list of allowed origins (e.g., "https://yourdomain.com,https://www.yourdomain.com")
+# For development, defaults to localhost origins if not set
+CORS_ALLOWLIST=http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173
+
+# Optional: Server Port (for local development server)
+PORT=3001
+
+# Optional: Node Environment
+NODE_ENV=development
 ```
 
    **⚠️ CRITICAL:** Never commit `.env.local` or any file containing API keys to the repository.
@@ -169,9 +190,9 @@ SecLens is deployed on **Vercel** for both frontend hosting and serverless funct
 
 1. Connect your GitHub repository to Vercel
 2. Configure environment variables in Vercel dashboard:
-   - `OPENAI_API_KEY` (get from `/Assets/security/secrets/openai.txt`)
-   - `RECAPTCHA_SITE_KEY`
-   - `RECAPTCHA_SECRET_KEY`
+   - `OPENAI_API_KEY` (obtain from OpenAI Console)
+   - `RECAPTCHA_SITE_KEY` (obtain from Google reCAPTCHA Console)
+   - `RECAPTCHA_SECRET_KEY` (obtain from Google reCAPTCHA Console)
 3. Deploy automatically on push (Vercel handles this automatically)
 
 ### Environment Variables
@@ -180,11 +201,18 @@ Set these in your Vercel project settings:
 
 | Variable | Description | Required | Source |
 |----------|-------------|----------|--------|
-| `OPENAI_API_KEY` | OpenAI API key for security analysis | Yes | `/Assets/security/secrets/openai.txt` |
+| `OPENAI_API_KEY` | OpenAI API key for security analysis | Yes | OpenAI Console |
 | `RECAPTCHA_SITE_KEY` | Google reCAPTCHA v3 site key | Yes | Google reCAPTCHA Console |
 | `RECAPTCHA_SECRET_KEY` | Google reCAPTCHA v3 secret key | Yes | Google reCAPTCHA Console |
+| `CORS_ALLOWLIST` | Comma-separated list of allowed origins (e.g., "https://yourdomain.com,https://www.yourdomain.com") | Yes (Production) | Your production domain(s) |
+| `GITHUB_TOKEN` | GitHub API token for higher rate limits | No | GitHub Settings → Developer Settings → Personal Access Tokens |
+| `NODE_ENV` | Environment mode (development/production) | No | Automatically set by Vercel |
 
-**Note:** Never commit secrets to the repository. Use environment variables only.
+**⚠️ Important Notes:**
+- `CORS_ALLOWLIST` is **required in production** - without it, all CORS requests will be denied
+- Never commit secrets to the repository. Use environment variables only.
+- For local development, `CORS_ALLOWLIST` defaults to localhost origins if not set
+- See `.env.example` for a complete list of all environment variables
 
 ## Project Structure
 
@@ -229,25 +257,29 @@ SecLens implements comprehensive security measures:
 - Prevents API abuse and DDoS
 
 ### CORS Protection
-- Strict CORS policies
-- Origin allowlist (production domain + localhost for dev)
-- No wildcard policies
+- Strict CORS policies configured via `CORS_ALLOWLIST` environment variable
+- Origin allowlist enforced (production domain + localhost for dev)
+- No wildcard policies in production
+- Production requires explicit origin configuration
 
 ### Bot Protection
 - reCAPTCHA v3 integration (invisible to users)
 - Token verification on backend
 
 ### Security Headers
-- `X-Frame-Options: DENY`
-- `X-Content-Type-Options: nosniff`
-- `Referrer-Policy: no-referrer`
-- Permissions-Policy headers
+- `X-Frame-Options: DENY` - Prevents clickjacking
+- `X-Content-Type-Options: nosniff` - Prevents MIME type sniffing
+- `Referrer-Policy: no-referrer` - Prevents referrer leakage
+- `Strict-Transport-Security` - Enforces HTTPS connections
+- `X-Permitted-Cross-Domain-Policies: none` - Prevents cross-domain policy files
+- `Permissions-Policy` - Restricts browser features (camera, microphone, geolocation)
+- Content Security Policy (CSP) - Strict CSP preventing XSS attacks
 
 ### Secret Management
 - ✅ All API keys stored in environment variables only
 - ✅ No secrets in code, logs, or comments
 - ✅ `.env.local` excluded from git via `.gitignore`
-- ✅ Secrets stored separately in `/Assets/security/secrets/`
+- ✅ No secrets stored in the repository
 
 ## API Endpoints
 
@@ -347,7 +379,6 @@ For issues, questions, or contributions:
 - **Issues:** [GitHub Issues](https://github.com/flowinternals/seclens-app/issues)
 - **Repository:** [https://github.com/flowinternals/seclens-app](https://github.com/flowinternals/seclens-app)
 - **Design Documents:** `/Assets/designs/`
-- **Security Secrets:** `/Assets/security/secrets/` (DO NOT commit)
 
 ## Acknowledgments
 

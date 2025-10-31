@@ -1,16 +1,36 @@
 /**
  * CORS middleware for Vercel serverless functions
  * Strict origin allowlist - no wildcards
+ * Configured via CORS_ALLOWLIST environment variable (comma-separated origins)
  */
 
-const ALLOWED_ORIGINS = new Set([
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:5173',
-  // Add production domain here when deployed
-  // 'https://your-domain.vercel.app',
-])
+// Build allowed origins from environment variable with fallback for development
+function getAllowedOrigins() {
+  const envAllowlist = process.env.CORS_ALLOWLIST
+  
+  if (envAllowlist) {
+    // Parse comma-separated list from environment variable
+    return new Set(
+      envAllowlist
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+    )
+  }
+  
+  // Fallback to localhost origins for development only
+  if (process.env.NODE_ENV === 'development') {
+    return new Set([
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5173',
+    ])
+  }
+  
+  // Production must have CORS_ALLOWLIST set - return empty set to deny all
+  return new Set()
+}
 
 export function corsHeaders(origin) {
   const headers = {
@@ -19,13 +39,18 @@ export function corsHeaders(origin) {
     'Vary': 'Origin',
   }
   
-  // If no origin (same-origin request), allow all (for local dev with proxy)
+  const allowedOrigins = getAllowedOrigins()
+  
+  // If no origin (same-origin request), allow only in development
   if (!origin) {
-    headers['Access-Control-Allow-Origin'] = '*'
+    if (process.env.NODE_ENV === 'development') {
+      headers['Access-Control-Allow-Origin'] = '*'
+    }
     return headers
   }
   
-  if (origin && ALLOWED_ORIGINS.has(origin)) {
+  // Check if origin is in allowlist
+  if (origin && allowedOrigins.has(origin)) {
     headers['Access-Control-Allow-Origin'] = origin
   }
   

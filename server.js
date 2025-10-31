@@ -101,14 +101,34 @@ const PORT = process.env.PORT || 3001
 // Trust proxy for IP detection
 app.set('trust proxy', true)
 
-// CORS middleware - allow all origins in development
+// CORS middleware - configured via CORS_ALLOWLIST environment variable
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, Postman, or proxied requests)
-    if (!origin) return callback(null, true)
+    // Allow requests with no origin in development only (like mobile apps, curl, Postman, or proxied requests)
+    if (!origin) {
+      if (process.env.NODE_ENV === 'development') {
+        return callback(null, true)
+      }
+      return callback(new Error('Not allowed by CORS'))
+    }
     
-    const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173']
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+    // Get allowed origins from environment variable
+    const envAllowlist = process.env.CORS_ALLOWLIST
+    let allowedOrigins = []
+    
+    if (envAllowlist) {
+      // Parse comma-separated list from environment variable
+      allowedOrigins = envAllowlist
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+    } else if (process.env.NODE_ENV === 'development') {
+      // Fallback to localhost origins for development only
+      allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173']
+    }
+    // Production requires CORS_ALLOWLIST to be set - empty array means deny all
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true)
     } else {
       callback(new Error('Not allowed by CORS'))
@@ -121,11 +141,46 @@ app.use(cors({
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// Request logging middleware
+// Request logging middleware - sanitized for production
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`)
+  const isDev = process.env.NODE_ENV === 'development'
+  if (isDev) {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`)
+  } else {
+    // Minimal logging in production - no sensitive data
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`)
+  }
   next()
 })
+
+// Sanitize sensitive data from logs
+function sanitizeForLogging(data) {
+  if (!data || typeof data !== 'object') return data
+  const sanitized = { ...data }
+  const sensitiveFields = ['authorization', 'cookie', 'githubToken', 'github_token', 'apiKey', 'api_key', 'token', 'password']
+  
+  if (sanitized.headers) {
+    sanitized.headers = { ...sanitized.headers }
+    for (const key of Object.keys(sanitized.headers)) {
+      const lowerKey = key.toLowerCase()
+      if (sensitiveFields.some(field => lowerKey.includes(field))) {
+        sanitized.headers[key] = '[REDACTED]'
+      }
+    }
+  }
+  
+  if (sanitized.body) {
+    sanitized.body = { ...sanitized.body }
+    for (const key of Object.keys(sanitized.body)) {
+      const lowerKey = key.toLowerCase()
+      if (sensitiveFields.some(field => lowerKey.includes(field))) {
+        sanitized.body[key] = '[REDACTED]'
+      }
+    }
+  }
+  
+  return sanitized
+}
 
 // Mock Vercel request/response objects
 function createVercelHandler(handler) {
@@ -205,11 +260,21 @@ function createVercelHandler(handler) {
     }
 
     try {
-      console.log('Calling handler with:', {
-        method: vercelReq.method,
-        url: vercelReq.url,
-        hasBody: !!vercelReq.body
-      })
+      // Sanitized logging - no sensitive data in production
+      const isDev = process.env.NODE_ENV === 'development'
+      if (isDev) {
+        const sanitized = sanitizeForLogging(vercelReq)
+        console.log('Calling handler with:', {
+          method: sanitized.method,
+          url: sanitized.url,
+          hasBody: !!sanitized.body,
+          body: sanitized.body,
+          headers: sanitized.headers
+        })
+      } else {
+        // Minimal logging in production
+        console.log(`[${vercelReq.method}] ${vercelReq.url}`)
+      }
       
       const result = await handler(vercelReq, vercelRes)
       

@@ -7,14 +7,23 @@ import { rateLimit } from './utils/rateLimit.js'
 import { corsHeaders } from './utils/cors.js'
 import { fetchRepositoryContent } from './utils/github.js'
 import { analyzeSecurity } from './utils/openai.js'
+import { sanitizeLogData, sanitizeHeaders } from './utils/sanitizeLog.js'
 
 export default async function handler(req, res) {
-  console.log('=== ANALYZE HANDLER CALLED ===')
-  console.log('Method:', req.method)
-  console.log('URL:', req.url)
-  console.log('Has body:', !!req.body)
-  console.log('Body:', req.body)
-  console.log('Origin:', req.headers?.origin || req.headers?.['origin'] || 'none')
+  // Sanitized logging - no sensitive data in production
+  const isDev = process.env.NODE_ENV === 'development'
+  if (isDev) {
+    console.log('=== ANALYZE HANDLER CALLED ===')
+    console.log('Method:', req.method)
+    console.log('URL:', req.url)
+    console.log('Has body:', !!req.body)
+    const sanitized = sanitizeLogData({ body: req.body, headers: req.headers })
+    console.log('Body (sanitized):', sanitized.body)
+    console.log('Origin:', sanitizeHeaders(req.headers)['origin'] || 'none')
+  } else {
+    // Minimal logging in production
+    console.log(`[${req.method}] ${req.url}`)
+  }
   
   // Ensure we always send a response
   let responseSent = false
@@ -45,7 +54,10 @@ export default async function handler(req, res) {
       })
     } else if (origin && !headers['Access-Control-Allow-Origin']) {
       // Origin provided but not in allowlist
-      console.error('CORS violation - origin not allowed:', origin)
+      console.error('CORS violation - origin not allowed')
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Origin:', origin)
+      }
       Object.entries(headers).forEach(([key, value]) => {
         res.setHeader(key, value)
       })

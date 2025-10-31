@@ -66,3 +66,7 @@ secrets-scan*
 gitleaks-report.json
 ss.bat
 
+# Security secrets directory (Assets workspace)
+**/security/secrets/**
+**/Assets/security/secrets/**
+
