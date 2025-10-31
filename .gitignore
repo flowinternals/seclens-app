@@ -61,3 +61,8 @@ config.json
 *.tmp
 *.temp
 
+# Secrets scanning artifacts
+secrets-scan*
+gitleaks-report.json
+ss.bat
+

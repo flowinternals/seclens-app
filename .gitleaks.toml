@@ -4,7 +4,7 @@ description = "Secrets scanning configuration for hardcoded credentials"
 [[rules]]
 id = "api-key"
 description = "API Key"
-regex = '''(?i)(api[_-]?key|apikey)\s*[=:]\s*["']?([a-z0-9]{16,})["']?'''
+regex = '''(?i)(api[_-]?key|apikey)\s*[=:]\s*["']?([a-z0-9]{8,})["']?'''
 
 [[rules]]
 id = "aws-access-key"
