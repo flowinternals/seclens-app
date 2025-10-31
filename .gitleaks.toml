@@ -1,0 +1,45 @@
+title = "Gitleaks Configuration"
+description = "Secrets scanning configuration for hardcoded credentials"
+
+[[rules]]
+id = "api-key"
+description = "API Key"
+regex = '''(?i)(api[_-]?key|apikey)\s*[=:]\s*["']?([a-z0-9]{16,})["']?'''
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key"
+regex = '''AKIA[0-9A-Z]{16}'''
+
+[[rules]]
+id = "aws-secret-key"
+description = "AWS Secret Key"
+regex = '''(?i)(aws[_-]?secret[_-]?access[_-]?key|aws[_-]?secret[_-]?key)\s*[=:]\s*["']?([a-z0-9/+=]{40})["']?'''
+
+[[rules]]
+id = "generic-secret"
+description = "Generic Secret"
+regex = '''(?i)(secret|password|passwd|pwd)\s*[=:]\s*["']?([a-z0-9@$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,})["']?'''
+
+[[rules]]
+id = "private-key"
+description = "Private Key"
+regex = '''-----BEGIN[ A-Z]+ PRIVATE KEY-----'''
+
+[[rules]]
+id = "access-token"
+description = "Access Token"
+regex = '''(?i)(access[_-]?token)\s*[=:]\s*["']?([a-z0-9\-_]{20,})["']?'''
+
+[[rules]]
+id = "bearer-token"
+description = "Bearer Token"
+regex = '''(?i)(bearer[_-]?token)\s*[=:]\s*["']?([a-z0-9\-_]{20,})["']?'''
+
+[allowlist]
+description = "Allowlist for known safe patterns"
+paths = [
+  '''\.gitleaks\.toml''',
+  '''portable-secrets-ruleset\.yaml''',
+]
+
