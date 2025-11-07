@@ -8,7 +8,7 @@ import { corsHeaders } from './utils/cors.js'
 import { fetchRepositoryContent } from './utils/github.js'
 import { analyzeSecurity } from './utils/openai.js'
 import { sanitizeLogData, sanitizeHeaders } from './utils/sanitizeLog.js'
-import { sanitizeGitHubUrl, validateInput } from './utils/sanitize.js'
+import { sanitizeGitHubUrl } from './utils/sanitize.js'
 
 export default async function handler(req, res) {
   // Sanitized logging - no sensitive data in production
@@ -99,21 +99,56 @@ export default async function handler(req, res) {
     res.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining.toString())
     
     // Validate request body
-    const { repositoryUrl, githubToken } = req.body
+    const { repositoryUrl, githubToken } = req.body || {}
+    
+    // Debug logging for production issues
+    if (!isDev) {
+      console.log('Request body type:', typeof req.body)
+      console.log('Request body keys:', req.body ? Object.keys(req.body) : 'no body')
+      console.log('repositoryUrl type:', typeof repositoryUrl)
+      console.log('repositoryUrl value:', repositoryUrl ? repositoryUrl.substring(0, 100) : 'null/undefined')
+    }
     
     // Validate and sanitize GitHub URL
     if (!repositoryUrl || typeof repositoryUrl !== 'string') {
+      if (!isDev) {
+        console.error('Invalid repositoryUrl:', { type: typeof repositoryUrl, value: repositoryUrl })
+      }
       return res.status(400).json({ error: 'Repository URL is required' })
     }
     
-    const urlValidation = validateInput(repositoryUrl, { maxLength: 500 })
-    if (!urlValidation.valid) {
-      return res.status(400).json({ error: urlValidation.error || 'Invalid repository URL format' })
+    // Validate input length (but don't HTML-escape URLs - that breaks them)
+    let trimmedUrl = repositoryUrl.trim()
+    
+    // Handle potential URL encoding issues
+    try {
+      // Decode URL if it's encoded (but keep original if decode fails)
+      const decoded = decodeURIComponent(trimmedUrl)
+      if (decoded !== trimmedUrl && decoded.includes('github.com')) {
+        trimmedUrl = decoded
+      }
+    } catch (e) {
+      // If decoding fails, use original URL
+      if (!isDev) {
+        console.log('URL decode attempt failed, using original')
+      }
     }
     
-    // Sanitize GitHub URL using utility function
-    const sanitizedUrl = sanitizeGitHubUrl(urlValidation.value)
+    if (trimmedUrl.length === 0) {
+      return res.status(400).json({ error: 'Repository URL cannot be empty' })
+    }
+    if (trimmedUrl.length > 500) {
+      return res.status(400).json({ error: 'Repository URL exceeds maximum length of 500 characters' })
+    }
+    
+    // Sanitize GitHub URL using utility function (use original trimmed URL, not HTML-escaped)
+    const sanitizedUrl = sanitizeGitHubUrl(trimmedUrl)
     if (!sanitizedUrl) {
+      if (!isDev) {
+        console.error('sanitizeGitHubUrl failed for:', trimmedUrl.substring(0, 100))
+        console.error('URL length:', trimmedUrl.length)
+        console.error('URL char codes:', Array.from(trimmedUrl.substring(0, 50)).map(c => c.charCodeAt(0)))
+      }
       return res.status(400).json({ error: 'Invalid GitHub repository URL format' })
     }
     
