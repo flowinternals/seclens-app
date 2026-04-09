@@ -63,6 +63,7 @@ config.json
 
 # Secrets scanning artifacts
 secrets-scan*
+secrets-scan-test-file.txt
 gitleaks-report.json
 ss.bat
 
