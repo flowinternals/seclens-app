@@ -37,7 +37,7 @@ description = "Bearer Token"
 regex = '''(?i)(bearer[_-]?token)\s*[=:]\s*["']?([a-z0-9\-_]{20,})["']?'''
 
 [allowlist]
-description = "Allowlist for known safe patterns"
+description = "Known safe patterns. The scanner canary secrets-scan-test-file.txt is not allowlisted here so it remains visible in reports; CI treats it as advisory-only via scripts/gitleaks-ci.mjs."
 paths = [
   '''\.gitleaks\.toml''',
   '''portable-secrets-ruleset\.yaml''',

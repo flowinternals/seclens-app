@@ -10,7 +10,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "audit": "npm audit",
-    "audit:fix": "npm audit fix"
+    "audit:fix": "npm audit fix",
+    "secrets:scan": "node scripts/gitleaks-ci.mjs"
   },
   "repository": {
     "type": "git",

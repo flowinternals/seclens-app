@@ -24,6 +24,18 @@ jobs:
     
     - name: Install dependencies
       run: npm ci
+
+    - name: Install Gitleaks
+      run: |
+        VERSION=8.24.3
+        curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" -o gitleaks.tgz
+        tar -xzf gitleaks.tgz
+        sudo mv gitleaks /usr/local/bin/
+        rm gitleaks.tgz
+        gitleaks version
+
+    - name: Gitleaks (advisory on canary, fail on other findings)
+      run: npm run secrets:scan
     
     - name: Run npm audit
       run: npm audit
