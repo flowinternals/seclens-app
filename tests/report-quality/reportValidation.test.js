@@ -5,6 +5,8 @@ import {
   hasMisleadingFirebaseSecretClassification,
   hasSpeculativeMediumFinding,
   hasUnboundedAbsenceClaim,
+  hasSummaryRiskInconsistentWithFindings,
+  hasNotEvidencedRecommendationDrift,
 } from '../../lib/server/reportValidation.js'
 import { SECTION_TITLES_ORDER } from '../../lib/prompts/seclens-output-contract-v2.js'
 import { buildRepoDataFromFixture } from '../fixtures/buildRepoFixture.js'
@@ -135,6 +137,48 @@ describe('validateReport', () => {
     expect(r.categories).not.toContain('MISLEADING_SECRET_CLASSIFICATION')
   })
 
+  it('flags placeholder-only env template as secret exposure claim', () => {
+    const inner = `### [Medium] Potential Exposure of Secrets
+
+**Category:** Sensitive Data Exposure
+**Evidence:** \`.env.example:1-54\`
+**Why it matters:** The template includes placeholder values and setup guidance, which may expose secrets.
+**Fix (recommended):** Remove the example entries.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasMisleadingFirebaseSecretClassification(inner)).toBe(true)
+    expect(r.categories).toContain('MISLEADING_SECRET_CLASSIFICATION')
+  })
+
+  it('flags env-template-only hardcoded secret framing from latest live defect artifact', () => {
+    const inner = `### [Medium] Hardcoded Secrets in Configuration Files
+
+**Category:** Configuration Management
+**Evidence:** \`.env.example:1-54\`, \`gcp-mcp-server/.env.example:1-28\`
+**Why it matters:** Hardcoded secrets or sensitive information in configuration files can lead to unauthorized access if these files are exposed or mismanaged.
+**Fix (recommended):** Move secrets out of source-controlled configuration files.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasMisleadingFirebaseSecretClassification(inner)).toBe(true)
+    expect(r.categories).toContain('MISLEADING_SECRET_CLASSIFICATION')
+  })
+
+  it('accepts env-template-only Info configuration review without vulnerability framing', () => {
+    const inner = `### [Info] Environment Template Configuration Review
+
+**Category:** Configuration Review
+**Evidence:** \`.env.example:1-54\`, \`gcp-mcp-server/.env.example:1-28\`
+**Why it matters:** The referenced files appear to be templates with placeholder names and setup guidance. This evidence alone does not prove committed secret material.
+**Fix (recommended):** Keep template values non-sensitive and verify real secrets are managed at runtime.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasMisleadingFirebaseSecretClassification(inner)).toBe(false)
+    expect(r.categories).not.toContain('MISLEADING_SECRET_CLASSIFICATION')
+  })
+
   it('flags conditional Medium finding without concrete weakness (DEFECT-004)', () => {
     const inner = `### [Medium] Insecure Handling of Secrets
 
@@ -165,6 +209,36 @@ describe('validateReport', () => {
     expect(r.categories).toContain('SPECULATIVE_FINDING')
   })
 
+  it('flags Medium finding that says validation exists but "could be improved" (live DEFECT-004 replay)', () => {
+    const inner = `### [Medium] Lack of Input Validation in API Endpoints
+
+**Category:** Input Validation
+**Evidence:** \`app/api/admin/add-recruiter/route.ts:1-111\`
+**Why it matters:** Insufficient input validation can lead to various attacks, including injection attacks and data corruption. In the addRecruiter endpoint, while there is some validation using Zod, the overall handling of user input could be improved to ensure all fields are properly validated.
+**Fix (recommended):** Implement comprehensive validation for all input fields across API endpoints, ensuring that all required fields are checked and that data types are enforced.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasSpeculativeMediumFinding(inner)).toBe(true)
+    expect(r.ok).toBe(false)
+    expect(r.categories).toContain('SPECULATIVE_FINDING')
+  })
+
+  it('flags accepted-run generic Medium validation claim without named missing rule/trust boundary', () => {
+    const inner = `### [Medium] Insufficient Input Validation in API Endpoints
+
+**Category:** Input Validation
+**Evidence:** \`app/api/admin/add-recruiter/route.ts:1-111\`
+**Why it matters:** Insufficient input validation can lead to various attacks, including injection attacks and data corruption. The lack of strict validation on user inputs may allow malicious data to be processed by the application.
+**Fix (recommended):** Implement stricter validation rules using libraries like \`zod\` or \`Joi\` to ensure all inputs conform to expected formats.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasSpeculativeMediumFinding(inner)).toBe(true)
+    expect(r.ok).toBe(false)
+    expect(r.categories).toContain('SPECULATIVE_FINDING')
+  })
+
   it('accepts Medium finding when concrete weakness and impact path are evidenced', () => {
     const inner = `### [Medium] Missing Ownership Check in Credits Top-Up
 
@@ -172,6 +246,75 @@ describe('validateReport', () => {
 **Evidence:** \`functions/src/handlers/credits.ts\`
 **Why it matters:** The endpoint accepts a target account id without validating ownership in this handler, which can allow an authenticated attacker to tamper with another account's credit balance.
 **Fix (recommended):** Enforce account ownership verification before processing top-up operations.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasSpeculativeMediumFinding(inner)).toBe(false)
+    expect(r.categories).not.toContain('SPECULATIVE_FINDING')
+  })
+
+  it('flags Medium runtime-control absence claim supported only by env template evidence', () => {
+    const inner = `### [Medium] Insufficient Rate Limiting
+
+**Category:** Abuse Controls
+**Evidence:** \`gcp-mcp-server/.env.example:1-28\`
+**Why it matters:** Rate limiting is not enforced.
+**Fix (recommended):** Enable and configure throttling.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasSpeculativeMediumFinding(inner)).toBe(true)
+    expect(r.categories).toContain('SPECULATIVE_FINDING')
+  })
+
+  it('flags policy-style Medium CI/CD workflow hardening claim without concrete unsafe setting', () => {
+    const inner = `### [Medium] CI/CD Security Practices
+
+**Category:** CI/CD & Operational Hardening
+**Evidence:** \`.github/workflows/ci-security.yml:1-51\`
+**Why it matters:** The workflow could allow vulnerabilities to reach production and should be stricter.
+**Fix (recommended):** Add additional checks.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasSpeculativeMediumFinding(inner)).toBe(true)
+    expect(r.categories).toContain('SPECULATIVE_FINDING')
+  })
+
+  it('accepts Medium CI/CD workflow finding when concrete unsafe setting is cited', () => {
+    const inner = `### [Medium] CI gate allows medium vulnerabilities
+
+**Category:** CI/CD & Operational Hardening
+**Evidence:** \`.github/workflows/ci-security.yml:1-51\`
+**Why it matters:** The workflow runs \`npm audit --audit-level=high\`, so vulnerabilities rated medium are not blocking in this gate and can be merged, which may allow known vulnerable dependencies into production.
+**Fix (recommended):** Use \`npm audit --audit-level=moderate\` for blocking checks.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasSpeculativeMediumFinding(inner)).toBe(false)
+    expect(r.categories).not.toContain('SPECULATIVE_FINDING')
+  })
+
+  it('accepts Medium when Why uses ensure but states concrete weakness and unauthorized impact', () => {
+    const inner = `### [Medium] Broken session binding
+
+**Category:** Access control
+**Evidence:** \`api/user.ts\`
+**Why it matters:** The handler does not appear to validate the subject against the authenticated session, which enables unauthorized access to another user's profile. Ensure authorization is enforced before reads.
+**Fix (recommended):** Resolve the principal from the session token only.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    expect(hasSpeculativeMediumFinding(inner)).toBe(false)
+    expect(validateReport(report).categories).not.toContain('SPECULATIVE_FINDING')
+  })
+
+  it('does not flag Medium when hedge words appear only in Fix (recommended)', () => {
+    const inner = `### [Medium] Missing Ownership Check in Credits Top-Up
+
+**Category:** Broken Access Control
+**Evidence:** \`functions/src/handlers/credits.ts\`
+**Why it matters:** The endpoint accepts a target account id without validating ownership in this handler, which can allow an authenticated attacker to tamper with another account's credit balance.
+**Fix (recommended):** Review access controls and ensure ownership is verified before processing top-up operations.
 `
     const report = fullReportWithKeyFindingsBody(inner)
     const r = validateReport(report)
@@ -222,6 +365,60 @@ describe('validateReport', () => {
     const r = validateReport(report)
     expect(hasUnboundedAbsenceClaim(report)).toBe(false)
     expect(r.categories).not.toContain('UNBOUNDED_ABSENCE_CLAIM')
+  })
+
+  it('flags summary risk above highest finding without bounded rationale', () => {
+    const inner = `### [Low] Insecure Handling of Personal Access Tokens
+
+**Category:** Configuration Management
+**Evidence:** \`cmd/github-mcp-server/main.go:1-115\`
+**Why it matters:** The server requires a token and this can increase operational risk if mishandled.
+**Fix (recommended):** Keep tokens in secure stores and rotate regularly.
+`
+    const report = fullReportWithKeyFindingsBody(inner).replace(
+      '**Summary Risk:** Low — limited scan scope.',
+      '**Summary Risk:** Medium — potential for misconfiguration and insufficient access control in server operations.'
+    )
+    const r = validateReport(report)
+    expect(hasSummaryRiskInconsistentWithFindings(report, inner)).toBe(true)
+    expect(r.categories).toContain('SUMMARY_RISK_INCONSISTENT')
+  })
+
+  it('accepts summary risk above findings when explicitly bounded by scan coverage rationale', () => {
+    const inner = `### [Low] Insecure Handling of Personal Access Tokens
+
+**Category:** Configuration Management
+**Evidence:** \`cmd/github-mcp-server/main.go:1-115\`
+**Why it matters:** The server requires a token and this can increase operational risk if mishandled.
+**Fix (recommended):** Keep tokens in secure stores and rotate regularly.
+`
+    const report = fullReportWithKeyFindingsBody(inner).replace(
+      '**Summary Risk:** Low — limited scan scope.',
+      '**Summary Risk:** Medium — due to limited scanned coverage in this run (40 selected, many omitted), residual risk may be understated by the observed Low findings.'
+    )
+    const r = validateReport(report)
+    expect(hasSummaryRiskInconsistentWithFindings(report, inner)).toBe(false)
+    expect(r.categories).not.toContain('SUMMARY_RISK_INCONSISTENT')
+  })
+
+  it('flags directive recommendation drift after not-evidenced bounded statement', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
+      '## Rate Limiting & Abuse Controls\n\nSection content 8. Use Not evidenced where applicable.\n',
+      '## Rate Limiting & Abuse Controls\n\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nImplement rate limiting on API endpoints to prevent abuse.\n'
+    )
+    const r = validateReport(report)
+    expect(hasNotEvidencedRecommendationDrift(report)).toBe(true)
+    expect(r.categories).toContain('NOT_EVIDENCED_DRIFT')
+  })
+
+  it('accepts conditional scope-limited guidance after not-evidenced bounded statement', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
+      '## Rate Limiting & Abuse Controls\n\nSection content 8. Use Not evidenced where applicable.\n',
+      '## Rate Limiting & Abuse Controls\n\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nIf rate limiting exists outside the scanned paths, consider documenting enforcement boundaries and validating behavior in a targeted follow-up scan.\n'
+    )
+    const r = validateReport(report)
+    expect(hasNotEvidencedRecommendationDrift(report)).toBe(false)
+    expect(r.categories).not.toContain('NOT_EVIDENCED_DRIFT')
   })
 })
 

@@ -72,9 +72,9 @@ function App() {
           console.error('JSON parse error:', parseError, 'Response text:', text)
           // If it's an error response, throw with the raw text
           if (!response.ok) {
-            throw new Error(`Server error: ${response.status} ${response.statusText}\n\nResponse: ${text}`)
+            throw new Error(`Server error: ${response.status} ${response.statusText}\n\nResponse: ${text}`, { cause: parseError })
           }
-          throw new Error(`Invalid JSON response from server: ${text}`)
+          throw new Error(`Invalid JSON response from server: ${text}`, { cause: parseError })
         }
       } else {
         // Empty response

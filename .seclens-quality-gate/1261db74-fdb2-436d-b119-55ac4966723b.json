@@ -1,0 +1,79 @@
+{
+  "correlationId": "1261db74-fdb2-436d-b119-55ac4966723b",
+  "generatedAt": "2026-04-28T06:19:12.637Z",
+  "categories": [
+    "MISLEADING_SECRET_CLASSIFICATION",
+    "UNBOUNDED_ABSENCE_CLAIM"
+  ],
+  "repairedAfterCritic": true,
+  "repository": {
+    "owner": "flowinternals",
+    "repo": "itc2-candidate-db",
+    "url": "https://github.com/flowinternals/itc2-candidate-db",
+    "defaultBranch": "main",
+    "scannedRef": "main",
+    "scannedSha": "197609d73ecd75f646515c9cc05ba685b1508a93"
+  },
+  "ingestion": {
+    "strategyVersion": "v1",
+    "selectedFileCount": 34,
+    "omittedFileCount": 386,
+    "capHits": [
+      "MAX_FILES_FETCHED",
+      "MAX_BYTES_PER_FILE",
+      "MAX_TOTAL_BYTES_TO_MODEL"
+    ],
+    "coverageSummary": "Partial coverage: limits reached (MAX_FILES_FETCHED, MAX_BYTES_PER_FILE, MAX_TOTAL_BYTES_TO_MODEL). Review Confidence & Coverage.",
+    "citationHints": [
+      "eslint.config.mjs:1-19",
+      "firebase.json:1-39",
+      "functions-python/requirements.txt:1-5",
+      "functions/package-lock.json:1-100",
+      "functions/package.json:1-37",
+      "functions/tsconfig.json:1-24",
+      "next.config.ts:1-71",
+      "openai_assistants_mcp/pyproject.toml:1-11"
+    ]
+  },
+  "bundleSummary": {
+    "inventory": {
+      "totalFilesSeen": 420,
+      "filesEligibleByTier": {
+        "tier1": 16,
+        "tier2": 82,
+        "tier3": 258
+      },
+      "filesSelected": 40,
+      "filesOmitted": 386
+    },
+    "coverage": {
+      "maxFilesCapHit": true,
+      "maxBytesPerFileCapHit": true,
+      "maxTotalBytesCapHit": true,
+      "maxTreeSizeCapHit": false,
+      "notes": []
+    }
+  },
+  "tokenUsage": {
+    "draft": {
+      "prompt_tokens": 19767,
+      "completion_tokens": 1509,
+      "total_tokens": 21276
+    },
+    "critic": {
+      "prompt_tokens": 5200,
+      "completion_tokens": 2976,
+      "total_tokens": 8176
+    },
+    "total": {
+      "prompt_tokens": 24967,
+      "completion_tokens": 4485,
+      "total_tokens": 29452
+    },
+    "estimatedCostUsd": 0.00644
+  },
+  "reports": {
+    "originalDraft": "# SecLens Security Report\n\n- **Repository:** flowinternals/itc2-candidate-db (https://github.com/flowinternals/itc2-candidate-db)\n- **Ref:** main @ 197609d\n- **Generated:** 2026-04-28T06:17:43.108Z\n- **Languages:** TypeScript\n- **Summary Risk:** Medium — potential for misconfiguration and missing security controls in API endpoints.\n\n## Executive Summary\nThis report provides an analysis of the security posture of the `itc2-candidate-db` repository. The review focused on the API endpoints and configuration files, identifying areas of concern related to authentication, data handling, and potential exposure of sensitive information.\n\n## Inventory & Attack Surface\nThe repository contains a total of 420 paths, with 40 paths selected for review. The paths include various configuration files and API endpoints, with a breakdown as follows:\n- **Tier 1:** 16\n- **Tier 2:** 82\n- **Tier 3:** 258\n\n## Key Findings (Prioritized)\n\n### [Medium] Insecure API Key Exposure\n**Category:** API Security  \n**Evidence:** `app/api/admin/add-recruiter/route.ts:1-111`  \n**Why it matters:** The API key for Firebase is accessed via `process.env.NEXT_PUBLIC_FIREBASE_API_KEY`, which could be exposed if the environment is misconfigured.  \n**Fix (recommended):** Ensure that sensitive keys are not exposed in the client-side code and are properly secured in environment variables. Consider using server-side functions to handle sensitive operations.  \n**Residual risk & tests:** Ensure that environment variables are not logged or exposed in error messages.\n\n### [Medium] Insufficient Input Validation\n**Category:** Input Validation  \n**Evidence:** `app/api/admin/bulk-import/bulk-resubmit/route.ts:1-126`  \n**Why it matters:** The API endpoint does not sufficiently validate the `fileIds` array, which could lead to unexpected behavior if malformed data is submitted.  \n**Fix (recommended):** Implement stricter validation on input parameters and ensure that all required fields are validated before processing.  \n**Residual risk & tests:** Test with various inputs to ensure that validation is enforced.\n\n### [Medium] Lack of Rate Limiting\n**Category:** Rate Limiting  \n**Evidence:** `app/api/admin/users/route.ts:1-64`  \n**Why it matters:** The API endpoints do not implement rate limiting, which could expose the application to denial-of-service attacks.  \n**Fix (recommended):** Implement rate limiting on all API endpoints to mitigate abuse.  \n**Residual risk & tests:** Monitor API usage patterns and adjust rate limits as necessary.\n\n## Dependency & Supply Chain Notes\nThe project uses several dependencies, including Firebase, OpenAI, and Algolia. Regular audits of these dependencies should be conducted to ensure that no known vulnerabilities are present.\n\n## CI/CD & Operational Hardening\nThe repository includes scripts for deployment and testing, but there is no evidence of automated security checks in the CI/CD pipeline. Implementing security checks as part of the CI/CD process is recommended.\n\n## Web Security Controls\nThere is a lack of security headers and CSRF protection in the API responses. Implementing security headers and CSRF tokens would enhance the security posture of the application.\n\n## Docker/IaC Observations\nNo Docker or Infrastructure as Code (IaC) configurations were reviewed in this scan. Ensure that any containerized deployments follow best practices for security.\n\n## Rate Limiting & Abuse Controls\nAs noted, there is no rate limiting implemented on API endpoints. This should be addressed to prevent abuse.\n\n## File Upload Security\nNo file upload functionality was observed in the reviewed paths. If implemented, ensure that proper validation and scanning for malicious files are conducted.\n\n## Session Management\nSession management practices were not evidenced in the scanned files. Ensure that sessions are managed securely, with appropriate expiration and renewal policies.\n\n## Quick Wins (Do These First)\n1. Implement input validation on all API endpoints.\n2. Secure API keys and sensitive information in environment variables.\n3. Introduce rate limiting on API endpoints.\n4. Add security headers to API responses.\n\n## Roadmap & Success Criteria\n1. Conduct a full security audit of all endpoints.\n2. Implement automated security testing in the CI/CD pipeline.\n3. Regularly update dependencies and monitor for vulnerabilities.\n\n## Confidence & Coverage\nThe analysis is based on a limited set of files (40 out of 420). While the findings are based on the reviewed paths, there may be additional vulnerabilities in the omitted paths. The coverage is limited due to the number of paths omitted.\n\n## Appendix A – Evidence Index\n- `eslint.config.mjs:1-19`\n- `firebase.json:1-39`\n- `functions-python/requirements.txt:1-5`\n- `functions/package-lock.json:1-100`\n- `functions/package.json:1-37`\n- `functions/tsconfig.json:1-24`\n- `next.config.ts:1-71`\n- `openai_assistants_mcp/pyproject.toml:1-11`\n- `openai_assistants_mcp/requirements.txt:1-4`\n- `openai_mcp_bridge/pyproject.toml:1-13`\n- `openai_mcp_bridge/requirements.txt:1-8`\n- `package-lock.json:1-117`\n- `package.json:1-81`\n- `postcss.config.mjs:1-8`\n- `tsconfig.json:1-56`\n- `vitest.config.ts:1-34`\n- `app/api/admin/add-recruiter/route.ts:1-111`\n- `app/api/admin/bulk-import-recovery/route.ts:1-49`\n- `app/api/admin/bulk-import/bulk-resubmit/route.ts:1-126`\n- `app/api/admin/bulk-import/cleanup-stuck/route.ts:1-110`\n- `app/api/admin/bulk-import/trigger-orchestrator/route.ts:1-62`\n- `app/api/admin/cleanup-old-uploads/route.ts:1-120`\n- `app/api/admin/users/[uid]/route.ts:1-116`\n- `app/api/admin/users/route.ts:1-64`\n- `app/api/admin/users/sync-avatars/route.ts:1-59`\n- `app/api/ai/chat/route.ts:1-90`\n- `app/api/ai/test-env/route.ts:1-24`\n- `app/api/ai/tools/algoliaSearch/route.ts:1-36`\n- `app/api/ai/tools/getCandidate/route.ts:1-92`\n- `app/api/ai/tools/getCandidateEvaluations/route.ts:1-51`\n- `app/api/ai/tools/getEvaluationDetails/route.ts:1-46`\n- `app/api/ai/tools/getJob/route.ts:1-30`\n- `app/api/ai/tools/getJobEvaluations/route.ts:1-37`\n- `app/api/ai/tools/runIndependentAssessment/route.ts:1-1`\n\n## Appendix B – Safe Config & Policy Snippets\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins.",
+    "finalRejectedReport": "# SecLens Security Report\n\n- **Repository:** flowinternals/itc2-candidate-db (https://github.com/flowinternals/itc2-candidate-db)\n- **Ref:** main @ 197609d\n- **Generated:** 2026-04-28T06:17:43.108Z\n- **Languages:** TypeScript\n- **Summary Risk:** Medium — potential for misconfiguration and missing security controls in API endpoints.\n\n## Executive Summary\nThis report provides an analysis of the security posture of the `itc2-candidate-db` repository. The review focused on the API endpoints and configuration files, identifying areas of concern related to authentication, data handling, and potential exposure of sensitive information.\n\n## Inventory & Attack Surface\nThe repository contains a total of 420 paths, with 40 paths selected for review. The paths include various configuration files and API endpoints, with a breakdown as follows:\n- **Tier 1:** 16\n- **Tier 2:** 82\n- **Tier 3:** 258\n\n## Key Findings (Prioritized)\n\n### [Medium] Insufficient Input Validation\n**Category:** Input Validation  \n**Evidence:** `app/api/admin/bulk-import/bulk-resubmit/route.ts:1-126`  \n**Why it matters:** The API endpoint does not sufficiently validate the `fileIds` array, which could lead to unexpected behavior if malformed data is submitted.  \n**Fix (recommended):** Implement stricter validation on input parameters and ensure that all required fields are validated before processing.  \n**Residual risk & tests:** Test with various inputs to ensure that validation is enforced.\n\n### [Medium] Lack of Rate Limiting\n**Category:** Rate Limiting  \n**Evidence:** `app/api/admin/users/route.ts:1-64`  \n**Why it matters:** The API endpoints do not implement rate limiting, which could expose the application to denial-of-service attacks.  \n**Fix (recommended):** Implement rate limiting on all API endpoints to mitigate abuse.  \n**Residual risk & tests:** Monitor API usage patterns and adjust rate limits as necessary.\n\n### [Info] Firebase Client Configuration\n**Category:** Configuration Review  \n**Evidence:** `app/api/admin/add-recruiter/route.ts:1-111`  \n**Why it matters:** The API key for Firebase is accessed via `process.env.NEXT_PUBLIC_FIREBASE_API_KEY`. While this is a public configuration, it should be ensured that sensitive operations are handled server-side to prevent exposure.  \n**Fix (recommended):** Ensure that sensitive keys are not exposed in the client-side code and are properly secured in environment variables.\n\n## Dependency & Supply Chain Notes\nThe project uses several dependencies, including Firebase, OpenAI, and Algolia. Regular audits of these dependencies should be conducted to ensure that no known vulnerabilities are present.\n\n## CI/CD & Operational Hardening\nThe repository includes scripts for deployment and testing, but there is no evidence of automated security checks in the CI/CD pipeline. Implementing security checks as part of the CI/CD process is recommended.\n\n## Web Security Controls\nThere is a lack of security headers and CSRF protection in the API responses. Implementing security headers and CSRF tokens would enhance the security posture of the application.\n\n## Docker/IaC Observations\nNo Docker or Infrastructure as Code (IaC) configurations were reviewed in this scan. Ensure that any containerized deployments follow best practices for security.\n\n## Rate Limiting & Abuse Controls\nAs noted, there is no rate limiting implemented on API endpoints. This should be addressed to prevent abuse.\n\n## File Upload Security\nNo file upload functionality was observed in the reviewed paths. If implemented, ensure that proper validation and scanning for malicious files are conducted.\n\n## Session Management\nSession management practices were not evidenced in the scanned files. Ensure that sessions are managed securely, with appropriate expiration and renewal policies.\n\n## Quick Wins (Do These First)\n1. Implement input validation on all API endpoints.\n2. Secure API keys and sensitive information in environment variables.\n3. Introduce rate limiting on API endpoints.\n4. Add security headers to API responses.\n\n## Roadmap & Success Criteria\n1. Conduct a full security audit of all endpoints.\n2. Implement automated security testing in the CI/CD pipeline.\n3. Regularly update dependencies and monitor for vulnerabilities.\n\n## Confidence & Coverage\nThe analysis is based on a limited set of files (40 out of 420). While the findings are based on the reviewed paths, there may be additional vulnerabilities in the omitted paths. The coverage is limited due to the number of paths omitted.\n\n## Appendix A – Evidence Index\n- `eslint.config.mjs:1-19`\n- `firebase.json:1-39`\n- `functions-python/requirements.txt:1-5`\n- `functions/package-lock.json:1-100`\n- `functions/package.json:1-37`\n- `functions/tsconfig.json:1-24`\n- `next.config.ts:1-71`\n- `openai_assistants_mcp/pyproject.toml:1-11`\n- `openai_assistants_mcp/requirements.txt:1-4`\n- `openai_mcp_bridge/pyproject.toml:1-13`\n- `openai_mcp_bridge/requirements.txt:1-8`\n- `package-lock.json:1-117`\n- `package.json:1-81`\n- `postcss.config.mjs:1-8`\n- `tsconfig.json:1-56`\n- `vitest.config.ts:1-34`\n- `app/api/admin/add-recruiter/route.ts:1-111`\n- `app/api/admin/bulk-import-recovery/route.ts:1-49`\n- `app/api/admin/bulk-import/bulk-resubmit/route.ts:1-126`\n- `app/api/admin/bulk-import/cleanup-stuck/route.ts:1-110`\n- `app/api/admin/bulk-import/trigger-orchestrator/route.ts:1-62`\n- `app/api/admin/cleanup-old-uploads/route.ts:1-120`\n- `app/api/admin/users/[uid]/route.ts:1-116`\n- `app/api/admin/users/route.ts:1-64`\n- `app/api/admin/users/sync-avatars/route.ts:1-59`\n- `app/api/ai/chat/route.ts:1-90`\n- `app/api/ai/test-env/route.ts:1-24`\n- `app/api/ai/tools/algoliaSearch/route.ts:1-36`\n- `app/api/ai/tools/getCandidate/route.ts:1-92`\n- `app/api/ai/tools/getCandidateEvaluations/route.ts:1-51`\n- `app/api/ai/tools/getEvaluationDetails/route.ts:1-46`\n- `app/api/ai/tools/getJob/route.ts:1-30`\n- `app/api/ai/tools/getJobEvaluations/route.ts:1-37`\n- `app/api/ai/tools/runIndependentAssessment/route.ts:1-1`\n\n## Appendix B – Safe Config & Policy Snippets\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins."
+  }
+}

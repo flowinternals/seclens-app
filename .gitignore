@@ -57,6 +57,9 @@ config.json
 # Vercel
 .vercel
 
+# Local Stage 02 self-scan artifacts (npm run self-scan)
+.seclens-self-scan/
+
 # Temporary files
 *.tmp
 *.temp

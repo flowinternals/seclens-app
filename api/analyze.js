@@ -161,7 +161,7 @@ export default async function handler(req, res) {
       if (decoded !== trimmedUrl && decoded.includes('github.com')) {
         trimmedUrl = decoded
       }
-    } catch (e) {
+    } catch {
       // If decoding fails, use original URL
       if (!isDev) {
         console.log('URL decode attempt failed, using original')
@@ -304,9 +304,13 @@ export default async function handler(req, res) {
         url: repoData.url,
         owner: repoData.owner,
         name: repoData.repo,
-        language: repoData.language
+        language: repoData.language,
+        ...(repoData.defaultBranch != null && { defaultBranch: repoData.defaultBranch }),
+        ...(repoData.scannedRef != null && { scannedRef: repoData.scannedRef }),
+        ...(repoData.scannedSha != null && { scannedSha: repoData.scannedSha }),
       },
-      timestamp: new Date().toISOString()
+      ...(repoData.ingestion != null && { ingestion: repoData.ingestion }),
+      timestamp: new Date().toISOString(),
     })
     
   } catch (error) {

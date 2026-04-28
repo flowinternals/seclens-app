@@ -1,5 +1,3 @@
-import Modal from './Modal'
-
 function Footer({ onOpenPrivacy, onOpenTerms }) {
   return (
     <footer className="border-t border-gray-700/50 backdrop-blur-md mt-auto" style={{ backgroundColor: '#101012' }}>

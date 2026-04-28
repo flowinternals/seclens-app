@@ -1,0 +1,78 @@
+{
+  "correlationId": "22a91e65-a919-4b84-b7f0-d2194325bb1c",
+  "generatedAt": "2026-04-28T05:56:59.765Z",
+  "categories": [
+    "MISLEADING_SECRET_CLASSIFICATION"
+  ],
+  "repairedAfterCritic": true,
+  "repository": {
+    "owner": "flowinternals",
+    "repo": "spekify-app",
+    "url": "https://github.com/flowinternals/spekify-app",
+    "defaultBranch": "main",
+    "scannedRef": "main",
+    "scannedSha": "eb0463cf8626ad2c21dd6a27cae0354358c57586"
+  },
+  "ingestion": {
+    "strategyVersion": "v1",
+    "selectedFileCount": 29,
+    "omittedFileCount": 521,
+    "capHits": [
+      "MAX_FILES_FETCHED",
+      "MAX_BYTES_PER_FILE",
+      "MAX_TOTAL_BYTES_TO_MODEL"
+    ],
+    "coverageSummary": "Partial coverage: limits reached (MAX_FILES_FETCHED, MAX_BYTES_PER_FILE, MAX_TOTAL_BYTES_TO_MODEL). Review Confidence & Coverage.",
+    "citationHints": [
+      ".env.example:1-54",
+      ".github/workflows/ci-security.yml:1-51",
+      "eslint.config.js:1-124",
+      "firebase.json:1-23",
+      "functions/package-lock.json:1-142",
+      "functions/package.json:1-34",
+      "functions/tsconfig.json:1-18",
+      "gcp-mcp-server/.env.example:1-28"
+    ]
+  },
+  "bundleSummary": {
+    "inventory": {
+      "totalFilesSeen": 550,
+      "filesEligibleByTier": {
+        "tier1": 22,
+        "tier2": 16,
+        "tier3": 468
+      },
+      "filesSelected": 40,
+      "filesOmitted": 521
+    },
+    "coverage": {
+      "maxFilesCapHit": true,
+      "maxBytesPerFileCapHit": true,
+      "maxTotalBytesCapHit": true,
+      "maxTreeSizeCapHit": false,
+      "notes": []
+    }
+  },
+  "tokenUsage": {
+    "draft": {
+      "prompt_tokens": 20900,
+      "completion_tokens": 1435,
+      "total_tokens": 22335
+    },
+    "critic": {
+      "prompt_tokens": 4831,
+      "completion_tokens": 2870,
+      "total_tokens": 7701
+    },
+    "total": {
+      "prompt_tokens": 25731,
+      "completion_tokens": 4305,
+      "total_tokens": 30036
+    },
+    "estimatedCostUsd": 0.00644
+  },
+  "reports": {
+    "originalDraft": "# SecLens Security Report\n\n- **Repository:** flowinternals/spekify-app (https://github.com/flowinternals/spekify-app)\n- **Ref:** main @ eb0463c\n- **Generated:** 2026-04-28T05:55:11.958Z\n- **Languages:** TypeScript\n- **Summary Risk:** Medium — the repository contains several areas of concern regarding security practices and configurations.\n\n## Executive Summary\nThis report provides an analysis of the security posture of the `spekify-app` repository. The review highlights key findings related to configuration management, dependency management, and potential vulnerabilities in the codebase. The findings indicate areas that require immediate attention to enhance the security of the application.\n\n## Inventory & Attack Surface\nThe repository contains a total of 550 paths, with 40 paths selected for review. The paths are categorized into three tiers based on their eligibility for security scrutiny:\n- **Tier 1:** 22 paths\n- **Tier 2:** 16 paths\n- **Tier 3:** 468 paths\n\n## Key Findings (Prioritized)\n\n### [Medium] Hardcoded Secrets in Configuration Files\n**Category:** Configuration Management  \n**Evidence:** `.env.example:1-54`, `gcp-mcp-server/.env.example:1-28`  \n**Why it matters:** Hardcoded secrets or sensitive information in configuration files can lead to unauthorized access if these files are exposed or mismanaged.  \n**Fix (recommended):** Use environment variables and secret management tools to handle sensitive information securely. Ensure that sensitive keys are not included in version control.  \n**Residual risk & tests:** Ensure that all environment variables are properly managed and that sensitive information is not logged or exposed in error messages.\n\n### [Medium] Inadequate Security Headers\n**Category:** Web Security Controls  \n**Evidence:** `vercel.json:1-20`, `vite.config.ts:1-87`  \n**Why it matters:** Missing or misconfigured security headers can expose the application to various attacks such as XSS, clickjacking, and data theft.  \n**Fix (recommended):** Implement additional security headers such as Content Security Policy (CSP), X-XSS-Protection, and others as per OWASP recommendations.  \n**Residual risk & tests:** Regularly review and update security headers to align with best practices.\n\n### [Medium] Lack of Rate Limiting\n**Category:** Rate Limiting & Abuse Controls  \n**Evidence:** `gcp-mcp-server/.env.example:1-28`  \n**Why it matters:** Without rate limiting, the application is vulnerable to abuse through brute-force attacks or denial-of-service attacks.  \n**Fix (recommended):** Implement rate limiting on API endpoints to mitigate abuse. Use libraries or middleware that support rate limiting.  \n**Residual risk & tests:** Monitor API usage patterns and adjust rate limits as necessary.\n\n## Dependency & Supply Chain Notes\nThe project utilizes several dependencies, including Firebase and various UI libraries. Regularly run `npm audit` to identify and address vulnerabilities in dependencies. The CI/CD pipeline includes a step for auditing dependencies, which is a positive practice.\n\n## CI/CD & Operational Hardening\nThe CI/CD pipeline is configured to run security checks, including `npm audit` and `gitleaks` for secrets scanning. This is a good practice; however, ensure that all findings from these tools are addressed promptly.\n\n## Web Security Controls\nBasic security controls are in place, but there are areas for improvement, particularly regarding security headers and input validation. Ensure that all user inputs are validated and sanitized to prevent injection attacks.\n\n## Docker/IaC Observations\nThe Dockerfile is well-structured for multi-stage builds, which helps in reducing the final image size and surface area for attacks. Ensure that sensitive files are not copied into the final image.\n\n## Rate Limiting & Abuse Controls\nAs noted, there is a lack of explicit rate limiting in the application. Implementing rate limiting is crucial to protect against abuse.\n\n## File Upload Security\nNot evidenced in scanned files. Ensure that any file upload functionality includes validation for file types and sizes, as well as checks against known vulnerabilities.\n\n## Session Management\nNot evidenced in scanned files. Implement secure session management practices, including session expiration and secure cookie attributes.\n\n## Quick Wins (Do These First)\n1. Review and secure all configuration files to ensure no hardcoded secrets are present.\n2. Implement additional security headers in the application.\n3. Establish rate limiting on API endpoints.\n\n## Roadmap & Success Criteria\n- **Short-term:** Address the medium findings identified in this report.\n- **Long-term:** Regularly review security practices, conduct penetration testing, and keep dependencies up to date.\n\n## Confidence & Coverage\nThe analysis is based on a subset of the repository, with 40 paths reviewed out of 550 total paths. The findings represent a partial view of the security posture, and further review is recommended for comprehensive coverage.\n\n## Appendix A – Evidence Index\n- `.env.example:1-54`\n- `.github/workflows/ci-security.yml:1-51`\n- `eslint.config.js:1-124`\n- `firebase.json:1-23`\n- `functions/package-lock.json:1-142`\n- `functions/package.json:1-34`\n- `functions/tsconfig.json:1-18`\n- `gcp-mcp-server/.env.example:1-28`\n- `gcp-mcp-server/Dockerfile:1-17`\n- `gcp-mcp-server/package-lock.json:1-141`\n- `gcp-mcp-server/package.json:1-36`\n- `gcp-mcp-server/tsconfig.json:1-18`\n- `gcp-mcp-server/vitest.config.ts:1-10`\n- `package-lock.json:1-109`\n- `package.json:1-88`\n- `postcss.config.cjs:1-7`\n- `src/server_disabled/tsconfig.json:1-31`\n- `tailwind.config.js:1-124`\n- `tsconfig.json:1-46`\n- `tsconfig.node.json:1-11`\n- `vercel.json:1-20`\n- `vite.config.ts:1-87`\n- `src/components/mvp15/auth/AuthModalUiToggle.tsx:1-50`\n- `src/components/mvp15/auth/NewSignInScreen.tsx:1-56`\n- `src/components/mvp15/auth/NewSignInView.tsx:1-105`\n- `src/components/mvp15/auth/SignInVariantToggle.tsx:1-51`\n- `src/server_disabled/projects/[id]/generate/route.ts:1-58`\n- `src/server_disabled/projects/[id]/route.ts:1-129`\n- `src/server_disabled/projects/route.ts:1-65`\n\n## Appendix B – Safe Config & Policy Snippets\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins.",
+    "finalRejectedReport": "# SecLens Security Report\n\n- **Repository:** flowinternals/spekify-app (https://github.com/flowinternals/spekify-app)\n- **Ref:** main @ eb0463c\n- **Generated:** 2026-04-28T05:55:11.958Z\n- **Languages:** TypeScript\n- **Summary Risk:** Medium — the repository contains several areas of concern regarding security practices and configurations.\n\n## Executive Summary\nThis report provides an analysis of the security posture of the `spekify-app` repository. The review highlights key findings related to configuration management, dependency management, and potential vulnerabilities in the codebase. The findings indicate areas that require immediate attention to enhance the security of the application.\n\n## Inventory & Attack Surface\nThe repository contains a total of 550 paths, with 40 paths selected for review. The paths are categorized into three tiers based on their eligibility for security scrutiny:\n- **Tier 1:** 22 paths\n- **Tier 2:** 16 paths\n- **Tier 3:** 468 paths\n\n## Key Findings (Prioritized)\n\n### [Medium] Hardcoded Secrets in Configuration Files\n**Category:** Configuration Management  \n**Evidence:** `.env.example:1-54`, `gcp-mcp-server/.env.example:1-28`  \n**Why it matters:** Hardcoded secrets or sensitive information in configuration files can lead to unauthorized access if these files are exposed or mismanaged.  \n**Fix (recommended):** Use environment variables and secret management tools to handle sensitive information securely. Ensure that sensitive keys are not included in version control.  \n**Residual risk & tests:** Ensure that all environment variables are properly managed and that sensitive information is not logged or exposed in error messages.\n\n### [Medium] Inadequate Security Headers\n**Category:** Web Security Controls  \n**Evidence:** `vercel.json:1-20`, `vite.config.ts:1-87`  \n**Why it matters:** Missing or misconfigured security headers can expose the application to various attacks such as XSS, clickjacking, and data theft.  \n**Fix (recommended):** Implement additional security headers such as Content Security Policy (CSP), X-XSS-Protection, and others as per OWASP recommendations.  \n**Residual risk & tests:** Regularly review and update security headers to align with best practices.\n\n### [Low] Lack of Rate Limiting\n**Category:** Rate Limiting & Abuse Controls  \n**Evidence:** `gcp-mcp-server/.env.example:1-28`  \n**Why it matters:** Without rate limiting, the application is vulnerable to abuse through brute-force attacks or denial-of-service attacks.  \n**Fix (recommended):** Implement rate limiting on API endpoints to mitigate abuse. Use libraries or middleware that support rate limiting.  \n**Residual risk & tests:** Monitor API usage patterns and adjust rate limits as necessary.\n\n## Dependency & Supply Chain Notes\nThe project utilizes several dependencies, including Firebase and various UI libraries. Regularly run `npm audit` to identify and address vulnerabilities in dependencies. The CI/CD pipeline includes a step for auditing dependencies, which is a positive practice.\n\n## CI/CD & Operational Hardening\nThe CI/CD pipeline is configured to run security checks, including `npm audit` and `gitleaks` for secrets scanning. This is a good practice; however, ensure that all findings from these tools are addressed promptly.\n\n## Web Security Controls\nBasic security controls are in place, but there are areas for improvement, particularly regarding security headers and input validation. Ensure that all user inputs are validated and sanitized to prevent injection attacks.\n\n## Docker/IaC Observations\nThe Dockerfile is well-structured for multi-stage builds, which helps in reducing the final image size and surface area for attacks. Ensure that sensitive files are not copied into the final image.\n\n## Rate Limiting & Abuse Controls\nAs noted, there is a lack of explicit rate limiting in the application. Implementing rate limiting is crucial to protect against abuse.\n\n## File Upload Security\nNot evidenced in scanned files. Ensure that any file upload functionality includes validation for file types and sizes, as well as checks against known vulnerabilities.\n\n## Session Management\nNot evidenced in scanned files. Implement secure session management practices, including session expiration and secure cookie attributes.\n\n## Quick Wins (Do These First)\n1. Review and secure all configuration files to ensure no hardcoded secrets are present.\n2. Implement additional security headers in the application.\n3. Establish rate limiting on API endpoints.\n\n## Roadmap & Success Criteria\n- **Short-term:** Address the medium findings identified in this report.\n- **Long-term:** Regularly review security practices, conduct penetration testing, and keep dependencies up to date.\n\n## Confidence & Coverage\nThe analysis is based on a subset of the repository, with 40 paths reviewed out of 550 total paths. The findings represent a partial view of the security posture, and further review is recommended for comprehensive coverage.\n\n## Appendix A – Evidence Index\n- `.env.example:1-54`\n- `.github/workflows/ci-security.yml:1-51`\n- `eslint.config.js:1-124`\n- `firebase.json:1-23`\n- `functions/package-lock.json:1-142`\n- `functions/package.json:1-34`\n- `functions/tsconfig.json:1-18`\n- `gcp-mcp-server/.env.example:1-28`\n- `gcp-mcp-server/Dockerfile:1-17`\n- `gcp-mcp-server/package-lock.json:1-141`\n- `gcp-mcp-server/package.json:1-36`\n- `gcp-mcp-server/tsconfig.json:1-18`\n- `gcp-mcp-server/vitest.config.ts:1-10`\n- `package-lock.json:1-109`\n- `package.json:1-88`\n- `postcss.config.cjs:1-7`\n- `src/server_disabled/tsconfig.json:1-31`\n- `tailwind.config.js:1-124`\n- `tsconfig.json:1-46`\n- `tsconfig.node.json:1-11`\n- `vercel.json:1-20`\n- `vite.config.ts:1-87`\n- `src/components/mvp15/auth/AuthModalUiToggle.tsx:1-50`\n- `src/components/mvp15/auth/NewSignInScreen.tsx:1-56`\n- `src/components/mvp15/auth/NewSignInView.tsx:1-105`\n- `src/components/mvp15/auth/SignInVariantToggle.tsx:1-51`\n- `src/server_disabled/projects/[id]/generate/route.ts:1-58`\n- `src/server_disabled/projects/[id]/route.ts:1-129`\n- `src/server_disabled/projects/route.ts:1-65`\n\n## Appendix B – Safe Config & Policy Snippets\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins."
+  }
+}

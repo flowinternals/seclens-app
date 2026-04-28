@@ -1,4 +1,3 @@
-import { sanitizeText } from '../utils/sanitize'
 import GlowingButton from './GlowingButton'
 
 function DownloadButton({ format, onDownload, disabled }) {
