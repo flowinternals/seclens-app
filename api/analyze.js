@@ -3,12 +3,46 @@
  * POST /api/analyze
  */
 
-import { rateLimit } from './utils/rateLimit.js'
-import { corsHeaders } from './utils/cors.js'
-import { fetchRepositoryContent } from './utils/github.js'
-import { analyzeSecurity } from './utils/openai.js'
-import { sanitizeLogData, sanitizeHeaders } from './utils/sanitizeLog.js'
-import { sanitizeGitHubUrl } from './utils/sanitize.js'
+import { rateLimit } from '../lib/server/rateLimit.js'
+import { corsHeaders } from '../lib/server/cors.js'
+import { fetchRepositoryContent } from '../lib/server/github.js'
+import { analyzeSecurity } from '../lib/server/openai.js'
+import { sanitizeLogData, sanitizeHeaders } from '../lib/server/sanitizeLog.js'
+import { sanitizeGitHubUrl } from '../lib/server/sanitize.js'
+import { ReportQualityGateError } from '../lib/server/reportQualityGateError.js'
+
+/** OpenAI usage → safe telemetry fragment (no extra provider fields). */
+function normalizeUsageFragment(usage) {
+  if (!usage) return null
+  return {
+    prompt_tokens: typeof usage.prompt_tokens === 'number' ? usage.prompt_tokens : 0,
+    completion_tokens:
+      typeof usage.completion_tokens === 'number' ? usage.completion_tokens : 0,
+    total_tokens: typeof usage.total_tokens === 'number' ? usage.total_tokens : 0,
+  }
+}
+
+function buildTelemetry(analysisResult) {
+  const draft =
+    normalizeUsageFragment(analysisResult.tokenUsage?.draft) ||
+    ({ prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 })
+  const critic = normalizeUsageFragment(analysisResult.tokenUsage?.critic)
+  const rawTotal = analysisResult.tokenUsage?.total || {}
+  const total = {
+    prompt_tokens: typeof rawTotal.prompt_tokens === 'number' ? rawTotal.prompt_tokens : 0,
+    completion_tokens:
+      typeof rawTotal.completion_tokens === 'number' ? rawTotal.completion_tokens : 0,
+    total_tokens: typeof rawTotal.total_tokens === 'number' ? rawTotal.total_tokens : 0,
+  }
+  return {
+    correlationId: analysisResult.correlationId,
+    tokenUsage: {
+      draft,
+      critic,
+      total,
+    },
+  }
+}
 
 export default async function handler(req, res) {
   // Sanitized logging - no sensitive data in production
@@ -196,9 +230,31 @@ export default async function handler(req, res) {
     
     // Analyze security
     let report
+    let reportContractVersion
+    let reportValidation
+    let analysisResult
     try {
-      report = await analyzeSecurity(repoData)
+      analysisResult = await analyzeSecurity(repoData)
+      report = analysisResult.report
+      reportContractVersion = analysisResult.reportContractVersion
+      reportValidation = analysisResult.reportValidation
     } catch (error) {
+      if (error instanceof ReportQualityGateError) {
+        const categories = error.categories.join(',')
+        console.error(
+          `[ReportQualityGate] correlationId=${error.correlationId} categories=${categories}`
+        )
+        return res.status(422).json({
+          error: 'The report failed SecLens quality checks. Please retry the scan.',
+          code: error.code,
+          correlationId: error.correlationId,
+          categories: error.categories,
+          ...(process.env.NODE_ENV === 'development' && {
+            details: `Validation categories: ${categories}`,
+          }),
+        })
+      }
+
       // Log error details only in development
       if (process.env.NODE_ENV === 'development') {
         console.error('Security analysis error:', error.message)
@@ -238,9 +294,12 @@ export default async function handler(req, res) {
       })
     }
     
-    // Return success response
+    // Return success response (telemetry: manual testing / cost planning only; no persistence)
     return res.status(200).json({
       report,
+      reportContractVersion,
+      reportValidation,
+      telemetry: buildTelemetry(analysisResult),
       repository: {
         url: repoData.url,
         owner: repoData.owner,

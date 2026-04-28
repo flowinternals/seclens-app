@@ -17,6 +17,11 @@ function resolveGitleaksBinary() {
   if (explicit) return explicit
   const names = process.platform === 'win32' ? ['gitleaks.exe', 'gitleaks'] : ['gitleaks']
   for (const name of names) {
+    const local = join(REPO_ROOT, name)
+    const r = spawnSync(local, ['version'], { encoding: 'utf8' })
+    if (r.status === 0) return local
+  }
+  for (const name of names) {
     const r = spawnSync(name, ['version'], { encoding: 'utf8' })
     if (r.status === 0) return name
   }
