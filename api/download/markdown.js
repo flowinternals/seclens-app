@@ -3,9 +3,9 @@
  * POST /api/download/markdown
  */
 
-import { corsHeaders } from '../utils/cors.js'
-import { prepareMarkdown, generateFilename, setDownloadHeaders, handleDownloadError } from '../utils/downloadUtils.js'
-import { validateString, validateRepoName } from '../utils/validation.js'
+import { corsHeaders } from '../../lib/server/cors.js'
+import { prepareMarkdown, generateFilename, setDownloadHeaders, handleDownloadError } from '../../lib/server/downloadUtils.js'
+import { validateString, validateRepoName } from '../../lib/server/validation.js'
 
 export default async function handler(req, res) {
   const origin = req.headers.origin

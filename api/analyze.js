@@ -3,13 +3,13 @@
  * POST /api/analyze
  */
 
-import { rateLimit } from './utils/rateLimit.js'
-import { corsHeaders } from './utils/cors.js'
-import { fetchRepositoryContent } from './utils/github.js'
-import { analyzeSecurity } from './utils/openai.js'
-import { sanitizeLogData, sanitizeHeaders } from './utils/sanitizeLog.js'
-import { sanitizeGitHubUrl } from './utils/sanitize.js'
-import { ReportQualityGateError } from './utils/reportQualityGateError.js'
+import { rateLimit } from '../lib/server/rateLimit.js'
+import { corsHeaders } from '../lib/server/cors.js'
+import { fetchRepositoryContent } from '../lib/server/github.js'
+import { analyzeSecurity } from '../lib/server/openai.js'
+import { sanitizeLogData, sanitizeHeaders } from '../lib/server/sanitizeLog.js'
+import { sanitizeGitHubUrl } from '../lib/server/sanitize.js'
+import { ReportQualityGateError } from '../lib/server/reportQualityGateError.js'
 
 /** OpenAI usage → safe telemetry fragment (no extra provider fields). */
 function normalizeUsageFragment(usage) {

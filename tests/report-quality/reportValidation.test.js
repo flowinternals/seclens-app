@@ -5,8 +5,8 @@ import {
   hasMisleadingFirebaseSecretClassification,
   hasSpeculativeMediumFinding,
   hasUnboundedAbsenceClaim,
-} from '../../api/utils/reportValidation.js'
-import { SECTION_TITLES_ORDER } from '../../api/prompts/seclens-output-contract-v2.js'
+} from '../../lib/server/reportValidation.js'
+import { SECTION_TITLES_ORDER } from '../../lib/prompts/seclens-output-contract-v2.js'
 import { buildRepoDataFromFixture } from '../fixtures/buildRepoFixture.js'
 
 function minimalValidReport() {
