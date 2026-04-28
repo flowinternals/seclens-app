@@ -42,4 +42,7 @@ paths = [
   '''\.gitleaks\.toml''',
   '''portable-secrets-ruleset\.yaml''',
 ]
+regexes = [
+  '''FAKE_TEST_SECRET_DO_NOT_USE''',
+]
 

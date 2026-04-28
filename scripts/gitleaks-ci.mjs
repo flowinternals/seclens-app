@@ -11,6 +11,10 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..')
 const CANARY_BASENAME = 'secrets-scan-test-file.txt'
+const ADVISORY_FINGERPRINTS = new Set([
+  // Intentional fixture-only fake secret from Stage 1 history.
+  '551bba9255f40d1af0eea3d40be39dae1d366bb7:tests/fixtures/repos/node-express-issues/server.js:generic-secret:10',
+])
 
 function resolveGitleaksBinary() {
   const explicit = process.env.GITLEAKS_PATH
@@ -35,6 +39,11 @@ function isCanaryFinding(f) {
     file.endsWith(`/${CANARY_BASENAME}`) ||
     file.endsWith(`\\${CANARY_BASENAME}`)
   )
+}
+
+function isAdvisoryFixtureFinding(f) {
+  const fingerprint = f.Fingerprint || ''
+  return ADVISORY_FINGERPRINTS.has(fingerprint)
 }
 
 function githubNotice(message) {
@@ -94,12 +103,21 @@ if (!Array.isArray(findings)) {
 }
 
 const canaryFindings = findings.filter(isCanaryFinding)
-const otherFindings = findings.filter((f) => !isCanaryFinding(f))
+const advisoryFixtureFindings = findings.filter(isAdvisoryFixtureFinding)
+const otherFindings = findings.filter((f) => !isCanaryFinding(f) && !isAdvisoryFixtureFinding(f))
 
 if (canaryFindings.length > 0) {
   const msg =
     `Secrets scanner advisory: intentional dummy "${CANARY_BASENAME}" was detected (${canaryFindings.length} finding(s)). ` +
     'This confirms rule matching on the known test artifact; it is not treated as a credential incident.'
+  console.log(`\n${msg}\n`)
+  if (process.env.GITHUB_ACTIONS === 'true') githubNotice(msg)
+}
+
+if (advisoryFixtureFindings.length > 0) {
+  const msg =
+    `Secrets scanner advisory: known fixture-only historical finding(s) detected (${advisoryFixtureFindings.length}). ` +
+    'These are intentionally synthetic test artifacts and are not treated as credential incidents.'
   console.log(`\n${msg}\n`)
   if (process.env.GITHUB_ACTIONS === 'true') githubNotice(msg)
 }
