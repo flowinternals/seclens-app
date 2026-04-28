@@ -90,6 +90,17 @@ PORT=3001
 
 # Optional: Node Environment
 NODE_ENV=development
+
+# SecLens report-quality controls (MVP4 Stage 01)
+# Development default is false unless explicitly set.
+# Set to true for MVP4 report-repair testing.
+SECLENS_CRITIC_ENABLED=true
+# Optional model overrides (default gpt-4o-mini)
+SECLENS_ANALYSIS_MODEL=gpt-4o-mini
+SECLENS_CRITIC_MODEL=gpt-4o-mini
+# Optional token caps (default 8192)
+SECLENS_MAX_ANALYSIS_TOKENS=8192
+SECLENS_MAX_CRITIC_TOKENS=8192
 ```
 
    **⚠️ CRITICAL:** Never commit `.env.local` or any file containing API keys to the repository.
@@ -168,6 +179,14 @@ Or create a `.env.local` file in the project root (it will be automatically load
 OPENAI_API_KEY=your_api_key_here
 ```
 
+For MVP4 report-quality testing, set `SECLENS_CRITIC_ENABLED=true` in `.env.local` and restart the API server. Otherwise reports that fail quality validation will return `422 REPORT_QUALITY_GATE` without a repair attempt.
+
+Critic behavior defaults:
+- Development (`NODE_ENV=development`): critic is off unless `SECLENS_CRITIC_ENABLED=true` is explicitly set.
+- Staging/production MVP4 testing: set `SECLENS_CRITIC_ENABLED=true`.
+
+After changing `.env.local`, restart `npm run dev:api` (or `npm run dev:full`) so the server reloads environment values.
+
 ### Build for Production
 
 Create a production build:
@@ -206,12 +225,20 @@ Set these in your Vercel project settings:
 | `RECAPTCHA_SECRET_KEY` | Google reCAPTCHA v3 secret key | Yes | Google reCAPTCHA Console |
 | `CORS_ALLOWLIST` | Comma-separated list of allowed origins (e.g., "https://yourdomain.com,https://www.yourdomain.com") | Yes (Production) | Your production domain(s) |
 | `GITHUB_TOKEN` | GitHub API token for higher rate limits | No | GitHub Settings → Developer Settings → Personal Access Tokens |
+| `SECLENS_CRITIC_ENABLED` | Enables one critic repair pass on report-quality failure | Required for MVP4 staging/prod testing (`true`) | SecLens Stage 01 config |
+| `SECLENS_ANALYSIS_MODEL` | Model for primary analysis pass | No (defaults to `gpt-4o-mini`) | SecLens Stage 01 config |
+| `SECLENS_CRITIC_MODEL` | Model for critic repair pass | No (defaults to `gpt-4o-mini`) | SecLens Stage 01 config |
+| `SECLENS_MAX_ANALYSIS_TOKENS` | Token cap for analysis completion | No (defaults to `8192`) | SecLens Stage 01 config |
+| `SECLENS_MAX_CRITIC_TOKENS` | Token cap for critic completion | No (defaults to `8192`) | SecLens Stage 01 config |
 | `NODE_ENV` | Environment mode (development/production) | No | Automatically set by Vercel |
 
 **⚠️ Important Notes:**
 - `CORS_ALLOWLIST` is **required in production** - without it, all CORS requests will be denied
 - Never commit secrets to the repository. Use environment variables only.
 - For local development, `CORS_ALLOWLIST` defaults to localhost origins if not set
+- Development default for `SECLENS_CRITIC_ENABLED` is effectively off unless you set it explicitly
+- For MVP4 staging/prod launch-readiness testing, set `SECLENS_CRITIC_ENABLED=true`
+- If critic is disabled, failed report validation returns `422 REPORT_QUALITY_GATE` immediately
 - See `.env.example` for a complete list of all environment variables
 
 ## Project Structure
