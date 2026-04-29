@@ -1,4 +1,13 @@
-import styled, { keyframes } from 'styled-components'
+import styled, { css, keyframes } from 'styled-components'
+
+const rainbowShift = keyframes`
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+`
 
 const starMovementBottom = keyframes`
   0% {
@@ -85,12 +94,19 @@ const StarBottom = styled.div`
   position: absolute;
   width: 150%;
   height: 25%;
-  opacity: 0.7;
+  opacity: ${props => props.$borderVariant === 'rainbow' ? 0.95 : 0.7};
   bottom: -11px;
   right: -125%;
   border-radius: 9999px;
-  background: radial-gradient(circle, white, transparent 10%);
-  animation: ${starMovementBottom} 5s linear infinite alternate;
+  background: ${props =>
+    props.$borderVariant === 'rainbow'
+      ? 'linear-gradient(90deg, #ff5f6d 0%, #ffc371 16%, #fff36b 32%, #63ffa2 48%, #56ccf2 64%, #6c63ff 80%, #ff5fcd 100%)'
+      : 'radial-gradient(circle, white, transparent 10%)'};
+  background-size: ${props => props.$borderVariant === 'rainbow' ? '200% 100%' : '100% 100%'};
+  animation: ${props =>
+    props.$borderVariant === 'rainbow'
+      ? css`${starMovementBottom} 5s linear infinite alternate, ${rainbowShift} 3s linear infinite`
+      : css`${starMovementBottom} 5s linear infinite alternate`};
   z-index: 0;
   pointer-events: none;
 `
@@ -99,17 +115,34 @@ const StarTop = styled.div`
   position: absolute;
   width: 150%;
   height: 25%;
-  opacity: 0.7;
+  opacity: ${props => props.$borderVariant === 'rainbow' ? 0.95 : 0.7};
   top: -10px;
   left: -125%;
   border-radius: 9999px;
-  background: radial-gradient(circle, white, transparent 10%);
-  animation: ${starMovementTop} 5s linear infinite alternate;
+  background: ${props =>
+    props.$borderVariant === 'rainbow'
+      ? 'linear-gradient(90deg, #ff5f6d 0%, #ffc371 16%, #fff36b 32%, #63ffa2 48%, #56ccf2 64%, #6c63ff 80%, #ff5fcd 100%)'
+      : 'radial-gradient(circle, white, transparent 10%)'};
+  background-size: ${props => props.$borderVariant === 'rainbow' ? '200% 100%' : '100% 100%'};
+  animation: ${props =>
+    props.$borderVariant === 'rainbow'
+      ? css`${starMovementTop} 5s linear infinite alternate, ${rainbowShift} 3s linear infinite reverse`
+      : css`${starMovementTop} 5s linear infinite alternate`};
   z-index: 0;
   pointer-events: none;
 `
 
-function GlowingButton({ children, disabled, onClick, type = 'button', className, 'aria-label': ariaLabel, fullWidth, ...props }) {
+function GlowingButton({
+  children,
+  disabled,
+  onClick,
+  type = 'button',
+  className,
+  'aria-label': ariaLabel,
+  fullWidth,
+  borderVariant,
+  ...props
+}) {
   return (
     <StyledButton
       type={type}
@@ -120,8 +153,8 @@ function GlowingButton({ children, disabled, onClick, type = 'button', className
       style={fullWidth ? { width: '100%' } : undefined}
       {...props}
     >
-      <StarBottom />
-      <StarTop />
+      <StarBottom $borderVariant={borderVariant} />
+      <StarTop $borderVariant={borderVariant} />
       <ButtonContent>{children}</ButtonContent>
     </StyledButton>
   )

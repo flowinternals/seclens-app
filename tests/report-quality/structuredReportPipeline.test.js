@@ -237,10 +237,12 @@ describe('structured report pipeline', () => {
       topic: 'auth',
       title: 'Missing auth check',
       severity: 'High',
-      claim: 'Auth boundary missing.',
-      specific_code_behavior: 'Handler accepts target id without owner verification',
-      missing_control_or_unsafe_condition: 'missing ownership binding and replay guard',
-      impact: 'cross-tenant tampering',
+      claim: 'An unauthenticated attacker can call the account update path due to missing auth boundary checks.',
+      specific_code_behavior:
+        'The route handler accepts attacker-controlled target id input and processes update requests without session verification.',
+      missing_control_or_unsafe_condition:
+        'Missing authorization check and ownership binding allows bypass of intended account boundary.',
+      impact: 'Unauthorized write tampering and cross-tenant data modification by malicious actor.',
       evidence_citations: ['app/api/account/update/route.ts:10-60'],
       evidence_ref_ids: ['ev_001'],
       evidence_categories: ['server_entrypoint', 'control_helper', 'policy'],
@@ -344,6 +346,207 @@ describe('structured report pipeline', () => {
     const admission = admitCandidates([candidate], bundle)
     expect(admission.admitted.findings).toHaveLength(0)
     expect(admission.rejections.some((r) => r.reason === 'meta_non_security_source')).toBe(true)
+  })
+
+  it('downscopes UI button prop validation claim out of Key Findings', () => {
+    const bundle = {
+      evidence: [
+        {
+          path: 'src/components/Button.tsx',
+          snippets: [{ startLine: 1, endLine: 30, text: 'export function Button() {}' }],
+        },
+      ],
+      inventory: { filesSelected: 1, filesOmitted: 0 },
+      coverage: { maxFilesCapHit: false, maxBytesPerFileCapHit: false, maxTotalBytesCapHit: false, maxTreeSizeCapHit: false, notes: [] },
+    }
+    const candidate = {
+      candidate_id: 'ui_1',
+      kind: 'finding',
+      topic: 'validation',
+      title: 'Missing Input Validation in Button Component',
+      severity: 'Medium',
+      claim: 'Button prop validation could be stronger.',
+      specific_code_behavior: 'Button accepts props from caller.',
+      missing_control_or_unsafe_condition: 'Input validation could be improved.',
+      impact: 'Unexpected rendering behavior.',
+      evidence_citations: ['src/components/Button.tsx:1-30'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['client_bridge'],
+      confidence: 'medium',
+      scoped_to_scan: true,
+    }
+    const admission = admitCandidates([candidate], bundle)
+    expect(admission.admitted.findings).toHaveLength(0)
+    expect(admission.admitted.recommendations.length + admission.admitted.observations.length).toBeGreaterThan(0)
+  })
+
+  it('downscopes vague session initialization concern out of Key Findings', () => {
+    const candidate = {
+      candidate_id: 'sess_1',
+      kind: 'finding',
+      topic: 'session',
+      title: 'Session Context Initialization',
+      severity: 'Medium',
+      claim: 'Session setup may need review.',
+      specific_code_behavior: 'Session context initializes at startup.',
+      missing_control_or_unsafe_condition: 'Session checks may be inconsistent.',
+      impact: 'Potential reliability issues.',
+      evidence_citations: ['app/api/account/update/route.ts:10-60'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['server_entrypoint'],
+      confidence: 'medium',
+      scoped_to_scan: true,
+    }
+    const admission = admitCandidates([candidate], mockBundle())
+    expect(admission.admitted.findings).toHaveLength(0)
+  })
+
+  it('downscopes generic CI/CD env validation claim from High finding', () => {
+    const bundle = {
+      evidence: [
+        {
+          path: '.github/workflows/ci.yml',
+          snippets: [{ startLine: 1, endLine: 20, text: 'name: ci' }],
+        },
+      ],
+      inventory: { filesSelected: 1, filesOmitted: 0 },
+      coverage: { maxFilesCapHit: false, maxBytesPerFileCapHit: false, maxTotalBytesCapHit: false, maxTreeSizeCapHit: false, notes: [] },
+    }
+    const candidate = {
+      candidate_id: 'cicd_1',
+      kind: 'finding',
+      topic: 'cicd',
+      title: 'Insufficient Environment Variable Validation in CI/CD Workflows',
+      severity: 'High',
+      claim: 'Environment validation could be improved in workflow.',
+      specific_code_behavior: 'Workflow runs build/test steps.',
+      missing_control_or_unsafe_condition: 'Validation checks are not explicit.',
+      impact: 'Potentially weaker robustness.',
+      evidence_citations: ['.github/workflows/ci.yml:1-20'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['policy'],
+      confidence: 'medium',
+      scoped_to_scan: true,
+    }
+    const admission = admitCandidates([candidate], bundle)
+    expect(admission.admitted.findings).toHaveLength(0)
+    expect(admission.admitted.recommendations.length + admission.admitted.observations.length).toBeGreaterThan(0)
+  })
+
+  it('downscopes broad firestore rules claim without unauthorized path proof', () => {
+    const bundle = {
+      evidence: [
+        {
+          path: 'firestore.rules',
+          snippets: [{ startLine: 1, endLine: 40, text: 'rules_version = 2;' }],
+        },
+      ],
+      inventory: { filesSelected: 1, filesOmitted: 0 },
+      coverage: { maxFilesCapHit: false, maxBytesPerFileCapHit: false, maxTotalBytesCapHit: false, maxTreeSizeCapHit: false, notes: [] },
+    }
+    const candidate = {
+      candidate_id: 'rules_1',
+      kind: 'finding',
+      topic: 'auth',
+      title: 'Insufficient Firestore Security Rules',
+      severity: 'Medium',
+      claim: 'Rules posture appears insufficient.',
+      specific_code_behavior: 'Rules file contains match predicates.',
+      missing_control_or_unsafe_condition: 'Authorization controls may be incomplete.',
+      impact: 'Potential unauthorized access.',
+      evidence_citations: ['firestore.rules:1-40'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['policy'],
+      confidence: 'medium',
+      scoped_to_scan: true,
+    }
+    const admission = admitCandidates([candidate], bundle)
+    expect(admission.admitted.findings).toHaveLength(0)
+  })
+
+  it('downscopes 40dd firebase workflow speculative High finding shape', () => {
+    const bundle = {
+      evidence: [
+        {
+          path: '.github/workflows/ci-staging.yml',
+          snippets: [{ startLine: 1, endLine: 93, text: 'name: ci-staging' }],
+        },
+      ],
+      inventory: { filesSelected: 1, filesOmitted: 0 },
+      coverage: { maxFilesCapHit: false, maxBytesPerFileCapHit: false, maxTotalBytesCapHit: false, maxTreeSizeCapHit: false, notes: [] },
+    }
+    const candidate = {
+      candidate_id: 'firebase_40dd',
+      kind: 'finding',
+      topic: 'cicd',
+      title: 'Potential Exposure of Firebase Environment Variables',
+      severity: 'High',
+      claim: 'If exposed, Firebase environment variables could be abused by attackers.',
+      specific_code_behavior: 'Workflow references environment variables for deploy steps.',
+      missing_control_or_unsafe_condition: 'Environment variables may not be fully protected.',
+      impact: 'May lead to unauthorized access.',
+      evidence_citations: ['.github/workflows/ci-staging.yml:1-93'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['policy'],
+      confidence: 'medium',
+      scoped_to_scan: true,
+    }
+    const admission = admitCandidates([candidate], bundle)
+    expect(admission.admitted.findings).toHaveLength(0)
+  })
+
+  it('admits concrete firestore rules finding with exact path predicate operation and actor', () => {
+    const bundle = {
+      evidence: [
+        {
+          path: 'firestore.rules',
+          snippets: [{ startLine: 1, endLine: 442, text: 'match /orgs/{orgId}' }],
+        },
+      ],
+      inventory: { filesSelected: 1, filesOmitted: 0 },
+      coverage: { maxFilesCapHit: false, maxBytesPerFileCapHit: false, maxTotalBytesCapHit: false, maxTreeSizeCapHit: false, notes: [] },
+    }
+    const candidate = {
+      candidate_id: 'rules_positive',
+      kind: 'finding',
+      topic: 'auth',
+      title: 'Firestore org membership check bypass on project write',
+      severity: 'High',
+      claim: 'An attacker without org membership can call update on match /orgs/{orgId}/projects/{projectId}.',
+      specific_code_behavior:
+        'In match /orgs/{orgId}/projects/{projectId}, update/write allows request.auth.uid without verifying request.auth.token.orgId == orgId.',
+      missing_control_or_unsafe_condition:
+        'Missing predicate check for orgId binding in update operation allows unauthorized actor path.',
+      impact: 'Unauthorized write and data tampering across tenant boundary.',
+      evidence_citations: ['firestore.rules:1-442'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['policy', 'server_entrypoint', 'control_helper'],
+      confidence: 'high',
+      scoped_to_scan: true,
+    }
+    const admission = admitCandidates([candidate], bundle)
+    expect(admission.admitted.findings).toHaveLength(1)
+  })
+
+  it('downscopes generic validation inconsistency claim lacking specific missing rule', () => {
+    const candidate = {
+      candidate_id: 'val_1',
+      kind: 'finding',
+      topic: 'validation',
+      title: 'Validation Inconsistency',
+      severity: 'Medium',
+      claim: 'Input validation is inconsistent and should be improved.',
+      specific_code_behavior: 'Handlers parse request payload.',
+      missing_control_or_unsafe_condition: 'Validation could be stronger.',
+      impact: 'Potentially unsafe handling.',
+      evidence_citations: ['app/api/account/update/route.ts:10-60'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['server_entrypoint'],
+      confidence: 'medium',
+      scoped_to_scan: true,
+    }
+    const admission = admitCandidates([candidate], mockBundle())
+    expect(admission.admitted.findings).toHaveLength(0)
   })
 
   it('appends full ingested citations to Appendix A when bundle is provided', () => {
@@ -490,6 +693,119 @@ describe('structured report pipeline', () => {
     const admission = admitCandidates([candidate], bundle)
     expect(admission.admitted.observations).toHaveLength(1)
     expect(admission.admitted.observations[0].topic).toBe('claims')
+  })
+
+  it('renders observed controls as clear positives in section output', () => {
+    const candidate = {
+      candidate_id: 'oc_1',
+      kind: 'observed_control',
+      topic: 'session',
+      title: 'Observed session guard',
+      severity: 'Info',
+      claim: 'Session middleware is present on protected routes.',
+      specific_code_behavior: '',
+      missing_control_or_unsafe_condition: '',
+      impact: '',
+      evidence_citations: ['app/api/account/update/route.ts:10-60'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['control_helper'],
+      confidence: 'medium',
+      scoped_to_scan: true,
+    }
+    const admission = admitCandidates([candidate], mockBundle())
+    const report = renderDeterministicReport({
+      repoData: mockRepoData(),
+      admitted: admission.admitted,
+      coverage: admission.coverage,
+    })
+    expect(report).toContain('Observed control:')
+    expect(report).toContain('Seen in:')
+  })
+
+  it('renders unverified controls as intentional follow-up areas', () => {
+    const candidate = {
+      candidate_id: 'uv_1',
+      kind: 'unverified_control',
+      topic: 'auth',
+      title: 'Unverified ownership check',
+      severity: 'Info',
+      claim: 'Ownership checks are not conclusively proven for all write paths.',
+      specific_code_behavior: '',
+      missing_control_or_unsafe_condition: '',
+      impact: '',
+      evidence_citations: ['app/api/account/update/route.ts:10-60'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['control_helper'],
+      confidence: 'medium',
+      scoped_to_scan: true,
+    }
+    const admission = admitCandidates([candidate], mockBundle())
+    const report = renderDeterministicReport({
+      repoData: mockRepoData(),
+      admitted: admission.admitted,
+      coverage: admission.coverage,
+    })
+    expect(report).toContain('Unverified important control:')
+    expect(report).toContain('Follow-up evidence target:')
+  })
+
+  it('softens broad negative header/config phrasing in rendered observations', () => {
+    const candidate = {
+      candidate_id: 'obs_soften',
+      kind: 'observation',
+      topic: 'headers',
+      title: 'Header concern',
+      severity: 'Info',
+      claim: 'The app lacks comprehensive security headers and does not include mechanisms for all routes.',
+      specific_code_behavior: '',
+      missing_control_or_unsafe_condition: '',
+      impact: '',
+      evidence_citations: ['firebase.json:1-40'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['policy'],
+      confidence: 'medium',
+      scoped_to_scan: true,
+    }
+    const bundle = {
+      evidence: [{ path: 'firebase.json', snippets: [{ startLine: 1, endLine: 40, text: '{}' }] }],
+      inventory: { filesSelected: 1, filesOmitted: 0 },
+      coverage: { maxFilesCapHit: false, maxBytesPerFileCapHit: false, maxTotalBytesCapHit: false, maxTreeSizeCapHit: false, notes: [] },
+    }
+    const admission = admitCandidates([candidate], bundle)
+    const report = renderDeterministicReport({
+      repoData: mockRepoData(),
+      admitted: admission.admitted,
+      coverage: admission.coverage,
+    })
+    expect(report).not.toContain('lacks comprehensive security headers')
+    expect(report).toContain('header coverage may be incomplete')
+  })
+
+  it('keeps validation inconsistency language as follow-up debt, not defect framing', () => {
+    const candidate = {
+      candidate_id: 'obs_val_consistency',
+      kind: 'observation',
+      topic: 'validation',
+      title: 'Validation consistency',
+      severity: 'Info',
+      claim: 'Validation is inconsistent across modules and may lead to security vulnerabilities.',
+      specific_code_behavior: '',
+      missing_control_or_unsafe_condition: '',
+      impact: '',
+      evidence_citations: ['app/api/account/update/route.ts:10-60'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['control_helper'],
+      confidence: 'medium',
+      scoped_to_scan: true,
+    }
+    const admission = admitCandidates([candidate], mockBundle())
+    const report = renderDeterministicReport({
+      repoData: mockRepoData(),
+      admitted: admission.admitted,
+      coverage: admission.coverage,
+    })
+    expect(report).toContain('validation consistency debt')
+    expect(report).not.toContain('may lead to security vulnerabilities')
   })
 
   it('computeLowInformationReport is false when non-trivial evidence has model observation and quick win', () => {

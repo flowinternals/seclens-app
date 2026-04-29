@@ -104,6 +104,19 @@ describe('validateReport', () => {
     expect(r.ok).toBe(true)
   })
 
+  it('accepts High finding evidence path for firestore.rules line ranges', () => {
+    const inner = `### [High] Firestore rule bypass
+
+**Category:** Broken Access Control
+**Evidence:** \`firestore.rules:1-442\`
+**Exploit path:** An unauthorized actor can target match /orgs/{orgId}/projects/{projectId} and update documents because the rule does not bind request.auth.token.orgId to orgId, enabling cross-tenant write tampering.
+**Why it matters:** This allows unauthorized write access across organization boundaries.
+**Fix (recommended):** Enforce orgId predicate checks on write operations in the cited match block.
+`
+    const r = validateReport(fullReportWithKeyFindingsBody(inner))
+    expect(r.categories).not.toContain('SEVERITY_EVIDENCE')
+  })
+
   it('does not require exploit path for Medium findings', () => {
     const inner = `### [Medium] Style issue
 

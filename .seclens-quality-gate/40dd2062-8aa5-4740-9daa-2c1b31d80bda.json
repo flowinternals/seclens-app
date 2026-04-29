@@ -1,0 +1,660 @@
+{
+  "correlationId": "40dd2062-8aa5-4740-9daa-2c1b31d80bda",
+  "generatedAt": "2026-04-29T07:59:59.323Z",
+  "categories": [
+    "SEVERITY_EVIDENCE"
+  ],
+  "repairedAfterCritic": false,
+  "repository": {
+    "owner": "ITC2-AUS",
+    "repo": "SPO_Management",
+    "url": "https://github.com/ITC2-AUS/SPO_Management/tree/staging",
+    "defaultBranch": "staging",
+    "scannedRef": "staging",
+    "scannedSha": "cb3f5c54be2e6fffd7bce2977d63362b7e2c097a"
+  },
+  "ingestion": {
+    "strategyVersion": "v2.4",
+    "selectedFileCount": 135,
+    "omittedFileCount": 845,
+    "capHits": [
+      "MAX_FILES_FETCHED",
+      "MAX_BYTES_PER_FILE",
+      "MAX_TOTAL_BYTES_TO_MODEL"
+    ],
+    "coverageSummary": "Partial coverage: limits reached (MAX_FILES_FETCHED, MAX_BYTES_PER_FILE, MAX_TOTAL_BYTES_TO_MODEL). Review Confidence & Coverage.",
+    "citationHints": [
+      ".env.template:1-27",
+      ".eslintrc.cjs:1-63",
+      ".github/workflows/ci-staging.yml:1-93",
+      ".github/workflows/deploy-staging-hosting.yml:1-62",
+      "eslint.config.cjs:1-117",
+      "firebase.json:1-63",
+      "firestore.rules:1-442",
+      "functions/.eslintrc.js:1-34"
+    ],
+    "selectedReasonCounts": {
+      "tier1_priority": 20,
+      "domain_reserve_auth_session": 8,
+      "related_imported_by_anchor": 63,
+      "domain_reserve_validation": 14,
+      "related_client_auth_bridge": 3,
+      "domain_reserve_invite_token_claims": 8,
+      "tier2_security_surface": 1,
+      "backfill_tier3": 18
+    },
+    "anchorCount": 6,
+    "relatedContextCount": 66,
+    "backfillCount": 18,
+    "domainReservationCount": 48,
+    "domainReservationByDomain": {
+      "auth_session": 14,
+      "invite_token_claims": 14,
+      "validation": 14,
+      "rate_limit": 1,
+      "data_store": 2,
+      "client_auth_bridge": 3
+    },
+    "plannedSelectedReasonCounts": {
+      "tier1_priority": 20,
+      "domain_reserve_auth_session": 8,
+      "related_imported_by_anchor": 63,
+      "domain_reserve_validation": 14,
+      "related_client_auth_bridge": 3,
+      "domain_reserve_invite_token_claims": 8,
+      "tier2_security_surface": 1,
+      "backfill_tier3": 203
+    },
+    "plannedAnchorCount": 6,
+    "plannedRelatedContextCount": 66,
+    "plannedBackfillCount": 203,
+    "plannedDomainReservationCount": 48,
+    "plannedDomainReservationByDomain": {
+      "auth_session": 14,
+      "invite_token_claims": 14,
+      "validation": 14,
+      "rate_limit": 1,
+      "middleware_headers": 0,
+      "cicd": 0,
+      "config_policy": 0,
+      "data_store": 2,
+      "client_auth_bridge": 3
+    }
+  },
+  "bundleSummary": {
+    "inventory": {
+      "totalFilesSeen": 980,
+      "filesEligibleByTier": {
+        "tier1": 20,
+        "tier2": 27,
+        "tier3": 875
+      },
+      "filesSelected": 320,
+      "filesOmitted": 845
+    },
+    "coverage": {
+      "maxFilesCapHit": true,
+      "maxBytesPerFileCapHit": true,
+      "maxTotalBytesCapHit": true,
+      "maxTreeSizeCapHit": false,
+      "notes": []
+    }
+  },
+  "tokenUsage": {
+    "draft": {
+      "prompt_tokens": 254811,
+      "completion_tokens": 4043,
+      "total_tokens": 258854
+    },
+    "critic": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0
+    },
+    "total": {
+      "prompt_tokens": 254811,
+      "completion_tokens": 4043,
+      "total_tokens": 258854
+    },
+    "estimatedCostUsd": 0.04065
+  },
+  "structuredTelemetry": {
+    "templateVersion": 5,
+    "candidateCounts": {
+      "total": 15,
+      "finding": 7,
+      "observation": 1,
+      "observed_control": 4,
+      "unverified_control": 0,
+      "recommendation": 3,
+      "quick_win": 0,
+      "coverage_note": 0
+    },
+    "admittedCounts": {
+      "total": 14,
+      "finding": 2,
+      "observation": 10,
+      "observed_control": 4,
+      "unverified_control": 2,
+      "recommendation": 2,
+      "quick_win": 0,
+      "coverage_note": 0
+    },
+    "rejectionReasonCounts": {
+      "downscoped_to_observation:insufficient_evidence_pack": 3,
+      "downscoped_to_unverified_control:missing_flow_or_boundary": 2,
+      "citation_integrity_failure": 1
+    },
+    "candidateCountByTopic": {
+      "auth": 4,
+      "invite": 1,
+      "validation": 5,
+      "cicd": 3,
+      "session": 1,
+      "rate_limit": 1
+    },
+    "rejectedCitationIntegrityCount": 1,
+    "renderMode": "findings",
+    "admissionRenderMode": "findings",
+    "finalRenderMode": "findings",
+    "markdownRenderMode": "findings",
+    "appendixEvidenceCount": 135,
+    "appendixRenderedCount": 40,
+    "appendixTruncated": true,
+    "inspectedSurfaceCounts": 0,
+    "inspectedSurfaceCountByTopic": {},
+    "inspectedSurfaceSpecificityRate": 0,
+    "observedControlCount": 4,
+    "unverifiedControlCount": 2,
+    "representedDomainCount": 6,
+    "requiredInspectedSurfaceRows": 6,
+    "placeholderSectionCount": 0,
+    "genericRecommendationCount": 1,
+    "repoSpecificSectionCount": 5,
+    "reportValueScore": 0.775,
+    "reportValueGatePassed": true,
+    "recommendationTypeCounts": {
+      "hardening": 2,
+      "verification_task": 2,
+      "validation_followup": 4
+    },
+    "sectionContentByTopicCounts": {
+      "auth": 3,
+      "invite": 1,
+      "validation": 3,
+      "cicd": 1,
+      "session": 1,
+      "rate_limit": 1
+    },
+    "downscopedObservationCount": 5,
+    "lowInformationReport": false,
+    "usedNoFindingsTemplate": false,
+    "analysisPassCount": 9,
+    "analysisPasses": [
+      {
+        "passId": "pass_01_auth_session_authorization",
+        "family": "auth_session_authorization",
+        "ok": true,
+        "examinedEvidenceCount": 10,
+        "examinedFiles": [
+          "functions/src/__tests__/authorization.test.ts",
+          "functions/src/auth/permissionPolicy.ts",
+          "functions/src/auth/resolveOrgRoleForWrite.ts",
+          "src/contexts/AuthContext.tsx",
+          "functions/src/auth/roleKeys.ts",
+          "functions/src/auth/sessionAllowedRoutes.ts",
+          "functions/src/utils/authorization.ts",
+          "functions/src/__tests__/createUserAndInvite.resolveRoles.test.ts",
+          "functions/src/session.ts",
+          "docs/reviews/programme_2/stage_11_unified_session_and_access_full_alignment_implementation_plan.md"
+        ],
+        "promptBudgetTrimmedEvidenceCount": 0,
+        "promptBudgetEstimatedTokens": 21147,
+        "promptBudgetAvailableInputTokens": 117760
+      },
+      {
+        "passId": "pass_02_invite_token_claims",
+        "family": "invite_token_claims",
+        "ok": true,
+        "examinedEvidenceCount": 14,
+        "examinedFiles": [
+          "functions/src/createUserAndInvite.ts",
+          "functions/src/inviteManagement.ts",
+          "functions/src/utils/inviteToken.ts",
+          "functions/src/validateInvite.ts",
+          "src/components/Auth/AcceptInvitePage.tsx",
+          "test/unit/components/Auth/AcceptInvitePage.test.tsx",
+          "functions/src/__tests__/claims.createUserAndInvite.test.ts",
+          "functions/src/__tests__/invite.acceptance.test.ts",
+          "functions/src/__tests__/invite.resend.test.ts",
+          "functions/src/__tests__/invite.send.test.ts",
+          "functions/src/expireInvites.ts",
+          "src/components/UserManagement/InvitesList.tsx",
+          "src/utils/inviteAcceptanceErrors.ts",
+          "functions/src/updateUserClaims.ts"
+        ],
+        "promptBudgetTrimmedEvidenceCount": 0,
+        "promptBudgetEstimatedTokens": 38048,
+        "promptBudgetAvailableInputTokens": 117760
+      },
+      {
+        "passId": "pass_03_validation_input_trust_boundaries",
+        "family": "validation_input_trust_boundaries",
+        "ok": true,
+        "examinedEvidenceCount": 14,
+        "examinedFiles": [
+          "docs/reviews/stage_5_release_readiness_and_validation_waiver.md",
+          "functions/src/issues/upsertRequestValidation.ts",
+          "functions/src/projectClosure/closureReadinessValidation.ts",
+          "functions/src/removeEntity/removeEntityValidation.ts",
+          "src/components/IssueRiskManagement/issueForm/issueFormValidation.ts",
+          "src/hooks/useOrgSetupFormValidation.ts",
+          "src/hooks/useValidatedOrgId.ts",
+          "src/hooks/useValidatedProjectId.ts",
+          "src/reporting/validateReportDefinitionMetrics.ts",
+          "src/reporting/validateReportingCatalogue.ts",
+          "src/services/unifiedFormValidationService.ts",
+          "src/utils/referenceDataValidation.ts",
+          "test/unit/reporting/validateReportDefinitionMetrics.test.ts",
+          "src/components/ui/StandardInput.tsx"
+        ],
+        "promptBudgetTrimmedEvidenceCount": 0,
+        "promptBudgetEstimatedTokens": 16826,
+        "promptBudgetAvailableInputTokens": 117760
+      },
+      {
+        "passId": "pass_04_rate_limiting_abuse_controls",
+        "family": "rate_limiting_abuse_controls",
+        "ok": true,
+        "examinedEvidenceCount": 1,
+        "examinedFiles": [
+          "functions/src/utils/rateLimit.ts"
+        ],
+        "promptBudgetTrimmedEvidenceCount": 0,
+        "promptBudgetEstimatedTokens": 5422,
+        "promptBudgetAvailableInputTokens": 117760
+      },
+      {
+        "passId": "pass_05_cicd_deployment_secret_handling",
+        "family": "cicd_deployment_secret_handling",
+        "ok": true,
+        "examinedEvidenceCount": 5,
+        "examinedFiles": [
+          ".github/workflows/ci-staging.yml",
+          ".github/workflows/deploy-staging-hosting.yml",
+          "functions/src/migrations/migrateSectorFinancialToFinancialServices.ts",
+          "functions/src/issueSequencing.ts",
+          "docs/platform/config/stage-7-slice6-release-rollback-incident.md"
+        ],
+        "promptBudgetTrimmedEvidenceCount": 0,
+        "promptBudgetEstimatedTokens": 8724,
+        "promptBudgetAvailableInputTokens": 117760
+      },
+      {
+        "passId": "pass_06_config_policy_rules",
+        "family": "config_policy_rules",
+        "ok": true,
+        "examinedEvidenceCount": 23,
+        "examinedFiles": [
+          ".eslintrc.cjs",
+          "eslint.config.cjs",
+          "firebase.json",
+          "firestore.rules",
+          "functions/.eslintrc.js",
+          "functions/jest.config.js",
+          "functions/tsconfig.json",
+          "postcss.config.mjs",
+          "tailwind.config.js",
+          "tsconfig.json",
+          "tsconfig.node.json",
+          "vite.config.ts",
+          "vitest.config.ts",
+          "functions/src/config/runtimeEnv.ts",
+          "src/config/designSystem.ts",
+          "src/config/publicViteEnv.ts",
+          "docs/platform/config/spo-management-environment.md",
+          "docs/platform/config/stage-7-slice-status.md",
+          "docs/platform/config/stage-7-slice2-logging.md",
+          "docs/platform/config/stage-7-slice3-workflow-audit.md",
+          "docs/platform/config/stage-7-slice4-onboarding-reporting-diagnostics.md",
+          "docs/platform/config/stage-7-slice5-support-and-tenant-lifecycle.md",
+          "docs/platform/config/stage-7-slice7-backup-retention-rollout.md"
+        ],
+        "promptBudgetTrimmedEvidenceCount": 0,
+        "promptBudgetEstimatedTokens": 30545,
+        "promptBudgetAvailableInputTokens": 117760
+      },
+      {
+        "passId": "pass_07_data_store_access_persistence_controls",
+        "family": "data_store_access_persistence_controls",
+        "ok": true,
+        "examinedEvidenceCount": 1,
+        "examinedFiles": [
+          "src/components/ui/StandardButton.tsx"
+        ],
+        "promptBudgetTrimmedEvidenceCount": 0,
+        "promptBudgetEstimatedTokens": 5417,
+        "promptBudgetAvailableInputTokens": 117760
+      },
+      {
+        "passId": "pass_08_client_auth_bridge_frontend_guarding",
+        "family": "client_auth_bridge_frontend_guarding",
+        "ok": true,
+        "examinedEvidenceCount": 16,
+        "examinedFiles": [
+          "src/components/Auth/AuthCallback.tsx",
+          "src/components/Auth/SessionProtectedRoute.tsx",
+          "src/components/Auth/CreateOrganisationForm.tsx",
+          "src/components/Auth/EmailSignInForm.tsx",
+          "src/components/Auth/index.ts",
+          "src/components/Auth/LoginScreen.tsx",
+          "src/components/Auth/PasswordResetComplete.tsx",
+          "test/unit/components/Auth/SessionProtectedRoute.test.tsx",
+          "src/components/ui/SkipLink.tsx",
+          "src/components/ui/StandardAutocomplete.tsx",
+          "src/components/ui/StandardError.tsx",
+          "src/components/ui/StandardForm.tsx",
+          "src/components/ui/StandardModal.tsx",
+          "src/components/ui/StandardSelect.tsx",
+          "src/components/ui/StandardTextarea.tsx",
+          "src/utils/clientLogger.ts"
+        ],
+        "promptBudgetTrimmedEvidenceCount": 0,
+        "promptBudgetEstimatedTokens": 35935,
+        "promptBudgetAvailableInputTokens": 117760
+      },
+      {
+        "passId": "pass_09_misc_supporting_context",
+        "family": "misc_supporting_context",
+        "ok": true,
+        "examinedEvidenceCount": 51,
+        "examinedFiles": [
+          ".env.template",
+          "functions/package-lock.json",
+          "functions/package.json",
+          "package-lock.json",
+          "package.json",
+          "functions/src/migrations/backfillOrgNormalisedFields.ts",
+          "test/unit/components/Auth/CreateOrganisationForm.test.tsx",
+          "test/unit/components/Auth/EmailSignInForm.defaultEmail.test.tsx",
+          "src/utils/statusTransitionValidator.ts",
+          "functions/src/createOrganisationAndAdmin.ts",
+          "functions/src/index.ts",
+          "functions/src/archiveEntity.ts",
+          "functions/src/departmentManagement.ts",
+          "functions/src/externalOrganisationManagement.ts",
+          "functions/src/functionManagement.ts",
+          "functions/src/issueManagement.ts",
+          "functions/src/migrationCleanup.ts",
+          "functions/src/organisationManagement.ts",
+          "functions/src/playerManagement.ts",
+          "functions/src/projectClosureCallable.ts",
+          "functions/src/projectClosureManagement.ts",
+          "functions/src/projectManagement.ts",
+          "functions/src/publicSelfSignup.ts",
+          "functions/src/removeEntity.ts",
+          "functions/src/setupProgressUpdate.ts",
+          "functions/src/userManagement.ts",
+          "functions/src/utils/appCheck.ts",
+          "functions/src/utils/auditLogger.ts",
+          "functions/src/utils/emailToUid.ts",
+          "functions/src/utils/entitlements.ts",
+          "functions/src/utils/organisationIndustryCompiled.ts",
+          "functions/src/utils/organisationTypeCompiled.ts",
+          "functions/src/utils/orgKeys.ts",
+          "functions/src/utils/seedFromSectorTemplate.ts",
+          "functions/src/utils/structuredLogger.ts",
+          "functions/src/utils/userResolution.ts",
+          "functions/src/workingGroupsManagement.ts",
+          "src/contexts/PageThemeContext.tsx",
+          "src/hooks/useAriaLive.ts",
+          "src/lib/firebase.ts",
+          "src/services/referenceDataService.ts",
+          "src/utils/onboardingDefaults.ts",
+          ".cursor/app-context/context.md",
+          "docs/README.md",
+          "docs/reviews/error-handling-notification-centralisation-plan.md",
+          "docs/reviews/error-handling-notification-review.md",
+          "docs/reviews/next_programme_plan.md",
+          "docs/reviews/post_stage_1_to_4_scope_audit_and_pre_launch_backlog.md",
+          "docs/reviews/programme_2/stage_10_release_blockers_and_evidence_closure_implementation_plan.md",
+          "docs/reviews/programme_2/stage_10_to_20_recommended_execution_order.md",
+          "docs/reviews/programme_2/stage_12_unified_reference_data_status_and_transition_completion_implementation_plan.md"
+        ],
+        "promptBudgetTrimmedEvidenceCount": 0,
+        "promptBudgetEstimatedTokens": 104745,
+        "promptBudgetAvailableInputTokens": 117760
+      }
+    ],
+    "passTypeCounts": {
+      "auth_session_authorization": 1,
+      "invite_token_claims": 1,
+      "validation_input_trust_boundaries": 1,
+      "rate_limiting_abuse_controls": 1,
+      "cicd_deployment_secret_handling": 1,
+      "config_policy_rules": 1,
+      "data_store_access_persistence_controls": 1,
+      "client_auth_bridge_frontend_guarding": 1,
+      "misc_supporting_context": 1
+    },
+    "passEvidenceCounts": {
+      "pass_01_auth_session_authorization": 10,
+      "pass_02_invite_token_claims": 14,
+      "pass_03_validation_input_trust_boundaries": 14,
+      "pass_04_rate_limiting_abuse_controls": 1,
+      "pass_05_cicd_deployment_secret_handling": 5,
+      "pass_06_config_policy_rules": 23,
+      "pass_07_data_store_access_persistence_controls": 1,
+      "pass_08_client_auth_bridge_frontend_guarding": 16,
+      "pass_09_misc_supporting_context": 51
+    },
+    "passTrimmedEvidenceCounts": {
+      "pass_01_auth_session_authorization": 0,
+      "pass_02_invite_token_claims": 0,
+      "pass_03_validation_input_trust_boundaries": 0,
+      "pass_04_rate_limiting_abuse_controls": 0,
+      "pass_05_cicd_deployment_secret_handling": 0,
+      "pass_06_config_policy_rules": 0,
+      "pass_07_data_store_access_persistence_controls": 0,
+      "pass_08_client_auth_bridge_frontend_guarding": 0,
+      "pass_09_misc_supporting_context": 0
+    },
+    "passPromptEstimatedTokens": {
+      "pass_01_auth_session_authorization": 21147,
+      "pass_02_invite_token_claims": 38048,
+      "pass_03_validation_input_trust_boundaries": 16826,
+      "pass_04_rate_limiting_abuse_controls": 5422,
+      "pass_05_cicd_deployment_secret_handling": 8724,
+      "pass_06_config_policy_rules": 30545,
+      "pass_07_data_store_access_persistence_controls": 5417,
+      "pass_08_client_auth_bridge_frontend_guarding": 35935,
+      "pass_09_misc_supporting_context": 104745
+    },
+    "passPromptAvailableInputTokens": {
+      "pass_01_auth_session_authorization": 117760,
+      "pass_02_invite_token_claims": 117760,
+      "pass_03_validation_input_trust_boundaries": 117760,
+      "pass_04_rate_limiting_abuse_controls": 117760,
+      "pass_05_cicd_deployment_secret_handling": 117760,
+      "pass_06_config_policy_rules": 117760,
+      "pass_07_data_store_access_persistence_controls": 117760,
+      "pass_08_client_auth_bridge_frontend_guarding": 117760,
+      "pass_09_misc_supporting_context": 117760
+    },
+    "candidateCountsByPass": {
+      "pass_01_auth_session_authorization": 1,
+      "pass_02_invite_token_claims": 1,
+      "pass_03_validation_input_trust_boundaries": 3,
+      "pass_04_rate_limiting_abuse_controls": 0,
+      "pass_05_cicd_deployment_secret_handling": 2,
+      "pass_06_config_policy_rules": 2,
+      "pass_07_data_store_access_persistence_controls": 0,
+      "pass_08_client_auth_bridge_frontend_guarding": 2,
+      "pass_09_misc_supporting_context": 4
+    },
+    "admittedCountsByPass": {
+      "pass_01_auth_session_authorization": {
+        "total": 3,
+        "finding": 0,
+        "observation": 3,
+        "observed_control": 0,
+        "unverified_control": 0,
+        "recommendation": 0,
+        "quick_win": 0,
+        "coverage_note": 0
+      },
+      "pass_02_invite_token_claims": {
+        "total": 3,
+        "finding": 0,
+        "observation": 3,
+        "observed_control": 0,
+        "unverified_control": 0,
+        "recommendation": 0,
+        "quick_win": 0,
+        "coverage_note": 0
+      },
+      "pass_03_validation_input_trust_boundaries": {
+        "total": 4,
+        "finding": 0,
+        "observation": 3,
+        "observed_control": 1,
+        "unverified_control": 1,
+        "recommendation": 1,
+        "quick_win": 0,
+        "coverage_note": 0
+      },
+      "pass_04_rate_limiting_abuse_controls": {
+        "total": 0,
+        "finding": 0,
+        "observation": 0,
+        "observed_control": 0,
+        "unverified_control": 0,
+        "recommendation": 0,
+        "quick_win": 0,
+        "coverage_note": 0
+      },
+      "pass_05_cicd_deployment_secret_handling": {
+        "total": 2,
+        "finding": 1,
+        "observation": 1,
+        "observed_control": 1,
+        "unverified_control": 0,
+        "recommendation": 0,
+        "quick_win": 0,
+        "coverage_note": 0
+      },
+      "pass_06_config_policy_rules": {
+        "total": 2,
+        "finding": 1,
+        "observation": 0,
+        "observed_control": 0,
+        "unverified_control": 0,
+        "recommendation": 1,
+        "quick_win": 0,
+        "coverage_note": 0
+      },
+      "pass_07_data_store_access_persistence_controls": {
+        "total": 0,
+        "finding": 0,
+        "observation": 0,
+        "observed_control": 0,
+        "unverified_control": 0,
+        "recommendation": 0,
+        "quick_win": 0,
+        "coverage_note": 0
+      },
+      "pass_08_client_auth_bridge_frontend_guarding": {
+        "total": 4,
+        "finding": 0,
+        "observation": 4,
+        "observed_control": 1,
+        "unverified_control": 0,
+        "recommendation": 0,
+        "quick_win": 0,
+        "coverage_note": 0
+      },
+      "pass_09_misc_supporting_context": {
+        "total": 6,
+        "finding": 0,
+        "observation": 6,
+        "observed_control": 1,
+        "unverified_control": 1,
+        "recommendation": 0,
+        "quick_win": 0,
+        "coverage_note": 0
+      }
+    },
+    "reportSynthesisDedupedFindingCount": 5,
+    "reportSynthesisDedupedRecommendationCount": 1,
+    "clusterInventory": [
+      {
+        "passId": "pass_01_auth_session_authorization",
+        "family": "auth_session_authorization",
+        "evidenceCount": 10,
+        "requiredHighRisk": true
+      },
+      {
+        "passId": "pass_02_invite_token_claims",
+        "family": "invite_token_claims",
+        "evidenceCount": 14,
+        "requiredHighRisk": true
+      },
+      {
+        "passId": "pass_03_validation_input_trust_boundaries",
+        "family": "validation_input_trust_boundaries",
+        "evidenceCount": 14,
+        "requiredHighRisk": true
+      },
+      {
+        "passId": "pass_04_rate_limiting_abuse_controls",
+        "family": "rate_limiting_abuse_controls",
+        "evidenceCount": 1,
+        "requiredHighRisk": false
+      },
+      {
+        "passId": "pass_05_cicd_deployment_secret_handling",
+        "family": "cicd_deployment_secret_handling",
+        "evidenceCount": 5,
+        "requiredHighRisk": false
+      },
+      {
+        "passId": "pass_06_config_policy_rules",
+        "family": "config_policy_rules",
+        "evidenceCount": 23,
+        "requiredHighRisk": false
+      },
+      {
+        "passId": "pass_07_data_store_access_persistence_controls",
+        "family": "data_store_access_persistence_controls",
+        "evidenceCount": 1,
+        "requiredHighRisk": false
+      },
+      {
+        "passId": "pass_08_client_auth_bridge_frontend_guarding",
+        "family": "client_auth_bridge_frontend_guarding",
+        "evidenceCount": 16,
+        "requiredHighRisk": false
+      },
+      {
+        "passId": "pass_09_misc_supporting_context",
+        "family": "misc_supporting_context",
+        "evidenceCount": 51,
+        "requiredHighRisk": false
+      }
+    ],
+    "clusterSkipReasons": {},
+    "passFailureCount": 0,
+    "passFailureReasons": [],
+    "passFailurePolicyTriggered": null
+  },
+  "initialValidationCategories": [
+    "STRUCTURED_ADMISSION_REJECTIONS"
+  ],
+  "finalValidationCategories": [
+    "SEVERITY_EVIDENCE"
+  ],
+  "reports": {
+    "originalDraft": "# SecLens Security Report\n\n- **Repository:** ITC2-AUS/SPO_Management (https://github.com/ITC2-AUS/SPO_Management/tree/staging)\n- **Ref:** staging\n- **Generated:** 2026-04-29T07:59:59.294Z\n- **Languages:** TypeScript\n- **Summary Risk:** High — Derived from admitted structured findings only.\n\n## Executive Summary\n\nAdmitted findings are rendered only from evidence-bounded structured claims.\n\n## Inventory & Attack Surface\n\nSelected files: 135. Omitted files: 845. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Key Findings (Prioritized)\n\n### [High] Potential Exposure of Firebase Environment Variables\n\n**Category:** cicd\n**Evidence:** `.github/workflows/ci-staging.yml:1-93`, `.github/workflows/deploy-staging-hosting.yml:1-62`\n**Exploit path:** Observed behavior: The workflows create `.env.staging` files that include sensitive Firebase configuration variables. Missing control: Lack of secure handling or encryption for environment variables in CI/CD processes. Potential impact: If these environment variables are exposed, it could lead to unauthorized access to Firebase services and data.\n**Why it matters:** The CI/CD workflows create and verify environment files containing Firebase API keys, which could be exposed if not properly secured.\n**Fix (recommended):** Address Lack of secure handling or encryption for environment variables in CI/CD processes. in the cited code path.\n**Residual risk & tests:** Validate remediation with targeted tests for the cited path and adjacent trust boundaries.\n\n### [High] Insufficient Firestore Rule Validation for Organization Access\n\n**Category:** validation\n**Evidence:** `firestore.rules:1-442`\n**Exploit path:** Observed behavior: The rules allow read access to organization data based on the user's role, but the role checks may not cover all scenarios, especially for users not explicitly defined in the rules. Missing control: The Firestore rules lack comprehensive checks for all user roles and their permissions, particularly for read access to organization documents. Potential impact: Unauthorized users may gain access to sensitive organization data, leading to potential data breaches and privacy violations.\n**Why it matters:** The Firestore rules do not adequately restrict access to organization data, allowing potential unauthorized access to sensitive information.\n**Fix (recommended):** Address The Firestore rules lack comprehensive checks for all user roles and their permissions, particularly for read access to organization documents. in the cited code path.\n**Residual risk & tests:** Validate remediation with targeted tests for the cited path and adjacent trust boundaries.\n\n## Dependency & Supply Chain Notes\n\n- Dependency and supply chain posture inspected at `functions/package-lock.json:1-528` for dependency lockfile integrity; review outcome: no admitted finding from scanned evidence.\n- Dependency and supply chain posture inspected at `functions/package.json:1-45` for dependency lockfile integrity; review outcome: no admitted finding from scanned evidence.\n\n## CI/CD & Operational Hardening\n\n- The CI/CD workflows include multiple security checks such as dependency audits and linting.\n  - Evidence: `.github/workflows/ci-staging.yml:1-93`\n\n## Web Security Controls\n\n- At scanned evidence `functions/src/issues/upsertRequestValidation.ts:1-77`, verify validation controls before admitting a finding; the evidence suggests an important control that could not be conclusively proven in this run.\n  - Evidence: `functions/src/issues/upsertRequestValidation.ts:1-77`\n- The closure readiness validation checks for required fields and conditions before allowing a project to transition to readyForApproval.\n  - Evidence: `functions/src/projectClosure/closureReadinessValidation.ts:1-64`\n- Validation for input fields is not consistently applied across different functions, leading to potential data integrity issues.\n  - Evidence: `functions/src/createOrganisationAndAdmin.ts:1-493`, `functions/src/departmentManagement.ts:1-219`\n\n## Docker/IaC Observations\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Rate Limiting & Abuse Controls\n\n- Rate limiting is implemented in the `createOrganisationAndAdmin` function to prevent abuse.\n  - Evidence: `functions/src/createOrganisationAndAdmin.ts:1-493`\n\n## File Upload Security\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Session Management\n\n- Scoped observation (finding candidate downscoped): In scanned evidence `functions/src/auth/permissionPolicy.ts:1-345`, targeted validation of auth is recommended; excerpts in this run did not support admitting a Key Finding at the proposed severity with the required evidence pack.\n  - Evidence: `functions/src/auth/permissionPolicy.ts:1-345`, `functions/src/utils/authorization.ts:1-238`, `functions/src/auth/sessionAllowedRoutes.ts:1-74`\n- Scoped observation (finding candidate downscoped): In scanned evidence `functions/src/validateInvite.ts:1-230`, targeted validation of invite is recommended; excerpts in this run did not support admitting a Key Finding at the proposed severity with the required evidence pack.\n  - Evidence: `functions/src/validateInvite.ts:1-230`\n- Scoped observation (finding candidate downscoped): In scanned evidence `src/components/Auth/AuthCallback.tsx:1-266`, targeted validation of auth is recommended; excerpts in this run did not support admitting a Key Finding at the proposed severity with the required evidence pack.\n  - Evidence: `src/components/Auth/AuthCallback.tsx:1-266`\n- The application properly initializes session context but does not handle loading states effectively, which could lead to user confusion.\n  - Evidence: `src/components/Auth/SessionProtectedRoute.tsx:1-128`\n- At scanned evidence `functions/src/createOrganisationAndAdmin.ts:1-493`, verify auth controls before admitting a finding; the evidence suggests an important control that could not be conclusively proven in this run.\n  - Evidence: `functions/src/createOrganisationAndAdmin.ts:1-493`\n\n## Prioritized Recommendations\n\n1. At `.github/workflows/ci-staging.yml:1-93`, remediate the admitted weakness in ci workflow secret handling: Lack of secure handling or encryption for environment variables in CI/CD processes. (hardening action).\n2. At `firestore.rules:1-442`, remediate the admitted weakness in policy and rules enforcement: The Firestore rules lack comprehensive checks for all user roles and their permissions, particularly for read access to organization documents. (hardening action).\n3. At `functions/src/removeEntity/removeEntityValidation.ts:1-37`, The remove entity validation lacks comprehensive checks for all entity types, which could lead to improper handling of requests.\n4. At `firestore.rules:1-442`, It is recommended to enhance Firestore rules to ensure that only authorized users can access organization data.\n5. At `functions/src/auth/permissionPolicy.ts:1-345`, review the scoped observation for permission policy and role assignment and validate assumptions before broader changes (validation follow-up).\n6. At `functions/src/validateInvite.ts:1-230`, review the scoped observation for invite acceptance token lifecycle and validate assumptions before broader changes (validation follow-up).\n7. At `functions/src/issues/upsertRequestValidation.ts:1-77`, review the scoped observation for validation schema and boundary checks and validate assumptions before broader changes (validation follow-up).\n8. At `.github/workflows/ci-staging.yml:1-93`, review the scoped observation for ci workflow secret handling and validate assumptions before broader changes (validation follow-up).\n\n## Roadmap & Success Criteria\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Confidence & Coverage\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Appendix A – Evidence Index\n\n- `.cursor/app-context/context.md:1-86`\n- `.env.template:1-27`\n- `.eslintrc.cjs:1-63`\n- `.github/workflows/ci-staging.yml:1-93` *(also cited in report body)*\n- `.github/workflows/deploy-staging-hosting.yml:1-62` *(also cited in report body)*\n- `docs/platform/config/spo-management-environment.md:1-85`\n- `docs/platform/config/stage-7-slice-status.md:1-50`\n- `docs/platform/config/stage-7-slice2-logging.md:1-27`\n- `docs/platform/config/stage-7-slice3-workflow-audit.md:1-35`\n- `docs/platform/config/stage-7-slice4-onboarding-reporting-diagnostics.md:1-21`\n- `docs/platform/config/stage-7-slice5-support-and-tenant-lifecycle.md:1-150`\n- `docs/platform/config/stage-7-slice6-release-rollback-incident.md:1-107`\n- `docs/platform/config/stage-7-slice7-backup-retention-rollout.md:1-126`\n- `docs/README.md:1-12`\n- `docs/reviews/error-handling-notification-centralisation-plan.md:1-421`\n- `docs/reviews/error-handling-notification-review.md:1-303`\n- `docs/reviews/next_programme_plan.md:1-507`\n- `docs/reviews/post_stage_1_to_4_scope_audit_and_pre_launch_backlog.md:1-477`\n- `docs/reviews/programme_2/stage_10_release_blockers_and_evidence_closure_implementation_plan.md:1-518`\n- `firebase.json:1-63`\n- `firestore.rules:1-442` *(also cited in report body)*\n- `functions/package-lock.json:1-528`\n- `functions/package.json:1-45`\n- `functions/src/__tests__/claims.createUserAndInvite.test.ts:1-278`\n- `functions/src/__tests__/createUserAndInvite.resolveRoles.test.ts:1-106`\n- `functions/src/__tests__/invite.acceptance.test.ts:1-402`\n- `functions/src/__tests__/invite.resend.test.ts:1-283`\n- `functions/src/auth/permissionPolicy.ts:1-345` *(also cited in report body)*\n- `functions/src/auth/sessionAllowedRoutes.ts:1-74` *(also cited in report body)*\n- `functions/src/createOrganisationAndAdmin.ts:1-493` *(also cited in report body)*\n- `functions/src/departmentManagement.ts:1-219` *(also cited in report body)*\n- `functions/src/issues/upsertRequestValidation.ts:1-77` *(also cited in report body)*\n- `functions/src/projectClosure/closureReadinessValidation.ts:1-64` *(also cited in report body)*\n- `functions/src/utils/authorization.ts:1-238` *(also cited in report body)*\n- `functions/src/utils/rateLimit.ts:1-160`\n- `functions/src/validateInvite.ts:1-230` *(also cited in report body)*\n- `package-lock.json:1-537`\n- `package.json:1-111`\n- `src/components/Auth/AuthCallback.tsx:1-266` *(also cited in report body)*\n- `src/components/Auth/SessionProtectedRoute.tsx:1-128` *(also cited in report body)*\n\n*Appendix A truncated:* 40 of 135 line-addressable citations shown (Stage 02 policy: cap 40 lines; admitted cites and up to 5 per domain prioritized).\n\n## Appendix B – Safe Config & Policy Snippets\n\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and Prioritized Recommendations.\n",
+    "finalRejectedReport": "# SecLens Security Report\n\n- **Repository:** ITC2-AUS/SPO_Management (https://github.com/ITC2-AUS/SPO_Management/tree/staging)\n- **Ref:** staging\n- **Generated:** 2026-04-29T07:59:59.294Z\n- **Languages:** TypeScript\n- **Summary Risk:** High — Derived from admitted structured findings only.\n\n## Executive Summary\n\nAdmitted findings are rendered only from evidence-bounded structured claims.\n\n## Inventory & Attack Surface\n\nSelected files: 135. Omitted files: 845. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Key Findings (Prioritized)\n\n### [High] Potential Exposure of Firebase Environment Variables\n\n**Category:** cicd\n**Evidence:** `.github/workflows/ci-staging.yml:1-93`, `.github/workflows/deploy-staging-hosting.yml:1-62`\n**Exploit path:** Observed behavior: The workflows create `.env.staging` files that include sensitive Firebase configuration variables. Missing control: Lack of secure handling or encryption for environment variables in CI/CD processes. Potential impact: If these environment variables are exposed, it could lead to unauthorized access to Firebase services and data.\n**Why it matters:** The CI/CD workflows create and verify environment files containing Firebase API keys, which could be exposed if not properly secured.\n**Fix (recommended):** Address Lack of secure handling or encryption for environment variables in CI/CD processes. in the cited code path.\n**Residual risk & tests:** Validate remediation with targeted tests for the cited path and adjacent trust boundaries.\n\n### [High] Insufficient Firestore Rule Validation for Organization Access\n\n**Category:** validation\n**Evidence:** `firestore.rules:1-442`\n**Exploit path:** Observed behavior: The rules allow read access to organization data based on the user's role, but the role checks may not cover all scenarios, especially for users not explicitly defined in the rules. Missing control: The Firestore rules lack comprehensive checks for all user roles and their permissions, particularly for read access to organization documents. Potential impact: Unauthorized users may gain access to sensitive organization data, leading to potential data breaches and privacy violations.\n**Why it matters:** The Firestore rules do not adequately restrict access to organization data, allowing potential unauthorized access to sensitive information.\n**Fix (recommended):** Address The Firestore rules lack comprehensive checks for all user roles and their permissions, particularly for read access to organization documents. in the cited code path.\n**Residual risk & tests:** Validate remediation with targeted tests for the cited path and adjacent trust boundaries.\n\n## Dependency & Supply Chain Notes\n\n- Dependency and supply chain posture inspected at `functions/package-lock.json:1-528` for dependency lockfile integrity; review outcome: no admitted finding from scanned evidence.\n- Dependency and supply chain posture inspected at `functions/package.json:1-45` for dependency lockfile integrity; review outcome: no admitted finding from scanned evidence.\n\n## CI/CD & Operational Hardening\n\n- The CI/CD workflows include multiple security checks such as dependency audits and linting.\n  - Evidence: `.github/workflows/ci-staging.yml:1-93`\n\n## Web Security Controls\n\n- At scanned evidence `functions/src/issues/upsertRequestValidation.ts:1-77`, verify validation controls before admitting a finding; the evidence suggests an important control that could not be conclusively proven in this run.\n  - Evidence: `functions/src/issues/upsertRequestValidation.ts:1-77`\n- The closure readiness validation checks for required fields and conditions before allowing a project to transition to readyForApproval.\n  - Evidence: `functions/src/projectClosure/closureReadinessValidation.ts:1-64`\n- Validation for input fields is not consistently applied across different functions, leading to potential data integrity issues.\n  - Evidence: `functions/src/createOrganisationAndAdmin.ts:1-493`, `functions/src/departmentManagement.ts:1-219`\n\n## Docker/IaC Observations\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Rate Limiting & Abuse Controls\n\n- Rate limiting is implemented in the `createOrganisationAndAdmin` function to prevent abuse.\n  - Evidence: `functions/src/createOrganisationAndAdmin.ts:1-493`\n\n## File Upload Security\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Session Management\n\n- Scoped observation (finding candidate downscoped): In scanned evidence `functions/src/auth/permissionPolicy.ts:1-345`, targeted validation of auth is recommended; excerpts in this run did not support admitting a Key Finding at the proposed severity with the required evidence pack.\n  - Evidence: `functions/src/auth/permissionPolicy.ts:1-345`, `functions/src/utils/authorization.ts:1-238`, `functions/src/auth/sessionAllowedRoutes.ts:1-74`\n- Scoped observation (finding candidate downscoped): In scanned evidence `functions/src/validateInvite.ts:1-230`, targeted validation of invite is recommended; excerpts in this run did not support admitting a Key Finding at the proposed severity with the required evidence pack.\n  - Evidence: `functions/src/validateInvite.ts:1-230`\n- Scoped observation (finding candidate downscoped): In scanned evidence `src/components/Auth/AuthCallback.tsx:1-266`, targeted validation of auth is recommended; excerpts in this run did not support admitting a Key Finding at the proposed severity with the required evidence pack.\n  - Evidence: `src/components/Auth/AuthCallback.tsx:1-266`\n- The application properly initializes session context but does not handle loading states effectively, which could lead to user confusion.\n  - Evidence: `src/components/Auth/SessionProtectedRoute.tsx:1-128`\n- At scanned evidence `functions/src/createOrganisationAndAdmin.ts:1-493`, verify auth controls before admitting a finding; the evidence suggests an important control that could not be conclusively proven in this run.\n  - Evidence: `functions/src/createOrganisationAndAdmin.ts:1-493`\n\n## Prioritized Recommendations\n\n1. At `.github/workflows/ci-staging.yml:1-93`, remediate the admitted weakness in ci workflow secret handling: Lack of secure handling or encryption for environment variables in CI/CD processes. (hardening action).\n2. At `firestore.rules:1-442`, remediate the admitted weakness in policy and rules enforcement: The Firestore rules lack comprehensive checks for all user roles and their permissions, particularly for read access to organization documents. (hardening action).\n3. At `functions/src/removeEntity/removeEntityValidation.ts:1-37`, The remove entity validation lacks comprehensive checks for all entity types, which could lead to improper handling of requests.\n4. At `firestore.rules:1-442`, It is recommended to enhance Firestore rules to ensure that only authorized users can access organization data.\n5. At `functions/src/auth/permissionPolicy.ts:1-345`, review the scoped observation for permission policy and role assignment and validate assumptions before broader changes (validation follow-up).\n6. At `functions/src/validateInvite.ts:1-230`, review the scoped observation for invite acceptance token lifecycle and validate assumptions before broader changes (validation follow-up).\n7. At `functions/src/issues/upsertRequestValidation.ts:1-77`, review the scoped observation for validation schema and boundary checks and validate assumptions before broader changes (validation follow-up).\n8. At `.github/workflows/ci-staging.yml:1-93`, review the scoped observation for ci workflow secret handling and validate assumptions before broader changes (validation follow-up).\n\n## Roadmap & Success Criteria\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Confidence & Coverage\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Appendix A – Evidence Index\n\n- `.cursor/app-context/context.md:1-86`\n- `.env.template:1-27`\n- `.eslintrc.cjs:1-63`\n- `.github/workflows/ci-staging.yml:1-93` *(also cited in report body)*\n- `.github/workflows/deploy-staging-hosting.yml:1-62` *(also cited in report body)*\n- `docs/platform/config/spo-management-environment.md:1-85`\n- `docs/platform/config/stage-7-slice-status.md:1-50`\n- `docs/platform/config/stage-7-slice2-logging.md:1-27`\n- `docs/platform/config/stage-7-slice3-workflow-audit.md:1-35`\n- `docs/platform/config/stage-7-slice4-onboarding-reporting-diagnostics.md:1-21`\n- `docs/platform/config/stage-7-slice5-support-and-tenant-lifecycle.md:1-150`\n- `docs/platform/config/stage-7-slice6-release-rollback-incident.md:1-107`\n- `docs/platform/config/stage-7-slice7-backup-retention-rollout.md:1-126`\n- `docs/README.md:1-12`\n- `docs/reviews/error-handling-notification-centralisation-plan.md:1-421`\n- `docs/reviews/error-handling-notification-review.md:1-303`\n- `docs/reviews/next_programme_plan.md:1-507`\n- `docs/reviews/post_stage_1_to_4_scope_audit_and_pre_launch_backlog.md:1-477`\n- `docs/reviews/programme_2/stage_10_release_blockers_and_evidence_closure_implementation_plan.md:1-518`\n- `firebase.json:1-63`\n- `firestore.rules:1-442` *(also cited in report body)*\n- `functions/package-lock.json:1-528`\n- `functions/package.json:1-45`\n- `functions/src/__tests__/claims.createUserAndInvite.test.ts:1-278`\n- `functions/src/__tests__/createUserAndInvite.resolveRoles.test.ts:1-106`\n- `functions/src/__tests__/invite.acceptance.test.ts:1-402`\n- `functions/src/__tests__/invite.resend.test.ts:1-283`\n- `functions/src/auth/permissionPolicy.ts:1-345` *(also cited in report body)*\n- `functions/src/auth/sessionAllowedRoutes.ts:1-74` *(also cited in report body)*\n- `functions/src/createOrganisationAndAdmin.ts:1-493` *(also cited in report body)*\n- `functions/src/departmentManagement.ts:1-219` *(also cited in report body)*\n- `functions/src/issues/upsertRequestValidation.ts:1-77` *(also cited in report body)*\n- `functions/src/projectClosure/closureReadinessValidation.ts:1-64` *(also cited in report body)*\n- `functions/src/utils/authorization.ts:1-238` *(also cited in report body)*\n- `functions/src/utils/rateLimit.ts:1-160`\n- `functions/src/validateInvite.ts:1-230` *(also cited in report body)*\n- `package-lock.json:1-537`\n- `package.json:1-111`\n- `src/components/Auth/AuthCallback.tsx:1-266` *(also cited in report body)*\n- `src/components/Auth/SessionProtectedRoute.tsx:1-128` *(also cited in report body)*\n\n*Appendix A truncated:* 40 of 135 line-addressable citations shown (Stage 02 policy: cap 40 lines; admitted cites and up to 5 per domain prioritized).\n\n## Appendix B – Safe Config & Policy Snippets\n\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and Prioritized Recommendations.\n"
+  }
+}

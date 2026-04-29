@@ -72,6 +72,7 @@ function InputPanel({ onScan, isLoading }) {
           disabled={isLoading}
           className="w-full"
           fullWidth
+          borderVariant="rainbow"
           aria-label={isLoading ? 'Analyzing repository' : 'Scan Repository'}
         >
           {isLoading ? (
