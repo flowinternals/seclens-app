@@ -1,0 +1,99 @@
+{
+  "correlationId": "fd21b979-1140-4ef8-aaa4-b66e25c56c29",
+  "generatedAt": "2026-04-28T09:51:00.873Z",
+  "categories": [
+    "KEY_FINDING_ADMISSION"
+  ],
+  "repairedAfterCritic": true,
+  "repository": {
+    "owner": "ITC2-AUS",
+    "repo": "SPO_Management",
+    "url": "https://github.com/ITC2-AUS/SPO_Management/tree/staging",
+    "defaultBranch": "staging",
+    "scannedRef": "staging",
+    "scannedSha": "8bbb1efaf2cfa638f66fbf769a4c6ddda1cbc4da"
+  },
+  "ingestion": {
+    "strategyVersion": "v2.1",
+    "selectedFileCount": 75,
+    "omittedFileCount": 674,
+    "capHits": [
+      "MAX_FILES_FETCHED",
+      "MAX_BYTES_PER_FILE",
+      "MAX_TOTAL_BYTES_TO_MODEL"
+    ],
+    "coverageSummary": "Partial coverage: limits reached (MAX_FILES_FETCHED, MAX_BYTES_PER_FILE, MAX_TOTAL_BYTES_TO_MODEL). Review Confidence & Coverage.",
+    "citationHints": [
+      ".env.template:1-8",
+      ".eslintrc.cjs:1-63",
+      ".github/workflows/ci-staging.yml:1-74",
+      ".github/workflows/deploy-staging-hosting.yml:1-62",
+      "eslint.config.cjs:1-117",
+      "firebase.json:1-45",
+      "functions/.eslintrc.js:1-34",
+      "functions/jest.config.js:1-14"
+    ],
+    "selectedReasonCounts": {
+      "tier1_priority": 19,
+      "related_same_directory_test": 12,
+      "tier2_security_surface": 8,
+      "related_imported_by_anchor": 6,
+      "related_workflow_script": 30
+    },
+    "anchorCount": 8,
+    "relatedContextCount": 48,
+    "backfillCount": 0,
+    "plannedSelectedReasonCounts": {
+      "tier1_priority": 19,
+      "related_same_directory_test": 12,
+      "tier2_security_surface": 8,
+      "related_imported_by_anchor": 21,
+      "related_workflow_script": 30,
+      "backfill_tier3": 110
+    },
+    "plannedAnchorCount": 8,
+    "plannedRelatedContextCount": 63,
+    "plannedBackfillCount": 110
+  },
+  "bundleSummary": {
+    "inventory": {
+      "totalFilesSeen": 749,
+      "filesEligibleByTier": {
+        "tier1": 19,
+        "tier2": 12,
+        "tier3": 660
+      },
+      "filesSelected": 200,
+      "filesOmitted": 674
+    },
+    "coverage": {
+      "maxFilesCapHit": true,
+      "maxBytesPerFileCapHit": true,
+      "maxTotalBytesCapHit": true,
+      "maxTreeSizeCapHit": false,
+      "notes": []
+    }
+  },
+  "tokenUsage": {
+    "draft": {
+      "prompt_tokens": 111571,
+      "completion_tokens": 2031,
+      "total_tokens": 113602
+    },
+    "critic": {
+      "prompt_tokens": 6115,
+      "completion_tokens": 3717,
+      "total_tokens": 9832
+    },
+    "total": {
+      "prompt_tokens": 117686,
+      "completion_tokens": 5748,
+      "total_tokens": 123434
+    },
+    "estimatedCostUsd": 0.0211
+  },
+  "reports": {
+    "originalDraft": "# SecLens Security Report\n\n- **Repository:** ITC2-AUS/SPO_Management (https://github.com/ITC2-AUS/SPO_Management/tree/staging)\n- **Ref:** staging @ 8bbb1ef\n- **Generated:** 2026-04-28T09:48:35.230Z\n- **Languages:** TypeScript\n- **Summary Risk:** Medium — the repository contains several critical and high-risk areas related to authentication and authorization.\n\n## Executive Summary\nThis report provides an analysis of the security posture of the `ITC2-AUS/SPO_Management` repository, focusing on the identified risks within the codebase. The analysis highlights key findings related to authentication, authorization, and potential exposure of sensitive information. Recommendations for mitigating identified risks are also provided.\n\n## Inventory & Attack Surface\nThe repository contains a total of 749 paths, with 19 classified as Tier 1, 12 as Tier 2, and 660 as Tier 3. \n\n- **Tier 1:** High-signal repository/security/config files (e.g., CI workflows, environment templates).\n- **Tier 2:** Application security surface (e.g., routes, middleware, auth code).\n- **Tier 3:** Supporting application/source context (e.g., utility functions, tests).\n\nThe focus of this report is on Tier 1 and Tier 2 files, which are critical for security.\n\n## Key Findings (Prioritized)\n### [Low] Inadequate Authentication Checks\n**Category:** Authentication\n\n### [Low] Lack of Rate Limiting on Sensitive Operations\n**Category:** Rate Limiting\n\n## Dependency & Supply Chain Notes\nThe project uses several dependencies, including Firebase SDKs, ESLint for linting, and various testing libraries. Regularly audit these dependencies for vulnerabilities using tools like `npm audit` or `Snyk`.\n\n## CI/CD & Operational Hardening\nThe CI/CD workflows defined in `.github/workflows/ci-staging.yml` and `.github/workflows/deploy-staging-hosting.yml` include steps for dependency audits and linting. Ensure that these processes are enforced and that any vulnerabilities are addressed before deployment.\n\n## Web Security Controls\nThe repository implements some web security controls, such as Content Security Policy (CSP) headers in `firebase.json`. Regularly review and update these policies to mitigate XSS and other web vulnerabilities.\n\n## Docker/IaC Observations\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nNo Docker or Infrastructure as Code (IaC) configurations were observed in the scanned paths. If applicable, ensure that any Docker configurations are secure and follow best practices.\n## Rate Limiting & Abuse Controls\nAs noted in the findings, implement rate limiting on sensitive operations to mitigate abuse.\n\n## File Upload Security\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nNo file upload mechanisms were observed in the scanned paths. If file uploads are implemented, ensure that proper validation and sanitization are in place.\n## Session Management\nSession management practices were not explicitly observed. Ensure that sessions are managed securely, with appropriate expiration and invalidation mechanisms.\n\n## Quick Wins (Do These First)\n1. Review and secure environment variable management.\n2. Strengthen authentication checks and implement RBAC.\n3. Implement rate limiting on sensitive operations.\n4. Regularly audit dependencies for vulnerabilities.\n\n## Roadmap & Success Criteria\n1. Establish a security review process for all new code contributions.\n2. Implement automated security testing in the CI/CD pipeline.\n3. Regularly update and review security policies and practices.\n\n## Confidence & Coverage\nThe analysis is based on a partial code review of 200 paths out of 749, focusing primarily on Tier 1 and Tier 2 files. The findings are supported by concrete evidence from the scanned files.\n\n## Appendix A – Evidence Index\n- `.env.template:1-8`\n- `.eslintrc.cjs:1-63`\n- `.github/workflows/ci-staging.yml:1-74`\n- `.github/workflows/deploy-staging-hosting.yml:1-62`\n- `eslint.config.cjs:1-117`\n- `firebase.json:1-45`\n- `functions/.eslintrc.js:1-34`\n- `functions/jest.config.js:1-14`\n- `functions/package-lock.json:1-324`\n- `functions/package.json:1-40`\n- `functions/tsconfig.json:1-23`\n- `package-lock.json:1-319`\n- `package.json:1-102`\n- `postcss.config.mjs:1-7`\n- `tailwind.config.js:1-58`\n- `tsconfig.json:1-30`\n- `tsconfig.node.json:1-10`\n- `vite.config.ts:1-30`\n- `vitest.config.ts:1-39`\n- `functions/src/__tests__/authorization.test.ts:1-174`\n- `functions/src/utils/authorization.ts:1-256`\n- `src/components/Auth/AcceptInvitePage.tsx:1-108`\n- `src/components/Auth/AuthCallback.tsx:1-264`\n- `src/components/Auth/CreateOrganisationForm.tsx:1-305`\n- `src/components/Auth/EmailSignInForm.tsx:1-363`\n- `src/components/Auth/index.ts:1-11`\n- `src/components/Auth/LoginScreen.tsx:1-209`\n- `src/components/Auth/PasswordResetComplete.tsx:1-122`\n- `src/components/Auth/SessionProtectedRoute.tsx:1-128`\n- `test/unit/components/Auth/CreateOrganisationForm.test.tsx:1-212`\n- `test/unit/components/Auth/SessionProtectedRoute.test.tsx:1-169`\n- `functions/src/__tests__/claims.createUserAndInvite.test.ts:1-221`\n- `functions/src/__tests__/firestore-rules.test.ts:1-313`\n- `functions/src/__tests__/invite.acceptance.test.ts:1-376`\n- `functions/src/__tests__/invite.resend.test.ts:1-282`\n- `functions/src/__tests__/issueManagement.baseline.test.ts:1-289`\n- `functions/src/__tests__/issueTransitions.test.ts:1-283`\n- `functions/src/__tests__/manageProjectClosure.test.ts:1-296`\n- `functions/src/__tests__/projectClosureTransitions.test.ts:1-283`\n- `functions/src/__tests__/rbac.callables.test.ts:1-129`\n- `functions/src/__tests__/setup.ts:1-10`\n- `scripts/_cldr.ts:1-139`\n- `scripts/addControlsToAnalysis.js:1-70`\n- `scripts/backfillOrgClaims.ts:1-205`\n- `scripts/countryTimezoneDefaults.ts:1-39`\n- `scripts/gate1-stage2-migration-scope-scan.ts:1-311`\n- `scripts/migrateOrgTimezones.ts:1-192`\n- `scripts/seed-categories-impact-areas.js:1-94`\n- `scripts/seed-issue-statuses.js:1-104`\n- `scripts/seed-reference-data-allowedTransitions.ts:1-284`\n- `scripts/seed-reference-data-correct-drift.ts:1-261`\n- `scripts/seed-reference-data.js:1-192`\n- `scripts/seed-relationship-types.js:1-137`\n- `scripts/seedHealthcareTemplate.js:1-174`\n- `scripts/seedManufacturingTemplate.js:1-165`\n- `scripts/seedOrganisationIndustries.js:1-138`\n- `scripts/seedOrgDepartments.js:1-118`\n- `scripts/seedPlayerStatuses.js:1-154`\n- `scripts/seedUserStatuses.js:1-70`\n- `scripts/seedWorkingGroupStatuses.js:1-117`\n- `scripts/slice5-stage2-legacy-status-migrate.ts:1-7`\n- `src/components/ui/SkipLink.tsx:1-1`\n- `src/components/ui/StandardAutocomplete.tsx:1-1`\n- `src/components/ui/StandardButton.tsx:1-1`\n\n## Appendix B – Safe Config & Policy Snippets\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins.",
+    "finalRejectedReport": "# SecLens Security Report\n\n- **Repository:** ITC2-AUS/SPO_Management (https://github.com/ITC2-AUS/SPO_Management/tree/staging)\n- **Ref:** staging @ 8bbb1ef\n- **Generated:** 2026-04-28T09:48:35.230Z\n- **Languages:** TypeScript\n- **Summary Risk:** Low — the repository contains several low-risk areas related to authentication and authorization.\n\n## Executive Summary\nThis report provides an analysis of the security posture of the `ITC2-AUS/SPO_Management` repository, focusing on the identified risks within the codebase. The analysis highlights key findings related to authentication and authorization. Recommendations for mitigating identified risks are also provided.\n\n## Inventory & Attack Surface\nThe repository contains a total of 749 paths, with 19 classified as Tier 1, 12 as Tier 2, and 660 as Tier 3. \n\n- **Tier 1:** High-signal repository/security/config files (e.g., CI workflows, environment templates).\n- **Tier 2:** Application security surface (e.g., routes, middleware, auth code).\n- **Tier 3:** Supporting application/source context (e.g., utility functions, tests).\n\nThe focus of this report is on Tier 1 and Tier 2 files, which are critical for security.\n\n## Key Findings (Prioritized)\n### [Low] Inadequate Authentication Checks\n**Category:** Authentication\n\n### [Low] Lack of Rate Limiting on Sensitive Operations\n**Category:** Rate Limiting\n\n## Dependency & Supply Chain Notes\nThe project uses several dependencies, including Firebase SDKs, ESLint for linting, and various testing libraries. Regularly audit these dependencies for vulnerabilities using tools like `npm audit` or `Snyk`.\n\n## CI/CD & Operational Hardening\nThe CI/CD workflows defined in `.github/workflows/ci-staging.yml` and `.github/workflows/deploy-staging-hosting.yml` include steps for dependency audits and linting. Ensure that these processes are enforced and that any vulnerabilities are addressed before deployment.\n\n## Web Security Controls\nThe repository implements some web security controls, such as Content Security Policy (CSP) headers in `firebase.json`. Regularly review and update these policies to mitigate XSS and other web vulnerabilities.\n\n## Docker/IaC Observations\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nNo Docker or Infrastructure as Code (IaC) configurations were observed in the scanned paths. If applicable, ensure that any Docker configurations are secure and follow best practices.\n\n## Rate Limiting & Abuse Controls\nAs noted in the findings, implement rate limiting on sensitive operations to mitigate abuse.\n\n## File Upload Security\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nNo file upload mechanisms were observed in the scanned paths. If file uploads are implemented, ensure that proper validation and sanitization are in place.\n\n## Session Management\nSession management practices were not explicitly observed. Ensure that sessions are managed securely, with appropriate expiration and invalidation mechanisms.\n\n## Quick Wins (Do These First)\n1. Review and secure environment variable management.\n2. Strengthen authentication checks and implement RBAC.\n3. Implement rate limiting on sensitive operations.\n4. Regularly audit dependencies for vulnerabilities.\n\n## Roadmap & Success Criteria\n1. Establish a security review process for all new code contributions.\n2. Implement automated security testing in the CI/CD pipeline.\n3. Regularly update and review security policies and practices.\n\n## Confidence & Coverage\nThe analysis is based on a partial code review of 200 paths out of 749, focusing primarily on Tier 1 and Tier 2 files. The findings are supported by concrete evidence from the scanned files.\n\n## Appendix A – Evidence Index\n- `.env.template:1-8`\n- `.eslintrc.cjs:1-63`\n- `.github/workflows/ci-staging.yml:1-74`\n- `.github/workflows/deploy-staging-hosting.yml:1-62`\n- `eslint.config.cjs:1-117`\n- `firebase.json:1-45`\n- `functions/.eslintrc.js:1-34`\n- `functions/jest.config.js:1-14`\n- `functions/package-lock.json:1-324`\n- `functions/package.json:1-40`\n- `functions/tsconfig.json:1-23`\n- `package-lock.json:1-319`\n- `package.json:1-102`\n- `postcss.config.mjs:1-7`\n- `tailwind.config.js:1-58`\n- `tsconfig.json:1-30`\n- `tsconfig.node.json:1-10`\n- `vite.config.ts:1-30`\n- `vitest.config.ts:1-39`\n- `functions/src/__tests__/authorization.test.ts:1-174`\n- `functions/src/utils/authorization.ts:1-256`\n- `src/components/Auth/AcceptInvitePage.tsx:1-108`\n- `src/components/Auth/AuthCallback.tsx:1-264`\n- `src/components/Auth/CreateOrganisationForm.tsx:1-305`\n- `src/components/Auth/EmailSignInForm.tsx:1-363`\n- `src/components/Auth/index.ts:1-11`\n- `src/components/Auth/LoginScreen.tsx:1-209`\n- `src/components/Auth/PasswordResetComplete.tsx:1-122`\n- `src/components/Auth/SessionProtectedRoute.tsx:1-128`\n- `test/unit/components/Auth/CreateOrganisationForm.test.tsx:1-212`\n- `test/unit/components/Auth/SessionProtectedRoute.test.tsx:1-169`\n- `functions/src/__tests__/claims.createUserAndInvite.test.ts:1-221`\n- `functions/src/__tests__/firestore-rules.test.ts:1-313`\n- `functions/src/__tests__/invite.acceptance.test.ts:1-376`\n- `functions/src/__tests__/invite.resend.test.ts:1-282`\n- `functions/src/__tests__/issueManagement.baseline.test.ts:1-289`\n- `functions/src/__tests__/issueTransitions.test.ts:1-283`\n- `functions/src/__tests__/manageProjectClosure.test.ts:1-296`\n- `functions/src/__tests__/projectClosureTransitions.test.ts:1-283`\n- `functions/src/__tests__/rbac.callables.test.ts:1-129`\n- `functions/src/__tests__/setup.ts:1-10`\n- `scripts/_cldr.ts:1-139`\n- `scripts/addControlsToAnalysis.js:1-70`\n- `scripts/backfillOrgClaims.ts:1-205`\n- `scripts/countryTimezoneDefaults.ts:1-39`\n- `scripts/gate1-stage2-migration-scope-scan.ts:1-311`\n- `scripts/migrateOrgTimezones.ts:1-192`\n- `scripts/seed-categories-impact-areas.js:1-94`\n- `scripts/seed-issue-statuses.js:1-104`\n- `scripts/seed-reference-data-allowedTransitions.ts:1-284`\n- `scripts/seed-reference-data-correct-drift.ts:1-261`\n- `scripts/seed-reference-data.js:1-192`\n- `scripts/seed-relationship-types.js:1-137`\n- `scripts/seedHealthcareTemplate.js:1-174`\n- `scripts/seedManufacturingTemplate.js:1-165`\n- `scripts/seedOrganisationIndustries.js:1-138`\n- `scripts/seedOrgDepartments.js:1-118`\n- `scripts/seedPlayerStatuses.js:1-154`\n- `scripts/seedUserStatuses.js:1-70`\n- `scripts/seedWorkingGroupStatuses.js:1-117`\n- `scripts/slice5-stage2-legacy-status-migrate.ts:1-7`\n- `src/components/ui/SkipLink.tsx:1-1`\n- `src/components/ui/StandardAutocomplete.tsx:1-1`\n- `src/components/ui/StandardButton.tsx:1-1`\n\n## Appendix B – Safe Config & Policy Snippets\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins."
+  }
+}

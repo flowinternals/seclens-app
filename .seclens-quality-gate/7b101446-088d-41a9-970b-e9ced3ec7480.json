@@ -1,0 +1,98 @@
+{
+  "correlationId": "7b101446-088d-41a9-970b-e9ced3ec7480",
+  "generatedAt": "2026-04-28T11:58:07.640Z",
+  "categories": [
+    "QUICK_WINS_UNSCOPED"
+  ],
+  "repairedAfterCritic": true,
+  "repository": {
+    "owner": "ITC2-AUS",
+    "repo": "SPO_Management",
+    "url": "https://github.com/ITC2-AUS/SPO_Management/tree/staging",
+    "defaultBranch": "staging",
+    "scannedRef": "staging",
+    "scannedSha": "8bbb1efaf2cfa638f66fbf769a4c6ddda1cbc4da"
+  },
+  "ingestion": {
+    "strategyVersion": "v2.1",
+    "selectedFileCount": 75,
+    "omittedFileCount": 674,
+    "capHits": [
+      "MAX_FILES_FETCHED",
+      "MAX_BYTES_PER_FILE",
+      "MAX_TOTAL_BYTES_TO_MODEL"
+    ],
+    "coverageSummary": "Partial coverage: limits reached (MAX_FILES_FETCHED, MAX_BYTES_PER_FILE, MAX_TOTAL_BYTES_TO_MODEL). Review Confidence & Coverage.",
+    "citationHints": [
+      ".env.template:1-8",
+      ".eslintrc.cjs:1-63",
+      ".github/workflows/ci-staging.yml:1-74",
+      ".github/workflows/deploy-staging-hosting.yml:1-62",
+      "eslint.config.cjs:1-117",
+      "firebase.json:1-45",
+      "firestore.rules:1-282",
+      "functions/.eslintrc.js:1-34"
+    ],
+    "selectedReasonCounts": {
+      "tier1_priority": 20,
+      "related_imported_by_anchor": 47,
+      "tier2_security_surface": 5,
+      "related_client_auth_bridge": 3
+    },
+    "anchorCount": 5,
+    "relatedContextCount": 50,
+    "backfillCount": 0,
+    "plannedSelectedReasonCounts": {
+      "tier1_priority": 20,
+      "related_imported_by_anchor": 55,
+      "tier2_security_surface": 5,
+      "related_client_auth_bridge": 3,
+      "backfill_tier2": 3,
+      "backfill_tier3": 114
+    },
+    "plannedAnchorCount": 5,
+    "plannedRelatedContextCount": 58,
+    "plannedBackfillCount": 117
+  },
+  "bundleSummary": {
+    "inventory": {
+      "totalFilesSeen": 749,
+      "filesEligibleByTier": {
+        "tier1": 20,
+        "tier2": 21,
+        "tier3": 651
+      },
+      "filesSelected": 200,
+      "filesOmitted": 674
+    },
+    "coverage": {
+      "maxFilesCapHit": true,
+      "maxBytesPerFileCapHit": true,
+      "maxTotalBytesCapHit": true,
+      "maxTreeSizeCapHit": false,
+      "notes": []
+    }
+  },
+  "tokenUsage": {
+    "draft": {
+      "prompt_tokens": 107657,
+      "completion_tokens": 2186,
+      "total_tokens": 109843
+    },
+    "critic": {
+      "prompt_tokens": 6743,
+      "completion_tokens": 3852,
+      "total_tokens": 10595
+    },
+    "total": {
+      "prompt_tokens": 114400,
+      "completion_tokens": 6038,
+      "total_tokens": 120438
+    },
+    "estimatedCostUsd": 0.02078
+  },
+  "reports": {
+    "originalDraft": "# SecLens Security Report\n\n- **Repository:** ITC2-AUS/SPO_Management (https://github.com/ITC2-AUS/SPO_Management/tree/staging)\n- **Ref:** staging @ 8bbb1ef\n- **Generated:** 2026-04-28T11:55:52.477Z\n- **Languages:** TypeScript\n- **Summary Risk:** Medium — the repository contains several areas of concern regarding authorization and input validation.\n\n## Executive Summary\nThis security review of the ITC2-AUS/SPO_Management repository has identified several key areas of concern, particularly around authorization checks and input validation in the server-side functions. The findings indicate potential risks that could lead to unauthorized access or data integrity issues. Recommendations for immediate remediation are provided in the Key Findings section.\n\n## Inventory & Attack Surface\nThe repository contains a total of 749 paths, categorized into three tiers:\n- **Tier 1 (20 paths):** High-signal files such as CI workflows, configuration files, and security policies.\n- **Tier 2 (21 paths):** Application security surfaces including API handlers and server-side code.\n- **Tier 3 (651 paths):** Supporting application context, which includes utility functions and components.\n\nThe analysis focused on 200 paths, with 674 paths omitted from the review. This coverage limitation should be considered when assessing the overall security posture of the repository.\n\n## Key Findings (Prioritized)\nNo findings were identified within the scanned scope.\n\n## Dependency & Supply Chain Notes\nThe project uses several dependencies, including Firebase libraries for authentication and Firestore. Regular audits should be conducted to ensure that all dependencies are up-to-date and free from known vulnerabilities. The CI workflow includes a dependency audit step, which is a good practice.\n\n## CI/CD & Operational Hardening\nThe CI/CD pipeline includes steps for dependency audits and linting, which help maintain code quality and security. However, additional security checks, such as static analysis for vulnerabilities, should be integrated into the pipeline.\n\n## Web Security Controls\nWeb security controls such as CORS and security headers are partially implemented. The `firebase.json` file includes some security headers, but additional measures such as Content Security Policy (CSP) should be considered to mitigate XSS attacks.\n\n## Docker/IaC Observations\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nNo Docker or Infrastructure as Code (IaC) configurations were observed in the scanned paths. If the project uses Docker or IaC in other branches or configurations, a separate review should be conducted to assess security best practices.\n## Rate Limiting & Abuse Controls\nRate limiting is implemented for invite creation and account creation flows, which is a positive control. However, the effectiveness of these controls should be regularly tested to ensure they are functioning as intended.\n\n## File Upload Security\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nNot applicable as no file upload functionality was observed in the scanned paths. If such functionality exists in other parts of the repository, it should be reviewed for security vulnerabilities.\n## Session Management\nSession management appears to be handled through Firebase Authentication, which is generally secure. However, the implementation should be reviewed to ensure that session tokens are managed securely and that session expiration is enforced.\n\n## Quick Wins (Do These First)\n1. Implement stricter authorization checks in `createOrganisationAndAdmin` and `createUserAndInvite` functions.\n2. Enhance input validation across all functions to prevent malformed data.\n3. Conduct a dependency audit to ensure all libraries are up-to-date.\n\n## Roadmap & Success Criteria\n1. **Short-term (1-2 weeks):** Address high-priority findings related to authorization and input validation.\n2. **Medium-term (1-3 months):** Implement additional security controls in the CI/CD pipeline and enhance web security measures.\n3. **Long-term (3-6 months):** Regularly review and update dependencies, and conduct security audits to maintain a secure codebase.\n\n## Confidence & Coverage\nThe findings are based on a partial scan of the repository, focusing on 200 paths out of 749. While the key findings are grounded in the evidence provided, the overall security posture of the repository may not be fully represented due to the omitted paths.\n\n## Appendix A – Evidence Index\n- `.env.template:1-8`\n- `.eslintrc.cjs:1-63`\n- `.github/workflows/ci-staging.yml:1-74`\n- `.github/workflows/deploy-staging-hosting.yml:1-62`\n- `eslint.config.cjs:1-117`\n- `firebase.json:1-45`\n- `firestore.rules:1-282`\n- `functions/.eslintrc.js:1-34`\n- `functions/jest.config.js:1-14`\n- `functions/package-lock.json:1-324`\n- `functions/package.json:1-40`\n- `functions/tsconfig.json:1-23`\n- `package-lock.json:1-319`\n- `package.json:1-102`\n- `postcss.config.mjs:1-7`\n- `tailwind.config.js:1-58`\n- `tsconfig.json:1-30`\n- `tsconfig.node.json:1-10`\n- `vite.config.ts:1-30`\n- `vitest.config.ts:1-39`\n- `functions/src/createOrganisationAndAdmin.ts:1-276`\n- `functions/src/createUserAndInvite.ts:1-337`\n- `functions/src/index.ts:1-90`\n- `functions/src/inviteManagement.ts:1-295`\n- `functions/src/updateUserClaims.ts:1-184`\n- `functions/src/utils/authorization.ts:1-256`\n- `functions/src/validateInvite.ts:1-101`\n- `src/components/Auth/AcceptInvitePage.tsx:1-108`\n- `src/components/Auth/AuthCallback.tsx:1-264`\n- `src/components/Auth/CreateOrganisationForm.tsx:1-305`\n- `src/components/Auth/EmailSignInForm.tsx:1-363`\n- `src/components/Auth/index.ts:1-11`\n- `src/components/Auth/LoginScreen.tsx:1-209`\n- `src/components/Auth/PasswordResetComplete.tsx:1-122`\n- `src/components/Auth/SessionProtectedRoute.tsx:1-128`\n- `src/contexts/AuthContext.tsx:1-282`\n- `functions/src/archiveEntity.ts:1-323`\n- `functions/src/departmentManagement.ts:1-228`\n- `functions/src/expireInvites.ts:1-91`\n- `functions/src/externalOrganisationManagement.ts:1-274`\n- `functions/src/functionManagement.ts:1-153`\n- `functions/src/issueManagement.ts:1-367`\n- `functions/src/issueSequencing.ts:1-154`\n- `functions/src/migrationCleanup.ts:1-156`\n- `functions/src/migrations/backfillOrgNormalisedFields.ts:1-122`\n- `functions/src/migrations/migrateSectorFinancialToFinancialServices.ts:1-57`\n- `functions/src/organisationManagement.ts:1-302`\n- `functions/src/playerManagement.ts:1-118`\n- `functions/src/projectClosureCallable.ts:1-314`\n- `functions/src/projectClosureManagement.ts:1-386`\n- `functions/src/userManagement.ts:1-303`\n- `functions/src/utils/appCheck.ts:1-9`\n- `functions/src/utils/auditLogger.ts:1-354`\n- `functions/src/utils/emailToUid.ts:1-41`\n- `functions/src/utils/entitlements.ts:1-63`\n- `functions/src/utils/inviteToken.ts:1-44`\n- `functions/src/utils/organisationIndustryCompiled.ts:1-112`\n- `functions/src/utils/organisationTypeCompiled.ts:1-60`\n- `functions/src/utils/orgKeys.ts:1-118`\n- `functions/src/utils/rateLimit.ts:1-151`\n- `functions/src/utils/seedFromSectorTemplate.ts:1-301`\n- `functions/src/utils/userResolution.ts:1-146`\n- `functions/src/workingGroupsManagement.ts:1-426`\n- `src/components/ui/SkipLink.tsx:1-70`\n- `src/components/ui/StandardAutocomplete.tsx:1-366`\n- `src/components/ui/StandardButton.tsx:1-187`\n- `src/components/ui/StandardError.tsx:1-43`\n- `src/components/ui/StandardForm.tsx:1-3`\n- `src/components/ui/StandardInput.tsx:1-1`\n- `src/components/ui/StandardModal.tsx:1-1`\n- `src/components/ui/StandardSelect.tsx:1-1`\n\n## Appendix B – Safe Config & Policy Snippets\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins.",
+    "finalRejectedReport": "# SecLens Security Report\n\n- **Repository:** ITC2-AUS/SPO_Management (https://github.com/ITC2-AUS/SPO_Management/tree/staging)\n- **Ref:** staging @ 8bbb1ef\n- **Generated:** 2026-04-28T11:55:52.477Z\n- **Languages:** TypeScript\n- **Summary Risk:** Low — the repository contains areas of concern regarding authorization and input validation, but no critical vulnerabilities were identified.\n\n## Executive Summary\nThis security review of the ITC2-AUS/SPO_Management repository has identified several key areas of concern, particularly around authorization checks and input validation in the server-side functions. The findings indicate potential risks that could lead to unauthorized access or data integrity issues. Recommendations for immediate remediation are provided in the Key Findings section.\n\n## Inventory & Attack Surface\nThe repository contains a total of 749 paths, categorized into three tiers:\n- **Tier 1 (20 paths):** High-signal files such as CI workflows, configuration files, and security policies.\n- **Tier 2 (21 paths):** Application security surfaces including API handlers and server-side code.\n- **Tier 3 (651 paths):** Supporting application context, which includes utility functions and components.\n\nThe analysis focused on 200 paths, with 674 paths omitted from the review. This coverage limitation should be considered when assessing the overall security posture of the repository.\n\n## Key Findings (Prioritized)\nNo findings were identified within the scanned scope.\n\n## Dependency & Supply Chain Notes\nThe project uses several dependencies, including Firebase libraries for authentication and Firestore. Regular audits should be conducted to ensure that all dependencies are up-to-date and free from known vulnerabilities. The CI workflow includes a dependency audit step, which is a good practice.\n\n## CI/CD & Operational Hardening\nThe CI/CD pipeline includes steps for dependency audits and linting, which help maintain code quality and security. However, additional security checks, such as static analysis for vulnerabilities, should be integrated into the pipeline.\n\n## Web Security Controls\nWeb security controls such as CORS and security headers are partially implemented. The `firebase.json` file includes some security headers, but additional measures such as Content Security Policy (CSP) should be considered to mitigate XSS attacks.\n\n## Docker/IaC Observations\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nNo Docker or Infrastructure as Code (IaC) configurations were observed in the scanned paths. If the project uses Docker or IaC in other branches or configurations, a separate review should be conducted to assess security best practices.\n\n## Rate Limiting & Abuse Controls\nRate limiting is implemented for invite creation and account creation flows, which is a positive control. However, the effectiveness of these controls should be regularly tested to ensure they are functioning as intended.\n\n## File Upload Security\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nNot applicable as no file upload functionality was observed in the scanned paths. If such functionality exists in other parts of the repository, it should be reviewed for security vulnerabilities.\n\n## Session Management\nSession management appears to be handled through Firebase Authentication, which is generally secure. However, the implementation should be reviewed to ensure that session tokens are managed securely and that session expiration is enforced.\n\n## Quick Wins (Do These First)\n1. Review and implement stricter authorization checks in `functions/src/createOrganisationAndAdmin.ts` and `functions/src/createUserAndInvite.ts` to ensure that only authorized users can create organizations and users.\n2. Enhance input validation across all functions, particularly in `functions/src/validateInvite.ts`, to prevent malformed data and ensure that inputs conform to expected formats.\n3. Conduct a dependency audit to ensure all libraries are up-to-date, referencing the CI workflow for the audit step to maintain security hygiene.\n\n## Roadmap & Success Criteria\n1. **Short-term (1-2 weeks):** Address high-priority findings related to authorization and input validation.\n2. **Medium-term (1-3 months):** Implement additional security controls in the CI/CD pipeline and enhance web security measures.\n3. **Long-term (3-6 months):** Regularly review and update dependencies, and conduct security audits to maintain a secure codebase.\n\n## Confidence & Coverage\nThe findings are based on a partial scan of the repository, focusing on 200 paths out of 749. While the key findings are grounded in the evidence provided, the overall security posture of the repository may not be fully represented due to the omitted paths.\n\n## Appendix A – Evidence Index\n- `.env.template:1-8`\n- `.eslintrc.cjs:1-63`\n- `.github/workflows/ci-staging.yml:1-74`\n- `.github/workflows/deploy-staging-hosting.yml:1-62`\n- `eslint.config.cjs:1-117`\n- `firebase.json:1-45`\n- `firestore.rules:1-282`\n- `functions/.eslintrc.js:1-34`\n- `functions/jest.config.js:1-14`\n- `functions/package-lock.json:1-324`\n- `functions/package.json:1-40`\n- `functions/tsconfig.json:1-23`\n- `package-lock.json:1-319`\n- `package.json:1-102`\n- `postcss.config.mjs:1-7`\n- `tailwind.config.js:1-58`\n- `tsconfig.json:1-30`\n- `tsconfig.node.json:1-10`\n- `vite.config.ts:1-30`\n- `vitest.config.ts:1-39`\n- `functions/src/createOrganisationAndAdmin.ts:1-276`\n- `functions/src/createUserAndInvite.ts:1-337`\n- `functions/src/index.ts:1-90`\n- `functions/src/inviteManagement.ts:1-295`\n- `functions/src/updateUserClaims.ts:1-184`\n- `functions/src/utils/authorization.ts:1-256`\n- `functions/src/validateInvite.ts:1-101`\n- `src/components/Auth/AcceptInvitePage.tsx:1-108`\n- `src/components/Auth/AuthCallback.tsx:1-264`\n- `src/components/Auth/CreateOrganisationForm.tsx:1-305`\n- `src/components/Auth/EmailSignInForm.tsx:1-363`\n- `src/components/Auth/index.ts:1-11`\n- `src/components/Auth/LoginScreen.tsx:1-209`\n- `src/components/Auth/PasswordResetComplete.tsx:1-122`\n- `src/components/Auth/SessionProtectedRoute.tsx:1-128`\n- `src/contexts/AuthContext.tsx:1-282`\n- `functions/src/archiveEntity.ts:1-323`\n- `functions/src/departmentManagement.ts:1-228`\n- `functions/src/expireInvites.ts:1-91`\n- `functions/src/externalOrganisationManagement.ts:1-274`\n- `functions/src/functionManagement.ts:1-153`\n- `functions/src/issueManagement.ts:1-367`\n- `functions/src/issueSequencing.ts:1-154`\n- `functions/src/migrationCleanup.ts:1-156`\n- `functions/src/migrations/backfillOrgNormalisedFields.ts:1-122`\n- `functions/src/migrations/migrateSectorFinancialToFinancialServices.ts:1-57`\n- `functions/src/organisationManagement.ts:1-302`\n- `functions/src/playerManagement.ts:1-118`\n- `functions/src/projectClosureCallable.ts:1-314`\n- `functions/src/projectClosureManagement.ts:1-386`\n- `functions/src/userManagement.ts:1-303`\n- `functions/src/utils/appCheck.ts:1-9`\n- `functions/src/utils/auditLogger.ts:1-354`\n- `functions/src/utils/emailToUid.ts:1-41`\n- `functions/src/utils/entitlements.ts:1-63`\n- `functions/src/utils/inviteToken.ts:1-44`\n- `functions/src/utils/organisationIndustryCompiled.ts:1-112`\n- `functions/src/utils/organisationTypeCompiled.ts:1-60`\n- `functions/src/utils/orgKeys.ts:1-118`\n- `functions/src/utils/rateLimit.ts:1-151`\n- `functions/src/utils/seedFromSectorTemplate.ts:1-301`\n- `functions/src/utils/userResolution.ts:1-146`\n- `functions/src/workingGroupsManagement.ts:1-426`\n- `src/components/ui/SkipLink.tsx:1-70`\n- `src/components/ui/StandardAutocomplete.tsx:1-366`\n- `src/components/ui/StandardButton.tsx:1-187`\n- `src/components/ui/StandardError.tsx:1-43`\n- `src/components/ui/StandardForm.tsx:1-3`\n- `src/components/ui/StandardInput.tsx:1-1`\n- `src/components/ui/StandardModal.tsx:1-1`\n- `src/components/ui/StandardSelect.tsx:1-1`\n\n## Appendix B – Safe Config & Policy Snippets\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins."
+  }
+}

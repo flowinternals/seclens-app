@@ -17,10 +17,10 @@ describe('getIngestionCaps', () => {
     const caps = getIngestionCaps()
 
     expect(caps).toEqual({
-      maxFiles: 120,
-      maxBytesPerFile: 8000,
-      maxTotalBytes: 300000,
-      maxTreeEntries: 50000,
+      maxFiles: 320,
+      maxBytesPerFile: 20000,
+      maxTotalBytes: 900000,
+      maxTreeEntries: 150000,
     })
 
     if (prev.files === undefined) delete process.env.SECLENS_MAX_FILES_FETCHED

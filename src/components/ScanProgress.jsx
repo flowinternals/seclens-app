@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 
 export const SCAN_PHASES = [
-  { id: 'resolve', label: 'Resolving repository and branch', durationSec: 6 },
-  { id: 'inventory', label: 'Building repository inventory', durationSec: 8 },
-  { id: 'select', label: 'Selecting security-relevant files', durationSec: 10 },
-  { id: 'evidence', label: 'Reading line-addressable evidence', durationSec: 12 },
-  { id: 'assess', label: 'Assessing findings and non-findings', durationSec: 12 },
-  { id: 'validate', label: 'Validating report quality', durationSec: 10 },
-  { id: 'prepare', label: 'Preparing report', durationSec: 8 },
+  { id: 'resolve', label: 'Resolving repository and branch', durationSec: 8 },
+  { id: 'inventory', label: 'Building repository inventory', durationSec: 17 },
+  { id: 'select', label: 'Selecting security-relevant files', durationSec: 17 },
+  { id: 'evidence', label: 'Reading line-addressable evidence', durationSec: 25 },
+  { id: 'assess', label: 'Assessing security posture', durationSec: 20 },
+  { id: 'report', label: 'Generating and validating report', durationSec: 13 },
 ]
 
 const TOTAL_ESTIMATED_SEC = SCAN_PHASES.reduce((acc, phase) => acc + phase.durationSec, 0)
@@ -121,7 +120,7 @@ function ScanProgress() {
                     isComplete ? 'text-emerald-300' : isCurrent ? 'text-cyan-300' : 'text-gray-500'
                   }`}
                 >
-                  {isComplete ? 'Estimated complete' : isCurrent ? 'In progress' : 'Up next'}
+                  {isComplete ? 'Estimated' : isCurrent ? 'In progress' : 'Up next'}
                 </span>
               </li>
             )

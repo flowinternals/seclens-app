@@ -1,0 +1,99 @@
+{
+  "correlationId": "fc54f99a-6637-45a9-8602-deeb52f3f5b7",
+  "generatedAt": "2026-04-28T09:42:44.936Z",
+  "categories": [
+    "KEY_FINDING_ADMISSION"
+  ],
+  "repairedAfterCritic": true,
+  "repository": {
+    "owner": "ITC2-AUS",
+    "repo": "SPO_Management",
+    "url": "https://github.com/ITC2-AUS/SPO_Management/tree/staging",
+    "defaultBranch": "staging",
+    "scannedRef": "staging",
+    "scannedSha": "8bbb1efaf2cfa638f66fbf769a4c6ddda1cbc4da"
+  },
+  "ingestion": {
+    "strategyVersion": "v2.1",
+    "selectedFileCount": 75,
+    "omittedFileCount": 674,
+    "capHits": [
+      "MAX_FILES_FETCHED",
+      "MAX_BYTES_PER_FILE",
+      "MAX_TOTAL_BYTES_TO_MODEL"
+    ],
+    "coverageSummary": "Partial coverage: limits reached (MAX_FILES_FETCHED, MAX_BYTES_PER_FILE, MAX_TOTAL_BYTES_TO_MODEL). Review Confidence & Coverage.",
+    "citationHints": [
+      ".env.template:1-8",
+      ".eslintrc.cjs:1-63",
+      ".github/workflows/ci-staging.yml:1-74",
+      ".github/workflows/deploy-staging-hosting.yml:1-62",
+      "eslint.config.cjs:1-117",
+      "firebase.json:1-45",
+      "functions/.eslintrc.js:1-34",
+      "functions/jest.config.js:1-14"
+    ],
+    "selectedReasonCounts": {
+      "tier1_priority": 19,
+      "related_same_directory_test": 12,
+      "tier2_security_surface": 8,
+      "related_imported_by_anchor": 6,
+      "related_workflow_script": 30
+    },
+    "anchorCount": 8,
+    "relatedContextCount": 48,
+    "backfillCount": 0,
+    "plannedSelectedReasonCounts": {
+      "tier1_priority": 19,
+      "related_same_directory_test": 12,
+      "tier2_security_surface": 8,
+      "related_imported_by_anchor": 21,
+      "related_workflow_script": 30,
+      "backfill_tier3": 110
+    },
+    "plannedAnchorCount": 8,
+    "plannedRelatedContextCount": 63,
+    "plannedBackfillCount": 110
+  },
+  "bundleSummary": {
+    "inventory": {
+      "totalFilesSeen": 749,
+      "filesEligibleByTier": {
+        "tier1": 19,
+        "tier2": 12,
+        "tier3": 660
+      },
+      "filesSelected": 200,
+      "filesOmitted": 674
+    },
+    "coverage": {
+      "maxFilesCapHit": true,
+      "maxBytesPerFileCapHit": true,
+      "maxTotalBytesCapHit": true,
+      "maxTreeSizeCapHit": false,
+      "notes": []
+    }
+  },
+  "tokenUsage": {
+    "draft": {
+      "prompt_tokens": 111571,
+      "completion_tokens": 2050,
+      "total_tokens": 113621
+    },
+    "critic": {
+      "prompt_tokens": 5798,
+      "completion_tokens": 2170,
+      "total_tokens": 7968
+    },
+    "total": {
+      "prompt_tokens": 117369,
+      "completion_tokens": 4220,
+      "total_tokens": 121589
+    },
+    "estimatedCostUsd": 0.02014
+  },
+  "reports": {
+    "originalDraft": "# SecLens Security Report\n\n- **Repository:** ITC2-AUS/SPO_Management (https://github.com/ITC2-AUS/SPO_Management/tree/staging)\n- **Ref:** staging @ 8bbb1ef\n- **Generated:** 2026-04-28T09:40:39.731Z\n- **Languages:** TypeScript\n- **Summary Risk:** Medium — the repository contains several security configurations and application logic that require attention to prevent potential vulnerabilities.\n\n## Executive Summary\nThis report provides an analysis of the security posture of the ITC2-AUS/SPO_Management repository, focusing on the configuration files, application security surface, and supporting context. The analysis identifies key findings related to security controls, potential vulnerabilities, and areas for improvement.\n\n## Inventory & Attack Surface\nThe repository contains a total of 749 paths, with 19 classified as Tier 1, 12 as Tier 2, and 660 as Tier 3. \n- **Tier 1** includes critical configuration files and workflows that directly impact security (e.g., CI/CD configurations, environment templates).\n- **Tier 2** includes application security surfaces such as authentication and authorization logic.\n- **Tier 3** consists of supporting files that provide context but are lower priority for security review.\n\n## Key Findings (Prioritized)\n\n### [Info] Environment Template Configuration Review\n**Category:** Configuration Review  \n**Evidence:** `.env.template:1-8`    \n**Why it matters:** These env-template files appear to document placeholder variable names and setup guidance. Template-only evidence does not prove committed secret material or a live credential leak path.  \n**Fix (recommended):** Keep placeholders non-sensitive, avoid committing populated credentials, and verify real secrets are stored only in runtime secret managers.  \n**Residual risk & tests:** Review the referenced template files for accidental populated values and validate CI secret scanning on real credential patterns.\n### [Low] Insecure CI/CD Configuration\n**Category:** CI/CD & Operational Hardening  \n**Evidence:** `.github/workflows/ci-staging.yml:1-74`  \n**Why it matters:** The CI/CD configuration allows for the installation of dependencies and running of audits, but it does not enforce strict security checks or validations before deployment. This could lead to vulnerabilities being introduced into production.  \n**Fix (recommended):** Implement additional security checks in the CI/CD pipeline, such as dependency scanning and security linting, before allowing deployments to proceed.  \n**Residual risk & tests:** Monitor the CI/CD pipeline for any security-related issues and ensure that all dependencies are regularly updated and audited.\n\n### [Info] Linting and Code Quality\n**Category:** Code Quality  \n**Evidence:** `.eslintrc.cjs:1-63`  \n**Why it matters:** The ESLint configuration is present, which helps maintain code quality and consistency. However, it is essential to ensure that all developers adhere to these linting rules to prevent potential security issues from poor coding practices.  \n**Fix (recommended):** Enforce linting rules in the CI/CD pipeline to ensure that all code adheres to the defined standards before merging.  \n**Residual risk & tests:** Regularly review and update linting rules to cover new security best practices.\n\n## Dependency & Supply Chain Notes\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nThe repository uses various dependencies, including Firebase, ESLint, and TypeScript. Regular audits of these dependencies are crucial to ensure that no known vulnerabilities exist. The CI/CD pipeline includes a step for auditing dependencies, which is a good practice.\n## CI/CD & Operational Hardening\nThe CI/CD workflows are set up to handle builds and deployments. However, there is a lack of strict security checks in the workflows. It is recommended to enhance the CI/CD process with additional security checks and validations.\n\n## Web Security Controls\nThe repository includes some web security controls, such as headers in the `firebase.json` file. However, further enhancements could be made to ensure comprehensive protection against common web vulnerabilities.\n\n## Docker/IaC Observations\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nNo Docker or Infrastructure as Code (IaC) configurations were observed in the scanned paths. If applicable, consider implementing these practices to improve deployment consistency and security.\n## Rate Limiting & Abuse Controls\nNot evidenced in scanned files. Ensure that rate limiting is implemented in API endpoints to prevent abuse and denial-of-service attacks.\n\n## File Upload Security\nNot evidenced in scanned files. If file uploads are part of the application, ensure that proper validation and sanitization are in place to prevent file upload vulnerabilities.\n\n## Session Management\nNot evidenced in scanned files. Ensure that session management practices are implemented to protect user sessions and prevent session hijacking.\n\n## Quick Wins (Do These First)\n1. Implement environment variable protection to ensure sensitive data is not exposed.\n2. Enhance CI/CD configurations to include stricter security checks.\n3. Regularly audit dependencies for known vulnerabilities.\n\n## Roadmap & Success Criteria\n1. Establish a regular review process for environment variables and CI/CD configurations.\n2. Implement automated security checks in the CI/CD pipeline.\n3. Conduct periodic security training for developers to raise awareness of best practices.\n\n## Confidence & Coverage\nThe analysis is based on a partial scan of the repository, covering 200 paths. While the findings are significant, they do not represent a comprehensive review of the entire repository. Further review is recommended for a complete security assessment.\n\n## Appendix A – Evidence Index\n- `.env.template:1-8`\n- `.eslintrc.cjs:1-63`\n- `.github/workflows/ci-staging.yml:1-74`\n- `.github/workflows/deploy-staging-hosting.yml:1-62`\n- `eslint.config.cjs:1-117`\n- `firebase.json:1-45`\n- `functions/.eslintrc.js:1-34`\n- `functions/jest.config.js:1-14`\n- `functions/package-lock.json:1-324`\n- `functions/package.json:1-40`\n- `functions/tsconfig.json:1-23`\n- `package-lock.json:1-319`\n- `package.json:1-102`\n- `postcss.config.mjs:1-7`\n- `tailwind.config.js:1-58`\n- `tsconfig.json:1-30`\n- `tsconfig.node.json:1-10`\n- `vite.config.ts:1-30`\n- `vitest.config.ts:1-39`\n- `functions/src/__tests__/authorization.test.ts:1-174`\n- `functions/src/utils/authorization.ts:1-256`\n- `src/components/Auth/AcceptInvitePage.tsx:1-108`\n- `src/components/Auth/AuthCallback.tsx:1-264`\n- `src/components/Auth/CreateOrganisationForm.tsx:1-305`\n- `src/components/Auth/EmailSignInForm.tsx:1-363`\n- `src/components/Auth/index.ts:1-11`\n- `src/components/Auth/LoginScreen.tsx:1-209`\n- `src/components/Auth/PasswordResetComplete.tsx:1-122`\n- `src/components/Auth/SessionProtectedRoute.tsx:1-128`\n- `test/unit/components/Auth/CreateOrganisationForm.test.tsx:1-212`\n- `test/unit/components/Auth/SessionProtectedRoute.test.tsx:1-169`\n- `functions/src/__tests__/claims.createUserAndInvite.test.ts:1-221`\n- `functions/src/__tests__/firestore-rules.test.ts:1-313`\n- `functions/src/__tests__/invite.acceptance.test.ts:1-376`\n- `functions/src/__tests__/invite.resend.test.ts:1-282`\n- `functions/src/__tests__/issueManagement.baseline.test.ts:1-289`\n- `functions/src/__tests__/issueTransitions.test.ts:1-283`\n- `functions/src/__tests__/manageProjectClosure.test.ts:1-296`\n- `functions/src/__tests__/projectClosureTransitions.test.ts:1-283`\n- `functions/src/__tests__/rbac.callables.test.ts:1-129`\n- `functions/src/__tests__/setup.ts:1-10`\n- `scripts/_cldr.ts:1-139`\n- `scripts/addControlsToAnalysis.js:1-70`\n- `scripts/backfillOrgClaims.ts:1-205`\n- `scripts/countryTimezoneDefaults.ts:1-39`\n- `scripts/gate1-stage2-migration-scope-scan.ts:1-311`\n- `scripts/migrateOrgTimezones.ts:1-192`\n- `scripts/rebuildTimezones.ts:1-297`\n- `scripts/runMigrateSectorFinancialToFinancialServices.js:1-117`\n- `scripts/seed-categories-impact-areas.js:1-94`\n- `scripts/seed-issue-statuses.js:1-104`\n- `scripts/seed-reference-data-allowedTransitions.ts:1-284`\n- `scripts/seed-reference-data-correct-drift.ts:1-261`\n- `scripts/seed-reference-data.js:1-192`\n- `scripts/seed-relationship-types.js:1-137`\n- `scripts/seed-role-definitions.js:1-117`\n- `scripts/seed-role-types.js:1-99`\n- `scripts/seedControlEffectivenessLevels.js:1-62`\n- `scripts/seedCountries.ts:1-193`\n- `scripts/seedOrgDepartments.js:1-118`\n- `scripts/seedPlayerStatuses.js:1-154`\n- `scripts/seedUserStatuses.js:1-70`\n- `scripts/seedWorkingGroupStatuses.js:1-117`\n- `scripts/slice5-stage2-legacy-status-migrate.ts:1-7`\n\n## Appendix B – Safe Config & Policy Snippets\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins.",
+    "finalRejectedReport": "# SecLens Security Report\n\n- **Repository:** ITC2-AUS/SPO_Management (https://github.com/ITC2-AUS/SPO_Management/tree/staging)\n- **Ref:** staging @ 8bbb1ef\n- **Generated:** 2026-04-28T09:40:39.731Z\n- **Languages:** TypeScript\n- **Summary Risk:** Low — the repository contains several security configurations and application logic that require attention to prevent potential vulnerabilities.\n\n## Executive Summary\nThis report provides an analysis of the security posture of the ITC2-AUS/SPO_Management repository, focusing on the configuration files, application security surface, and supporting context. The analysis identifies key findings related to security controls, potential vulnerabilities, and areas for improvement.\n\n## Inventory & Attack Surface\nThe repository contains a total of 749 paths, with 19 classified as Tier 1, 12 as Tier 2, and 660 as Tier 3. \n- **Tier 1** includes critical configuration files and workflows that directly impact security (e.g., CI/CD configurations, environment templates).\n- **Tier 2** includes application security surfaces such as authentication and authorization logic.\n- **Tier 3** consists of supporting files that provide context but are lower priority for security review.\n\n## Key Findings (Prioritized)\n\n### [Info] Environment Template Configuration Review\n**Category:** Configuration Review  \n**Evidence:** `.env.template:1-8`    \n**Why it matters:** These env-template files appear to document placeholder variable names and setup guidance. Template-only evidence does not prove committed secret material or a live credential leak path.  \n**Fix (recommended):** Keep placeholders non-sensitive, avoid committing populated credentials, and verify real secrets are stored only in runtime secret managers.  \n**Residual risk & tests:** Review the referenced template files for accidental populated values and validate CI secret scanning on real credential patterns.\n\n### [Low] Insecure CI/CD Configuration\n**Category:** CI/CD & Operational Hardening  \n**Evidence:** `.github/workflows/ci-staging.yml:1-74`  \n**Why it matters:** The CI/CD configuration allows for the installation of dependencies and running of audits, but it does not enforce strict security checks or validations before deployment. This could lead to vulnerabilities being introduced into production.  \n**Fix (recommended):** Implement additional security checks in the CI/CD pipeline, such as dependency scanning and security linting, before allowing deployments to proceed.  \n**Residual risk & tests:** Monitor the CI/CD pipeline for any security-related issues and ensure that all dependencies are regularly updated and audited.\n\n## Dependency & Supply Chain Notes\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nThe repository uses various dependencies, including Firebase, ESLint, and TypeScript. Regular audits of these dependencies are crucial to ensure that no known vulnerabilities exist. The CI/CD pipeline includes a step for auditing dependencies, which is a good practice.\n\n## CI/CD & Operational Hardening\nThe CI/CD workflows are set up to handle builds and deployments. However, there is a lack of strict security checks in the workflows. It is recommended to enhance the CI/CD process with additional security checks and validations.\n\n## Web Security Controls\nThe repository includes some web security controls, such as headers in the `firebase.json` file. However, further enhancements could be made to ensure comprehensive protection against common web vulnerabilities.\n\n## Docker/IaC Observations\nNot evidenced in scanned files included in this run. Coverage is limited to files selected for this scan, and omitted paths were not analyzed.\n\nNo Docker or Infrastructure as Code (IaC) configurations were observed in the scanned paths. If applicable, consider implementing these practices to improve deployment consistency and security.\n\n## Rate Limiting & Abuse Controls\nNot evidenced in scanned files. Ensure that rate limiting is implemented in API endpoints to prevent abuse and denial-of-service attacks.\n\n## File Upload Security\nNot evidenced in scanned files. If file uploads are part of the application, ensure that proper validation and sanitization are in place to prevent file upload vulnerabilities.\n\n## Session Management\nNot evidenced in scanned files. Ensure that session management practices are implemented to protect user sessions and prevent session hijacking.\n\n## Quick Wins (Do These First)\n1. Implement environment variable protection to ensure sensitive data is not exposed.\n2. Enhance CI/CD configurations to include stricter security checks.\n3. Regularly audit dependencies for known vulnerabilities.\n\n## Roadmap & Success Criteria\n1. Establish a regular review process for environment variables and CI/CD configurations.\n2. Implement automated security checks in the CI/CD pipeline.\n3. Conduct periodic security training for developers to raise awareness of best practices.\n\n## Confidence & Coverage\nThe analysis is based on a partial scan of the repository, covering 200 paths. While the findings are significant, they do not represent a comprehensive review of the entire repository. Further review is recommended for a complete security assessment.\n\n## Appendix A – Evidence Index\n- `.env.template:1-8`\n- `.github/workflows/ci-staging.yml:1-74`\n- `firebase.json:1-45`\n\n## Appendix B – Safe Config & Policy Snippets\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins."
+  }
+}

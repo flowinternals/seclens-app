@@ -4,11 +4,17 @@ import {
   validateSeverityEvidence,
   hasMisleadingFirebaseSecretClassification,
   hasSpeculativeMediumFinding,
+  hasGenericKeyFindingAdmissionFailure,
   hasUnboundedAbsenceClaim,
   hasSummaryRiskInconsistentWithFindings,
+  hasUnscopedGenericQuickWins,
+  hasNoFindingsContradictoryGapAssertions,
   hasNotEvidencedRecommendationDrift,
 } from '../../lib/server/reportValidation.js'
-import { SECTION_TITLES_ORDER } from '../../lib/prompts/seclens-output-contract-v2.js'
+import {
+  SECTION_TITLES_ORDER,
+  SECTION_PRIORITIZED_RECOMMENDATIONS,
+} from '../../lib/prompts/seclens-output-contract-v2.js'
 import { buildRepoDataFromFixture } from '../fixtures/buildRepoFixture.js'
 
 function minimalValidReport() {
@@ -253,6 +259,63 @@ describe('validateReport', () => {
     expect(r.categories).not.toContain('SPECULATIVE_FINDING')
   })
 
+  it('flags generic rate-limiting advice in Key Findings without concrete file-level weakness (CR-005)', () => {
+    const inner = `### [Low] Lack of Rate Limiting on API Endpoints
+
+**Category:** Rate Limiting & Abuse Controls
+**Evidence:** \`app/api/admin/add-recruiter/route.ts:1-111\`
+**Why it matters:** Adding rate limiting would improve resilience against abuse.
+**Fix (recommended):** Add throttling to public APIs.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasGenericKeyFindingAdmissionFailure(inner)).toBe(true)
+    expect(r.categories).toContain('KEY_FINDING_ADMISSION')
+  })
+
+  it('flags generic security-header advice in Key Findings without response-layer evidence (CR-005)', () => {
+    const inner = `### [Info] Missing Security Headers
+
+**Category:** Web Security Controls
+**Evidence:** \`app/api/admin/add-recruiter/route.ts:1-111\`
+**Why it matters:** Security headers should be implemented as a best practice.
+**Fix (recommended):** Add CSP, HSTS, and X-Frame-Options headers.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasGenericKeyFindingAdmissionFailure(inner)).toBe(true)
+    expect(r.categories).toContain('KEY_FINDING_ADMISSION')
+  })
+
+  it('flags High validation finding without specific missing rule/trust boundary (CR-005)', () => {
+    const inner = `### [High] Inadequate Input Validation
+
+**Category:** Input Validation
+**Evidence:** \`app/api/admin/add-recruiter/route.ts:1-111\`
+**Exploit path:** Attackers can submit crafted input to endpoints.
+**Why it matters:** Input validation may be insufficient and could allow abuse.
+**Fix (recommended):** Strengthen validation using schema libraries.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasGenericKeyFindingAdmissionFailure(inner)).toBe(true)
+    expect(r.categories).toContain('KEY_FINDING_ADMISSION')
+  })
+
+  it('accepts Low key finding when a concrete missing control is named with scoped path evidence', () => {
+    const inner = `### [Low] Missing CSP Header in Express Response Layer
+
+**Category:** Web Security Controls
+**Evidence:** \`server/app.js:1-120\`, \`server/middleware/securityHeaders.js:1-40\`
+**Why it matters:** The Express bootstrap does not register Helmet/CSP middleware before route handlers, so responses can be returned without Content-Security-Policy headers for scanned server paths.
+**Fix (recommended):** Register CSP middleware in the response pipeline before route registration and validate with integration tests.
+`
+    const report = fullReportWithKeyFindingsBody(inner)
+    const r = validateReport(report)
+    expect(hasGenericKeyFindingAdmissionFailure(inner)).toBe(false)
+    expect(r.categories).not.toContain('KEY_FINDING_ADMISSION')
+  })
+
   it('flags Medium runtime-control absence claim supported only by env template evidence', () => {
     const inner = `### [Medium] Insufficient Rate Limiting
 
@@ -334,6 +397,16 @@ describe('validateReport', () => {
     expect(r.categories).toContain('UNBOUNDED_ABSENCE_CLAIM')
   })
 
+  it('accepts non-finding absence-adjacent wording when line-range path citations provide basis (CR-008)', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`)
+      .replace(
+        '## Rate Limiting & Abuse Controls\n\nSection content 8. Use Not evidenced where applicable.\n',
+        '## Rate Limiting & Abuse Controls\n\nNo explicit rate limiting was identified in scanned excerpt `api/routes.ts:10-40`.\n'
+      )
+    expect(hasUnboundedAbsenceClaim(report)).toBe(false)
+    expect(validateReport(report).categories).not.toContain('UNBOUNDED_ABSENCE_CLAIM')
+  })
+
   it('accepts bounded non-finding claims with scanned scope basis', () => {
     const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`)
       .replace(
@@ -399,6 +472,118 @@ describe('validateReport', () => {
     const r = validateReport(report)
     expect(hasSummaryRiskInconsistentWithFindings(report, inner)).toBe(false)
     expect(r.categories).not.toContain('SUMMARY_RISK_INCONSISTENT')
+  })
+
+  it('flags summary risk Medium when Key Findings admits no findings without bounded rationale', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
+      '**Summary Risk:** Low — limited scan scope.',
+      '**Summary Risk:** Medium — user-management and authorization concerns remain.'
+    )
+    const r = validateReport(report)
+    expect(hasSummaryRiskInconsistentWithFindings(report, 'No findings were identified within the scanned scope.')).toBe(
+      true
+    )
+    expect(r.categories).toContain('SUMMARY_RISK_INCONSISTENT')
+  })
+
+  it('flags generic unscoped Quick Wins directives without evidence basis', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
+      `## ${SECTION_PRIORITIZED_RECOMMENDATIONS}\n\nSection content 11. Use Not evidenced where applicable.\n`,
+      `## ${SECTION_PRIORITIZED_RECOMMENDATIONS}\n\n1. Implement stricter authorization checks.\n2. Add duplicate organization checks.\n3. Enhance rate limiting for sensitive operations.\n`
+    )
+    const r = validateReport(report)
+    expect(hasUnscopedGenericQuickWins(report)).toBe(true)
+    expect(r.categories).toContain('QUICK_WINS_UNSCOPED')
+  })
+
+  it('accepts scoped Quick Wins when conditional and evidence-bounded', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
+      `## ${SECTION_PRIORITIZED_RECOMMENDATIONS}\n\nSection content 11. Use Not evidenced where applicable.\n`,
+      `## ${SECTION_PRIORITIZED_RECOMMENDATIONS}\n\n1. For scanned \`functions/src/createUserAndInvite.ts\`, consider validating authorization boundary assumptions with targeted tests.\n2. If invite flows outside scanned files exist, consider extending rate limiting coverage.\n`
+    )
+    const r = validateReport(report)
+    expect(hasUnscopedGenericQuickWins(report)).toBe(false)
+    expect(r.categories).not.toContain('QUICK_WINS_UNSCOPED')
+  })
+
+  it('flags mixed Quick Wins when one scoped item coexists with generic imperative item', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
+      `## ${SECTION_PRIORITIZED_RECOMMENDATIONS}\n\nSection content 11. Use Not evidenced where applicable.\n`,
+      `## ${SECTION_PRIORITIZED_RECOMMENDATIONS}\n\n1. For scanned \`functions/src/createUserAndInvite.ts\`, consider adding targeted authorization tests.\n2. Implement stricter authorization checks in user management functions.\n`
+    )
+    const r = validateReport(report)
+    expect(hasUnscopedGenericQuickWins(report)).toBe(true)
+    expect(r.categories).toContain('QUICK_WINS_UNSCOPED')
+  })
+
+  it('flags Quick Wins that only mention bare file path without line-cited basis', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
+      `## ${SECTION_PRIORITIZED_RECOMMENDATIONS}\n\nSection content 11. Use Not evidenced where applicable.\n`,
+      `## ${SECTION_PRIORITIZED_RECOMMENDATIONS}\n\n1. Implement stricter input validation in \`functions/src/createUserAndInvite.ts\`.\n`
+    )
+    const r = validateReport(report)
+    expect(hasUnscopedGenericQuickWins(report)).toBe(true)
+    expect(r.categories).toContain('QUICK_WINS_UNSCOPED')
+  })
+
+  it('flags no-findings reports that assert concrete non-finding security gaps as facts', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
+      '## Web Security Controls\n\nSection content 6. Use Not evidenced where applicable.\n',
+      '## Web Security Controls\n\nThere are still gaps in input validation and error handling that need to be addressed.\n'
+    )
+    const r = validateReport(report)
+    expect(hasNoFindingsContradictoryGapAssertions(report, 'No findings were identified within the scanned scope.')).toBe(
+      true
+    )
+    expect(r.categories).toContain('NO_FINDINGS_GAP_ASSERTION')
+  })
+
+  it('accepts no-findings reports when non-finding concerns are conditional/scoped', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
+      '## Web Security Controls\n\nSection content 6. Use Not evidenced where applicable.\n',
+      '## Web Security Controls\n\nNot evidenced in scanned files included in this run. Coverage is limited, and additional validation/error-handling checks may be needed if present in omitted paths.\n'
+    )
+    const r = validateReport(report)
+    expect(hasNoFindingsContradictoryGapAssertions(report, 'No findings were identified within the scanned scope.')).toBe(
+      false
+    )
+    expect(r.categories).not.toContain('NO_FINDINGS_GAP_ASSERTION')
+  })
+
+  it('flags no-findings soft narrative gap assertions in Executive Summary', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
+      '## Executive Summary\n\nSection content 1. Use Not evidenced where applicable.\n',
+      '## Executive Summary\n\nThere are areas that require attention in authorization and validation handling.\n'
+    )
+    const r = validateReport(report)
+    expect(
+      hasNoFindingsContradictoryGapAssertions(report, 'No findings were identified within the scanned scope.')
+    ).toBe(true)
+    expect(r.categories).toContain('NO_FINDINGS_GAP_ASSERTION')
+  })
+
+  it('flags no-findings broad rate-limit assertions stated as facts', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
+      '## Rate Limiting & Abuse Controls\n\nSection content 8. Use Not evidenced where applicable.\n',
+      '## Rate Limiting & Abuse Controls\n\nAdditional measures are needed to cover all user-facing endpoints.\n'
+    )
+    const r = validateReport(report)
+    expect(
+      hasNoFindingsContradictoryGapAssertions(report, 'No findings were identified within the scanned scope.')
+    ).toBe(true)
+    expect(r.categories).toContain('NO_FINDINGS_GAP_ASSERTION')
+  })
+
+  it('flags no-findings soft advisory assertions like "should be considered"', () => {
+    const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
+      '## Web Security Controls\n\nSection content 6. Use Not evidenced where applicable.\n',
+      '## Web Security Controls\n\nAdditional measures such as CSP headers should be considered.\n'
+    )
+    const r = validateReport(report)
+    expect(
+      hasNoFindingsContradictoryGapAssertions(report, 'No findings were identified within the scanned scope.')
+    ).toBe(true)
+    expect(r.categories).toContain('NO_FINDINGS_GAP_ASSERTION')
   })
 
   it('flags directive recommendation drift after not-evidenced bounded statement', () => {

@@ -73,12 +73,12 @@ NODE_ENV=development
 SECLENS_CRITIC_ENABLED=true
 SECLENS_ANALYSIS_MODEL=gpt-4o-mini
 SECLENS_CRITIC_MODEL=gpt-4o-mini
-SECLENS_MAX_ANALYSIS_TOKENS=4096
-SECLENS_MAX_CRITIC_TOKENS=8192
-SECLENS_MAX_FILES_FETCHED=120
-SECLENS_MAX_BYTES_PER_FILE=8000
-SECLENS_MAX_TOTAL_BYTES_TO_MODEL=300000
-SECLENS_MAX_REPO_TREE_ENTRIES=50000
+SECLENS_MAX_ANALYSIS_TOKENS=6144
+SECLENS_MAX_CRITIC_TOKENS=10000
+SECLENS_MAX_FILES_FETCHED=200
+SECLENS_MAX_BYTES_PER_FILE=12000
+SECLENS_MAX_TOTAL_BYTES_TO_MODEL=420000
+SECLENS_MAX_REPO_TREE_ENTRIES=100000
 ```
 
 Never commit `.env.local` or any file containing populated credentials.
@@ -88,7 +88,7 @@ Never commit `.env.local` or any file containing populated credentials.
 Stage 02 ingestion:
 
 - resolves the repository `default_branch` and commit SHA
-- uses a deterministic tiered file-selection strategy
+- uses a deterministic tiered + related-context file-selection strategy (`v2`)
 - builds line-addressable evidence excerpts using `path:start-end`
 - applies bounded `SECLENS_MAX_*` caps
 - returns branch/ref metadata and an ingestion summary in `/api/analyze`
@@ -116,21 +116,21 @@ Default local ref label is `local-working-tree` unless `SECLENS_SELF_SCAN_LABEL`
 Recommended launch-readiness defaults:
 
 ```env
-SECLENS_MAX_FILES_FETCHED=120
-SECLENS_MAX_BYTES_PER_FILE=8000
-SECLENS_MAX_TOTAL_BYTES_TO_MODEL=300000
-SECLENS_MAX_REPO_TREE_ENTRIES=50000
-SECLENS_MAX_ANALYSIS_TOKENS=4096
-SECLENS_MAX_CRITIC_TOKENS=8192
+SECLENS_MAX_FILES_FETCHED=200
+SECLENS_MAX_BYTES_PER_FILE=12000
+SECLENS_MAX_TOTAL_BYTES_TO_MODEL=420000
+SECLENS_MAX_REPO_TREE_ENTRIES=100000
+SECLENS_MAX_ANALYSIS_TOKENS=6144
+SECLENS_MAX_CRITIC_TOKENS=10000
 ```
 
 Optional deep QA profile for explicit high-coverage validation runs:
 
 ```env
-SECLENS_MAX_FILES_FETCHED=200
+SECLENS_MAX_FILES_FETCHED=250
 SECLENS_MAX_BYTES_PER_FILE=12000
 SECLENS_MAX_TOTAL_BYTES_TO_MODEL=500000
-SECLENS_MAX_REPO_TREE_ENTRIES=100000
+SECLENS_MAX_REPO_TREE_ENTRIES=150000
 SECLENS_MAX_ANALYSIS_TOKENS=6144
 SECLENS_MAX_CRITIC_TOKENS=10000
 ```
@@ -290,9 +290,13 @@ Endpoints:
     "scannedSha": "commitsha"
   },
   "ingestion": {
-    "strategyVersion": "v1",
+    "strategyVersion": "v2",
     "selectedFileCount": 40,
     "omittedFileCount": 120,
+    "selectedReasonCounts": { "tier1_priority": 8, "tier2_anchor_route": 12, "related_middleware": 4 },
+    "anchorCount": 18,
+    "relatedContextCount": 11,
+    "backfillCount": 9,
     "capHits": ["MAX_FILES_FETCHED"],
     "coverageSummary": "Partial coverage due to configured caps."
   },

@@ -1,0 +1,131 @@
+{
+  "correlationId": "2a23ebc2-7164-4761-acaf-7d034678033f",
+  "generatedAt": "2026-04-28T13:09:31.819Z",
+  "categories": [
+    "SUMMARY_RISK_INCONSISTENT"
+  ],
+  "repairedAfterCritic": false,
+  "repository": {
+    "owner": "ITC2-AUS",
+    "repo": "SPO_Management",
+    "url": "https://github.com/ITC2-AUS/SPO_Management/tree/staging",
+    "defaultBranch": "staging",
+    "scannedRef": "staging",
+    "scannedSha": "8bbb1efaf2cfa638f66fbf769a4c6ddda1cbc4da"
+  },
+  "ingestion": {
+    "strategyVersion": "v2.1",
+    "selectedFileCount": 75,
+    "omittedFileCount": 674,
+    "capHits": [
+      "MAX_FILES_FETCHED",
+      "MAX_BYTES_PER_FILE",
+      "MAX_TOTAL_BYTES_TO_MODEL"
+    ],
+    "coverageSummary": "Partial coverage: limits reached (MAX_FILES_FETCHED, MAX_BYTES_PER_FILE, MAX_TOTAL_BYTES_TO_MODEL). Review Confidence & Coverage.",
+    "citationHints": [
+      ".env.template:1-8",
+      ".eslintrc.cjs:1-63",
+      ".github/workflows/ci-staging.yml:1-74",
+      ".github/workflows/deploy-staging-hosting.yml:1-62",
+      "eslint.config.cjs:1-117",
+      "firebase.json:1-45",
+      "firestore.rules:1-282",
+      "functions/.eslintrc.js:1-34"
+    ],
+    "selectedReasonCounts": {
+      "tier1_priority": 20,
+      "related_imported_by_anchor": 47,
+      "tier2_security_surface": 5,
+      "related_client_auth_bridge": 3
+    },
+    "anchorCount": 5,
+    "relatedContextCount": 50,
+    "backfillCount": 0,
+    "plannedSelectedReasonCounts": {
+      "tier1_priority": 20,
+      "related_imported_by_anchor": 55,
+      "tier2_security_surface": 5,
+      "related_client_auth_bridge": 3,
+      "backfill_tier2": 3,
+      "backfill_tier3": 114
+    },
+    "plannedAnchorCount": 5,
+    "plannedRelatedContextCount": 58,
+    "plannedBackfillCount": 117
+  },
+  "bundleSummary": {
+    "inventory": {
+      "totalFilesSeen": 749,
+      "filesEligibleByTier": {
+        "tier1": 20,
+        "tier2": 21,
+        "tier3": 651
+      },
+      "filesSelected": 200,
+      "filesOmitted": 674
+    },
+    "coverage": {
+      "maxFilesCapHit": true,
+      "maxBytesPerFileCapHit": true,
+      "maxTotalBytesCapHit": true,
+      "maxTreeSizeCapHit": false,
+      "notes": []
+    }
+  },
+  "tokenUsage": {
+    "draft": {
+      "prompt_tokens": 107914,
+      "completion_tokens": 738,
+      "total_tokens": 108652
+    },
+    "critic": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0
+    },
+    "total": {
+      "prompt_tokens": 107914,
+      "completion_tokens": 738,
+      "total_tokens": 108652
+    },
+    "estimatedCostUsd": 0.01663
+  },
+  "structuredTelemetry": {
+    "candidateCounts": {
+      "total": 3,
+      "finding": 1,
+      "observation": 0,
+      "quick_win": 1,
+      "coverage_note": 1
+    },
+    "admittedCounts": {
+      "total": 2,
+      "finding": 1,
+      "observation": 0,
+      "quick_win": 0,
+      "coverage_note": 1
+    },
+    "rejectionReasonCounts": {
+      "citation_integrity_failure": 1
+    },
+    "candidateCountByTopic": {
+      "invite": 1,
+      "rate_limit": 1,
+      "validation": 1
+    },
+    "rejectedCitationIntegrityCount": 1,
+    "renderMode": "findings",
+    "usedNoFindingsTemplate": true
+  },
+  "initialValidationCategories": [
+    "STRUCTURED_ADMISSION_REJECTIONS"
+  ],
+  "finalValidationCategories": [
+    "SUMMARY_RISK_INCONSISTENT"
+  ],
+  "reports": {
+    "originalDraft": "# SecLens Security Report\n\n- **Repository:** ITC2-AUS/SPO_Management (https://github.com/ITC2-AUS/SPO_Management/tree/staging)\n- **Ref:** staging\n- **Generated:** 2026-04-28T13:09:31.797Z\n- **Languages:** TypeScript\n- **Summary Risk:** High — Derived from admitted structured findings only.\n\n## Executive Summary\n\nNot fully evidenced in scanned files included in this run. Coverage is limited by omitted paths.\n\nAdmitted findings are rendered only from evidence-bounded structured claims.\n## Inventory & Attack Surface\n\nSelected files: 200. Omitted files: 674. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Key Findings (Prioritized)\nNo findings were identified within the scanned scope.\n\n## Dependency & Supply Chain Notes\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## CI/CD & Operational Hardening\n\nNot fully evidenced in scanned files included in this run. Coverage is limited by omitted paths.\n\nSection scoped to admitted findings and observations from scanned evidence.\n## Web Security Controls\n\nNot fully evidenced in scanned files included in this run. Coverage is limited by omitted paths.\n\nSection scoped to admitted findings and observations from scanned evidence.\n## Docker/IaC Observations\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Rate Limiting & Abuse Controls\n\nNot fully evidenced in scanned files included in this run. Coverage is limited by omitted paths.\n\nSection scoped to admitted findings and observations from scanned evidence.\n## File Upload Security\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Session Management\n\nNot fully evidenced in scanned files included in this run. Coverage is limited by omitted paths.\n\nSection scoped to admitted findings and observations from scanned evidence.\n## Quick Wins (Do These First)\n1. For scanned `functions/src/utils/inviteToken.ts:1-44`, consider implementing the missing control described in the admitted finding.\n## Roadmap & Success Criteria\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Confidence & Coverage\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Appendix A – Evidence Index\n\n- `functions/src/utils/inviteToken.ts:1-44`\n\n## Appendix B – Safe Config & Policy Snippets\n\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins.\n",
+    "finalRejectedReport": "# SecLens Security Report\n\n- **Repository:** ITC2-AUS/SPO_Management (https://github.com/ITC2-AUS/SPO_Management/tree/staging)\n- **Ref:** staging\n- **Generated:** 2026-04-28T13:09:31.797Z\n- **Languages:** TypeScript\n- **Summary Risk:** High — Derived from admitted structured findings only.\n\n## Executive Summary\n\nNot fully evidenced in scanned files included in this run. Coverage is limited by omitted paths.\n\nAdmitted findings are rendered only from evidence-bounded structured claims.\n## Inventory & Attack Surface\n\nSelected files: 200. Omitted files: 674. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Key Findings (Prioritized)\nNo findings were identified within the scanned scope.\n\n## Dependency & Supply Chain Notes\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## CI/CD & Operational Hardening\n\nNot fully evidenced in scanned files included in this run. Coverage is limited by omitted paths.\n\nSection scoped to admitted findings and observations from scanned evidence.\n## Web Security Controls\n\nNot fully evidenced in scanned files included in this run. Coverage is limited by omitted paths.\n\nSection scoped to admitted findings and observations from scanned evidence.\n## Docker/IaC Observations\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Rate Limiting & Abuse Controls\n\nNot fully evidenced in scanned files included in this run. Coverage is limited by omitted paths.\n\nSection scoped to admitted findings and observations from scanned evidence.\n## File Upload Security\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Session Management\n\nNot fully evidenced in scanned files included in this run. Coverage is limited by omitted paths.\n\nSection scoped to admitted findings and observations from scanned evidence.\n## Quick Wins (Do These First)\n1. For scanned `functions/src/utils/inviteToken.ts:1-44`, consider implementing the missing control described in the admitted finding.\n## Roadmap & Success Criteria\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Confidence & Coverage\n\nSection scoped to admitted findings and observations from scanned evidence.\n\n## Appendix A – Evidence Index\n\n- `functions/src/utils/inviteToken.ts:1-44`\n\n## Appendix B – Safe Config & Policy Snippets\n\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins.\n"
+  }
+}

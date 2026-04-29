@@ -1,0 +1,178 @@
+{
+  "correlationId": "2c96a048-1144-4a33-87be-529d9c6cef2c",
+  "generatedAt": "2026-04-29T01:52:26.540Z",
+  "categories": [
+    "UNBOUNDED_ABSENCE_CLAIM"
+  ],
+  "repairedAfterCritic": false,
+  "repository": {
+    "owner": "ITC2-AUS",
+    "repo": "SPO_Management",
+    "url": "https://github.com/ITC2-AUS/SPO_Management/tree/staging",
+    "defaultBranch": "staging",
+    "scannedRef": "staging",
+    "scannedSha": "cb3f5c54be2e6fffd7bce2977d63362b7e2c097a"
+  },
+  "ingestion": {
+    "strategyVersion": "v2.3",
+    "selectedFileCount": 87,
+    "omittedFileCount": 893,
+    "capHits": [
+      "MAX_FILES_FETCHED",
+      "MAX_BYTES_PER_FILE",
+      "MAX_TOTAL_BYTES_TO_MODEL"
+    ],
+    "coverageSummary": "Partial coverage: limits reached (MAX_FILES_FETCHED, MAX_BYTES_PER_FILE, MAX_TOTAL_BYTES_TO_MODEL). Review Confidence & Coverage.",
+    "citationHints": [
+      ".env.template:1-27",
+      ".eslintrc.cjs:1-63",
+      ".github/workflows/ci-staging.yml:1-93",
+      ".github/workflows/deploy-staging-hosting.yml:1-62",
+      "eslint.config.cjs:1-117",
+      "firebase.json:1-63",
+      "firestore.rules:1-273",
+      "functions/.eslintrc.js:1-34"
+    ],
+    "selectedReasonCounts": {
+      "tier1_priority": 20,
+      "domain_reserve_auth_session": 4,
+      "related_imported_by_anchor": 42,
+      "domain_reserve_validation": 10,
+      "related_client_auth_bridge": 3,
+      "domain_reserve_invite_token_claims": 6,
+      "tier2_security_surface": 2
+    },
+    "anchorCount": 6,
+    "relatedContextCount": 45,
+    "backfillCount": 0,
+    "domainReservationCount": 36,
+    "domainReservationByDomain": {
+      "auth_session": 10,
+      "invite_token_claims": 10,
+      "validation": 10,
+      "rate_limit": 1,
+      "data_store": 2,
+      "client_auth_bridge": 3
+    },
+    "plannedSelectedReasonCounts": {
+      "tier1_priority": 20,
+      "domain_reserve_auth_session": 4,
+      "related_imported_by_anchor": 63,
+      "domain_reserve_validation": 10,
+      "related_client_auth_bridge": 3,
+      "domain_reserve_invite_token_claims": 6,
+      "tier2_security_surface": 2,
+      "backfill_tier2": 3,
+      "backfill_tier3": 89
+    },
+    "plannedAnchorCount": 6,
+    "plannedRelatedContextCount": 66,
+    "plannedBackfillCount": 92,
+    "plannedDomainReservationCount": 36,
+    "plannedDomainReservationByDomain": {
+      "auth_session": 10,
+      "invite_token_claims": 10,
+      "validation": 10,
+      "rate_limit": 1,
+      "middleware_headers": 0,
+      "cicd": 0,
+      "config_policy": 0,
+      "data_store": 2,
+      "client_auth_bridge": 3
+    }
+  },
+  "bundleSummary": {
+    "inventory": {
+      "totalFilesSeen": 980,
+      "filesEligibleByTier": {
+        "tier1": 20,
+        "tier2": 27,
+        "tier3": 875
+      },
+      "filesSelected": 200,
+      "filesOmitted": 893
+    },
+    "coverage": {
+      "maxFilesCapHit": true,
+      "maxBytesPerFileCapHit": true,
+      "maxTotalBytesCapHit": true,
+      "maxTreeSizeCapHit": false,
+      "notes": []
+    }
+  },
+  "tokenUsage": {
+    "draft": {
+      "prompt_tokens": 109521,
+      "completion_tokens": 789,
+      "total_tokens": 110310
+    },
+    "critic": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0
+    },
+    "total": {
+      "prompt_tokens": 109521,
+      "completion_tokens": 789,
+      "total_tokens": 110310
+    },
+    "estimatedCostUsd": 0.0169
+  },
+  "structuredTelemetry": {
+    "templateVersion": 3,
+    "candidateCounts": {
+      "total": 3,
+      "finding": 1,
+      "observation": 0,
+      "quick_win": 1,
+      "coverage_note": 1
+    },
+    "admittedCounts": {
+      "total": 10,
+      "finding": 0,
+      "observation": 8,
+      "quick_win": 1,
+      "coverage_note": 1
+    },
+    "rejectionReasonCounts": {
+      "downscoped_to_observation:insufficient_evidence_pack": 1
+    },
+    "candidateCountByTopic": {
+      "auth": 1,
+      "invite": 1,
+      "validation": 1
+    },
+    "rejectedCitationIntegrityCount": 0,
+    "renderMode": "observations_only",
+    "admissionRenderMode": "observations_only",
+    "finalRenderMode": "observations_only",
+    "markdownRenderMode": "no_findings",
+    "appendixEvidenceCount": 87,
+    "appendixRenderedCount": 40,
+    "appendixTruncated": true,
+    "inspectedSurfaceCounts": 7,
+    "inspectedSurfaceCountByTopic": {
+      "validation": 1,
+      "cicd": 1,
+      "auth": 1,
+      "dependency": 1,
+      "session": 1,
+      "invite": 1,
+      "rate_limit": 1
+    },
+    "representedDomainCount": 7,
+    "requiredInspectedSurfaceRows": 6,
+    "lowInformationReport": false,
+    "usedNoFindingsTemplate": true
+  },
+  "initialValidationCategories": [
+    "STRUCTURED_ADMISSION_REJECTIONS"
+  ],
+  "finalValidationCategories": [
+    "UNBOUNDED_ABSENCE_CLAIM"
+  ],
+  "reports": {
+    "originalDraft": "# SecLens Security Report\n\n- **Repository:** ITC2-AUS/SPO_Management (https://github.com/ITC2-AUS/SPO_Management/tree/staging)\n- **Ref:** staging\n- **Generated:** 2026-04-29T01:52:26.528Z\n- **Languages:** TypeScript\n- **Summary Risk:** Low — No findings were identified within the scanned scope.\n\n## Executive Summary\n\nNo Key Findings were admitted from structured candidates; 8 scoped observation(s) reference inspected excerpts. Coverage is limited by ingestion caps and omitted paths in this run. No cap-derived notes.\n\n## Inventory & Attack Surface\n\nSelected files: 87. Omitted files: 893. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Key Findings (Prioritized)\n\nNo findings were identified within the scanned scope.\n\n## Dependency & Supply Chain Notes\n\n- Reviewed scanned excerpt for dependency-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `functions/package-lock.json:1-324`\n\n## CI/CD & Operational Hardening\n\n- Reviewed scanned excerpt for cicd-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `.github/workflows/ci-staging.yml:1-93`\n\n## Web Security Controls\n\n- Reviewed scanned excerpt for validation-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `.env.template:1-27`\n\n## Docker/IaC Observations\n\nNot evidenced in scanned files included in this run. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Rate Limiting & Abuse Controls\n\n- Reviewed scanned excerpt for rate_limit-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `functions/src/utils/rateLimit.ts:1-160`\n\n## File Upload Security\n\nNot evidenced in scanned files included in this run. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Session Management\n\n- Scoped observation (finding candidate downscoped): evidence in scanned excerpts does not support a Key Finding at the proposed severity with the required concreteness or evidence pack. The createUserAndInvite function does not validate the roles provided for user creation against a known set of roles, potentially allowing unauthorized roles to be assigned.\n  - Evidence: `functions/src/createUserAndInvite.ts:1-320`\n- Reviewed scanned excerpt for auth-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `firebase.json:1-63`\n- Reviewed scanned excerpt for session-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `functions/src/__tests__/authorization.test.ts:1-159`\n- Reviewed scanned excerpt for invite-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `functions/src/inviteManagement.ts:1-297`\n\n## Quick Wins (Do These First)\n\n1. For scanned `functions/src/inviteManagement.ts:1-297`, consider validating whether the invite management functions should implement stricter rate limiting to prevent abuse of the invite system\n2. For scanned `functions/src/createUserAndInvite.ts:1-320`, consider validating the scoped observation before applying hardening changes.\n3. For scanned `.env.template:1-27`, consider validating the scoped observation before applying hardening changes.\n4. For scanned `.github/workflows/ci-staging.yml:1-93`, consider validating the scoped observation before applying hardening changes.\n5. For scanned `firebase.json:1-63`, consider validating the scoped observation before applying hardening changes.\n6. For scanned `functions/package-lock.json:1-324`, consider validating the scoped observation before applying hardening changes.\n\n## Roadmap & Success Criteria\n\nNot evidenced in scanned files included in this run. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Confidence & Coverage\n\nNot evidenced in scanned files included in this run. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Appendix A – Evidence Index\n\n- `.env.template:1-27` *(also cited in report body)*\n- `.eslintrc.cjs:1-63`\n- `.github/workflows/ci-staging.yml:1-93` *(also cited in report body)*\n- `.github/workflows/deploy-staging-hosting.yml:1-62`\n- `docs/reviews/stage_5_release_readiness_and_validation_waiver.md:1-93`\n- `eslint.config.cjs:1-117`\n- `firebase.json:1-63` *(also cited in report body)*\n- `firestore.rules:1-273`\n- `functions/.eslintrc.js:1-34`\n- `functions/jest.config.js:1-14`\n- `functions/package-lock.json:1-324` *(also cited in report body)*\n- `functions/package.json:1-45`\n- `functions/src/__tests__/authorization.test.ts:1-159` *(also cited in report body)*\n- `functions/src/__tests__/claims.createUserAndInvite.test.ts:1-278`\n- `functions/src/__tests__/createUserAndInvite.resolveRoles.test.ts:1-106`\n- `functions/src/__tests__/invite.acceptance.test.ts:1-378`\n- `functions/src/__tests__/invite.resend.test.ts:1-283`\n- `functions/src/archiveEntity.ts:1-321`\n- `functions/src/auth/permissionPolicy.ts:1-345`\n- `functions/src/auth/resolveOrgRoleForWrite.ts:1-209`\n- `functions/src/auth/roleKeys.ts:1-73`\n- `functions/src/auth/sessionAllowedRoutes.ts:1-74`\n- `functions/src/config/runtimeEnv.ts:1-83`\n- `functions/src/createOrganisationAndAdmin.ts:1-276`\n- `functions/src/createUserAndInvite.ts:1-320` *(also cited in report body)*\n- `functions/src/departmentManagement.ts:1-219`\n- `functions/src/expireInvites.ts:1-125`\n- `functions/src/externalOrganisationManagement.ts:1-265`\n- `functions/src/functionManagement.ts:1-144`\n- `functions/src/index.ts:1-92`\n- `functions/src/inviteManagement.ts:1-297` *(also cited in report body)*\n- `functions/src/issueManagement.ts:1-10`\n- `functions/src/issues/upsertRequestValidation.ts:1-77`\n- `functions/src/issueSequencing.ts:1-154`\n- `functions/src/migrationCleanup.ts:1-156`\n- `functions/src/migrations/backfillOrgNormalisedFields.ts:1-122`\n- `functions/src/migrations/migrateSectorFinancialToFinancialServices.ts:1-57`\n- `functions/src/utils/rateLimit.ts:1-160` *(also cited in report body)*\n- `package-lock.json:1-318`\n- `package.json:1-111`\n\n*Appendix A truncated:* 40 of 87 line-addressable citations shown (Stage 02 policy: cap 40 lines; admitted cites and up to 5 per domain prioritized).\n\n## Appendix B – Safe Config & Policy Snippets\n\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins.\n",
+    "finalRejectedReport": "# SecLens Security Report\n\n- **Repository:** ITC2-AUS/SPO_Management (https://github.com/ITC2-AUS/SPO_Management/tree/staging)\n- **Ref:** staging\n- **Generated:** 2026-04-29T01:52:26.528Z\n- **Languages:** TypeScript\n- **Summary Risk:** Low — No findings were identified within the scanned scope.\n\n## Executive Summary\n\nNo Key Findings were admitted from structured candidates; 8 scoped observation(s) reference inspected excerpts. Coverage is limited by ingestion caps and omitted paths in this run. No cap-derived notes.\n\n## Inventory & Attack Surface\n\nSelected files: 87. Omitted files: 893. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Key Findings (Prioritized)\n\nNo findings were identified within the scanned scope.\n\n## Dependency & Supply Chain Notes\n\n- Reviewed scanned excerpt for dependency-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `functions/package-lock.json:1-324`\n\n## CI/CD & Operational Hardening\n\n- Reviewed scanned excerpt for cicd-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `.github/workflows/ci-staging.yml:1-93`\n\n## Web Security Controls\n\n- Reviewed scanned excerpt for validation-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `.env.template:1-27`\n\n## Docker/IaC Observations\n\nNot evidenced in scanned files included in this run. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Rate Limiting & Abuse Controls\n\n- Reviewed scanned excerpt for rate_limit-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `functions/src/utils/rateLimit.ts:1-160`\n\n## File Upload Security\n\nNot evidenced in scanned files included in this run. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Session Management\n\n- Scoped observation (finding candidate downscoped): evidence in scanned excerpts does not support a Key Finding at the proposed severity with the required concreteness or evidence pack. The createUserAndInvite function does not validate the roles provided for user creation against a known set of roles, potentially allowing unauthorized roles to be assigned.\n  - Evidence: `functions/src/createUserAndInvite.ts:1-320`\n- Reviewed scanned excerpt for auth-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `firebase.json:1-63`\n- Reviewed scanned excerpt for session-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `functions/src/__tests__/authorization.test.ts:1-159`\n- Reviewed scanned excerpt for invite-related paths in this run. No concrete vulnerability was admitted from this excerpt alone; see citation for what was inspected.\n  - Evidence: `functions/src/inviteManagement.ts:1-297`\n\n## Quick Wins (Do These First)\n\n1. For scanned `functions/src/inviteManagement.ts:1-297`, consider validating whether the invite management functions should implement stricter rate limiting to prevent abuse of the invite system\n2. For scanned `functions/src/createUserAndInvite.ts:1-320`, consider validating the scoped observation before applying hardening changes.\n3. For scanned `.env.template:1-27`, consider validating the scoped observation before applying hardening changes.\n4. For scanned `.github/workflows/ci-staging.yml:1-93`, consider validating the scoped observation before applying hardening changes.\n5. For scanned `firebase.json:1-63`, consider validating the scoped observation before applying hardening changes.\n6. For scanned `functions/package-lock.json:1-324`, consider validating the scoped observation before applying hardening changes.\n\n## Roadmap & Success Criteria\n\nNot evidenced in scanned files included in this run. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Confidence & Coverage\n\nNot evidenced in scanned files included in this run. Coverage is limited by ingestion caps and omitted paths in this run.\n\n## Appendix A – Evidence Index\n\n- `.env.template:1-27` *(also cited in report body)*\n- `.eslintrc.cjs:1-63`\n- `.github/workflows/ci-staging.yml:1-93` *(also cited in report body)*\n- `.github/workflows/deploy-staging-hosting.yml:1-62`\n- `docs/reviews/stage_5_release_readiness_and_validation_waiver.md:1-93`\n- `eslint.config.cjs:1-117`\n- `firebase.json:1-63` *(also cited in report body)*\n- `firestore.rules:1-273`\n- `functions/.eslintrc.js:1-34`\n- `functions/jest.config.js:1-14`\n- `functions/package-lock.json:1-324` *(also cited in report body)*\n- `functions/package.json:1-45`\n- `functions/src/__tests__/authorization.test.ts:1-159` *(also cited in report body)*\n- `functions/src/__tests__/claims.createUserAndInvite.test.ts:1-278`\n- `functions/src/__tests__/createUserAndInvite.resolveRoles.test.ts:1-106`\n- `functions/src/__tests__/invite.acceptance.test.ts:1-378`\n- `functions/src/__tests__/invite.resend.test.ts:1-283`\n- `functions/src/archiveEntity.ts:1-321`\n- `functions/src/auth/permissionPolicy.ts:1-345`\n- `functions/src/auth/resolveOrgRoleForWrite.ts:1-209`\n- `functions/src/auth/roleKeys.ts:1-73`\n- `functions/src/auth/sessionAllowedRoutes.ts:1-74`\n- `functions/src/config/runtimeEnv.ts:1-83`\n- `functions/src/createOrganisationAndAdmin.ts:1-276`\n- `functions/src/createUserAndInvite.ts:1-320` *(also cited in report body)*\n- `functions/src/departmentManagement.ts:1-219`\n- `functions/src/expireInvites.ts:1-125`\n- `functions/src/externalOrganisationManagement.ts:1-265`\n- `functions/src/functionManagement.ts:1-144`\n- `functions/src/index.ts:1-92`\n- `functions/src/inviteManagement.ts:1-297` *(also cited in report body)*\n- `functions/src/issueManagement.ts:1-10`\n- `functions/src/issues/upsertRequestValidation.ts:1-77`\n- `functions/src/issueSequencing.ts:1-154`\n- `functions/src/migrationCleanup.ts:1-156`\n- `functions/src/migrations/backfillOrgNormalisedFields.ts:1-122`\n- `functions/src/migrations/migrateSectorFinancialToFinancialServices.ts:1-57`\n- `functions/src/utils/rateLimit.ts:1-160` *(also cited in report body)*\n- `package-lock.json:1-318`\n- `package.json:1-111`\n\n*Appendix A truncated:* 40 of 87 line-addressable citations shown (Stage 02 policy: cap 40 lines; admitted cites and up to 5 per domain prioritized).\n\n## Appendix B – Safe Config & Policy Snippets\n\nNo standalone snippets were generated for this scan. See the fix snippets embedded in Key Findings and the actions in Quick Wins.\n"
+  }
+}

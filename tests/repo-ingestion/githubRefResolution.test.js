@@ -6,6 +6,20 @@ function refPayload(sha) {
 }
 
 describe('resolveScanRef (DEFECT-001)', () => {
+  it('resolves trusted default branch staging via git/ref endpoint', async () => {
+    const fetchWithAuth = vi.fn(async (url) => {
+      if (url.includes('/git/ref/heads/staging')) {
+        return { ok: true, status: 200, json: async () => refPayload('sha-staging') }
+      }
+      return { ok: false, status: 404, json: async () => ({}) }
+    })
+
+    const r = await resolveScanRef(fetchWithAuth, 'o', 'r', 'staging', { metadataResolved: true })
+    expect(r.scannedRef).toBe('staging')
+    expect(r.sha).toBe('sha-staging')
+    expect(r.degraded).toBe(false)
+  })
+
   it('uses only default branch when metadata resolved — no main/master when develop ref succeeds', async () => {
     const urls = []
     const fetchWithAuth = vi.fn(async (url) => {
@@ -45,6 +59,44 @@ describe('resolveScanRef (DEFECT-001)', () => {
     expect(urls.some((u) => u.includes('/git/ref/heads/master'))).toBe(false)
   })
 
+  it('uses commits fallback for same trusted ref when ref and branches endpoints fail', async () => {
+    const urls = []
+    const fetchWithAuth = vi.fn(async (url) => {
+      urls.push(url)
+      if (url.includes('/git/ref/heads/staging')) {
+        return { ok: false, status: 404, json: async () => ({}) }
+      }
+      if (url.includes('/branches/staging')) {
+        return { ok: false, status: 404, json: async () => ({}) }
+      }
+      if (url.includes('/commits/staging')) {
+        return { ok: true, status: 200, json: async () => ({ sha: 'sha-from-commits-api' }) }
+      }
+      return { ok: false, status: 404, json: async () => ({}) }
+    })
+
+    const r = await resolveScanRef(fetchWithAuth, 'o', 'r', 'staging', { metadataResolved: true })
+    expect(r.scannedRef).toBe('staging')
+    expect(r.sha).toBe('sha-from-commits-api')
+    expect(r.degraded).toBe(true)
+    expect(urls.some((u) => u.includes('/git/ref/heads/main'))).toBe(false)
+    expect(urls.some((u) => u.includes('/git/ref/heads/master'))).toBe(false)
+  })
+
+  it('resolves slash branch names using encoded or segmented variants', async () => {
+    const fetchWithAuth = vi.fn(async (url) => {
+      if (url.includes('/git/ref/heads/release/2026-04')) {
+        return { ok: true, status: 200, json: async () => refPayload('sha-release') }
+      }
+      return { ok: false, status: 404, json: async () => ({}) }
+    })
+
+    const r = await resolveScanRef(fetchWithAuth, 'o', 'r', 'release/2026-04', { metadataResolved: true })
+    expect(r.scannedRef).toBe('release/2026-04')
+    expect(r.sha).toBe('sha-release')
+    expect(r.degraded).toBe(false)
+  })
+
   it('throws when default branch cannot be resolved — does not fall back to main', async () => {
     const urls = []
     const fetchWithAuth = vi.fn(async (url) => {
@@ -53,7 +105,7 @@ describe('resolveScanRef (DEFECT-001)', () => {
     })
 
     await expect(resolveScanRef(fetchWithAuth, 'o', 'r', 'develop', { metadataResolved: true })).rejects.toThrow(
-      /default branch/
+      /selected branch\/ref/
     )
     expect(urls.some((u) => u.includes('main'))).toBe(false)
   })
