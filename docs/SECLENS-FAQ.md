@@ -77,6 +77,8 @@ The current app is built around GitHub repository URLs and GitHub access pattern
 
 Not necessarily. The app uses a deterministic file-selection strategy and bounded ingestion caps.
 
+Before those security-review counts are calculated, SecLens excludes non-germane files such as Markdown and plain-text documentation, PDFs, Office documents, images, and video or media assets. Those files are not counted as security-relevant files examined.
+
 ## What is the best way to use SecLens?
 
 Use it as:

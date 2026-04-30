@@ -111,4 +111,42 @@ describe('evidenceBundle', () => {
     expect(digest).toContain('Anchor-linked control evidence digest')
     expect(digest).toContain('app/api/users/route.ts')
   })
+
+  it('emits artifact-class breadth telemetry and rationale coverage', () => {
+    const caps = {
+      maxFiles: 100,
+      maxBytesPerFile: 500,
+      maxTotalBytes: 4000,
+      maxTreeEntries: 5000,
+    }
+
+    const selection = {
+      selected: [
+        { path: 'README.md', tier: 'tier3', reason: 'backfill_tier3' },
+        { path: 'package-lock.json', tier: 'tier1', reason: 'tier1_priority' },
+        { path: 'src/routes/users.ts', tier: 'tier2', reason: 'tier2_anchor_route' },
+      ],
+      omitted: [{ path: 'docs/architecture.pdf', reason: 'cap' }],
+    }
+
+    const orderedFiles = [
+      { path: 'README.md', content: '# docs' },
+      { path: 'package-lock.json', content: '{ "name": "fixture" }' },
+      { path: 'src/routes/users.ts', content: 'export const route = true' },
+    ]
+
+    const { apiIngestion } = buildEvidenceBundle(
+      { owner: 'o', name: 'n', defaultBranch: 'main', scannedRef: 'main' },
+      { totalFilesSeen: 4, filesEligibleByTier: { tier1: 1, tier2: 1, tier3: 2 } },
+      selection,
+      orderedFiles,
+      caps,
+      {}
+    )
+
+    expect(apiIngestion.artifactClassCounts.selected.documentation).toBe(1)
+    expect(apiIngestion.artifactClassCounts.selected.manifest_or_lockfile).toBe(1)
+    expect(apiIngestion.artifactClassCounts.omitted.optional_documents).toBe(1)
+    expect(apiIngestion.retrievalBreadth.rationaleCoverage.percent).toBe(100)
+  })
 })

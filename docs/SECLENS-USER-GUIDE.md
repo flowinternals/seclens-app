@@ -23,6 +23,8 @@ The scan output can include:
 - selected and omitted file counts
 - coverage notes and cap-hit indicators
 
+SecLens also performs a pre-scan eligibility pass. Non-germane files such as Markdown and plain-text documentation, PDFs, Office documents, images, and video or media assets are excluded before the security-relevant file counts are calculated.
+
 ## Supported repository types
 
 SecLens can be used with:
@@ -107,6 +109,7 @@ SecLens uses bounded ingestion and selection rules. This helps keep scans determ
 Users should understand:
 
 - not every file is guaranteed to be analyzed
+- non-germane documentation and media files are excluded from security-review counts up front
 - cap hits can affect scan depth
 - omitted paths matter when judging confidence
 - a clean report is not the same thing as a complete security audit

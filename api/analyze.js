@@ -465,6 +465,7 @@ export default async function handler(req, res) {
       reportContractVersion,
       reportValidation,
       telemetry: buildTelemetry(analysisResult, repoData, requestStartedAtMs),
+      ...(analysisResult.dashboard ? { dashboard: analysisResult.dashboard } : {}),
       repository: {
         url: repoData.url,
         owner: repoData.owner,

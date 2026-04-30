@@ -50,11 +50,11 @@ describe('multi-pass analysis planning', () => {
     )
   })
 
-  it('routes unmatched evidence into non-required misc supporting pass', () => {
+  it('does not create a separate misc supporting pass for unmatched evidence', () => {
     const bundle = mockBundle(['docs/architecture/overview.md'])
     const plan = buildMultiPassPlan(bundle)
     const misc = plan.passes.find((p) => p.family === 'misc_supporting_context')
-    expect(misc).toBeTruthy()
-    expect(misc.requiredHighRisk).toBe(false)
+    expect(misc).toBeUndefined()
+    expect(plan.analysisPassCount).toBe(0)
   })
 })

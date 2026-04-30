@@ -64,9 +64,10 @@ describe('fileSelection', () => {
     expect(classifyRepoPath('src/middleware/auth.ts').tier).toBe(2)
   })
 
-  it('classifies ordinary modules as tier 3', () => {
+  it('classifies ordinary modules and documentation/config artifacts as tier 3', () => {
     expect(classifyRepoPath('src/components/Button.tsx').tier).toBe(3)
     expect(classifyRepoPath('README.md').tier).toBe(3)
+    expect(classifyRepoPath('docs/security-review.docx').tier).toBe(3)
   })
 
   it('ignores vendor and dependency trees', () => {

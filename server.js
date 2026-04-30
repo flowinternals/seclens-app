@@ -357,6 +357,16 @@ async function registerRoutes() {
     })
     console.log('✓ Registered /api/analyze')
 
+    const scanJobsHandler = await import('./api/scan-jobs.js')
+    app.post('/api/scan-jobs', createVercelHandler(scanJobsHandler.default))
+    app.get('/api/scan-jobs', createVercelHandler(scanJobsHandler.default))
+    app.options('/api/scan-jobs', (req, res) => {
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+      res.status(204).end()
+    })
+    console.log('✓ Registered /api/scan-jobs')
+
     // Download endpoints
     const markdownHandler = await import('./api/download/markdown.js')
     app.post('/api/download/markdown', createVercelHandler(markdownHandler.default))

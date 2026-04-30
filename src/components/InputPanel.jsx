@@ -1,146 +1,165 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { sanitizeGitHubUrl } from '../utils/sanitize'
 import GlowingButton from './GlowingButton'
 
-function InputPanel({ onScan, isLoading }) {
-  const [url, setUrl] = useState('')
+const STORAGE_KEY = 'seclens-scan-form'
+
+function AnimatedLoadingLabel({ label }) {
+  const [dotCount, setDotCount] = useState(1)
+
+  useEffect(() => {
+    setDotCount(1)
+    const timer = window.setInterval(() => {
+      setDotCount((current) => (current >= 3 ? 1 : current + 1))
+    }, 420)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  return (
+    <span aria-live="polite" aria-atomic="true">
+      {label}
+      <span className="inline-block w-[1.2em] text-left">{'.'.repeat(dotCount)}</span>
+    </span>
+  )
+}
+
+function InputPanel({ onScan, isLoading, compact = false, loadingLabel = 'Scan running' }) {
+  const [url, setUrl] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}')
+      return typeof saved.url === 'string' ? saved.url : ''
+    } catch {
+      return ''
+    }
+  })
   const [error, setError] = useState('')
-  const [isPrivate, setIsPrivate] = useState(false)
-  const [token, setToken] = useState('')
+  const [isPrivate, setIsPrivate] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}')
+      return Boolean(saved.isPrivate)
+    } catch {
+      return false
+    }
+  })
+  const [token, setToken] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}')
+      return typeof saved.token === 'string' ? saved.token : ''
+    } catch {
+      return ''
+    }
+  })
 
-  const handleChange = (e) => {
-    const value = e.target.value
-    setUrl(value)
-    setError('')
-  }
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        url,
+        isPrivate,
+        token,
+      })
+    )
+  }, [url, isPrivate, token])
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    
+  const handleSubmit = (event) => {
+    event.preventDefault()
+
     if (!url.trim()) {
-      setError('Please enter a GitHub repository URL')
+      setError('Enter a GitHub repository URL to start the scan.')
       return
     }
 
     const sanitized = sanitizeGitHubUrl(url)
     if (!sanitized) {
-      setError('Please enter a valid GitHub repository URL (e.g., https://github.com/user/repo)')
+      setError('Use a valid GitHub repository URL, for example https://github.com/user/repo.')
       return
     }
 
-    onScan({ url: sanitized, githubToken: isPrivate && token.trim() ? token.trim() : undefined })
+    setError('')
+    onScan({
+      url: sanitized,
+      githubToken: isPrivate && token.trim() ? token.trim() : undefined,
+    })
   }
 
   return (
-    <div className="backdrop-blur-md rounded-lg shadow-xl border border-gray-700/30 p-6 h-full flex flex-col" style={{ backgroundColor: '#101012' }}>
-      <h2 className="text-xl font-semibold text-gray-100 mb-4">
-        Analyze Repository
-      </h2>
-      
-      <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
-        <div className="mb-4">
-          <label htmlFor="repo-url" className="block text-sm font-medium text-gray-300 mb-2">
+    <div className="seclens-panel px-5 py-5">
+      <div className="seclens-border-soft border-b pb-4">
+        <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Start a scan</p>
+        {!compact ? (
+          <>
+            <h2 className="seclens-text mt-1 text-lg font-semibold tracking-tight">Repository intake</h2>
+            <p className="seclens-muted mt-2 text-sm leading-6">
+              Launch a new dimension review and watch the dashboard populate as each security domain completes.
+            </p>
+          </>
+        ) : null}
+      </div>
+
+      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <div>
+          <label htmlFor="repo-url" className="seclens-text mb-2 block text-sm font-medium">
             Repository URL
           </label>
           <input
             id="repo-url"
             type="text"
             value={url}
-            onChange={handleChange}
+            onChange={(event) => {
+              setUrl(event.target.value)
+              setError('')
+            }}
             placeholder="https://github.com/user/repo"
-            className={`w-full px-4 py-2 border rounded-lg backdrop-blur-sm text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent ${
-              error ? 'border-red-500' : 'border-gray-600'
-            }`}
-            style={{ backgroundColor: '#333333' }}
+            className="seclens-input h-12 w-full rounded-[12px] px-4 text-[16px] outline-none transition"
             disabled={isLoading}
             aria-invalid={error ? 'true' : 'false'}
-            aria-describedby={error ? 'url-error' : undefined}
+            aria-describedby={error ? 'repo-url-error' : undefined}
           />
-          {error && (
-            <p
-              id="url-error"
-              className="mt-2 text-sm text-red-500"
-              role="alert"
-            >
+          {error ? (
+            <p id="repo-url-error" className="mt-2 text-sm text-[var(--sl-danger-text)]" role="alert">
               {error}
             </p>
-          )}
+          ) : null}
         </div>
 
-        <GlowingButton
-          type="submit"
-          disabled={isLoading}
-          className="w-full"
-          fullWidth
-          borderVariant="rainbow"
-          aria-label={isLoading ? 'Analyzing repository' : 'Scan Repository'}
-        >
-          {isLoading ? (
-            <>
-              <svg
-                className="h-5 w-5 text-cyan-200"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 12l2 2 4-4m5-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span className="inline-flex items-center gap-2">
-                <span>Scanning...</span>
-                <span
-                  className="h-2 w-2 rounded-full bg-cyan-300 motion-safe:animate-pulse"
-                  aria-hidden="true"
-                />
-              </span>
-            </>
-          ) : (
-            'Scan Repository'
-          )}
-        </GlowingButton>
+        <label className="seclens-surface seclens-text flex items-center gap-3 rounded-[12px] px-4 py-3 text-sm">
+          <input
+            type="checkbox"
+            checked={isPrivate}
+            onChange={(event) => setIsPrivate(event.target.checked)}
+            disabled={isLoading}
+            className="h-4 w-4"
+          />
+          Private repository
+        </label>
 
-        {/* Private repo opt-in */}
-        <div className="mt-4 space-y-3">
-          <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-300">
+        {isPrivate ? (
+          <div>
+            <label htmlFor="gh-token" className="seclens-text mb-2 block text-sm font-medium">
+              GitHub token
+            </label>
             <input
-              aria-label="Private Repository"
-              type="checkbox"
-              checked={isPrivate}
-              onChange={(e) => setIsPrivate(e.target.checked)}
+              id="gh-token"
+              type="text"
+              value={token}
+              onChange={(event) => setToken(event.target.value)}
+              placeholder="ghp_... or github_pat_..."
+              className="seclens-input h-12 w-full rounded-[12px] px-4 text-[16px] outline-none transition"
               disabled={isLoading}
-              className="h-4 w-4"
             />
-            Private Repo?
-          </label>
+          </div>
+        ) : null}
 
-          {isPrivate && (
-            <div>
-              <label htmlFor="gh-token" className="block text-sm font-medium text-gray-300 mb-2">
-                GitHub Token (Read access)
-              </label>
-              <input
-                id="gh-token"
-                type="text"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="ghp_... or github_pat_..."
-                className="w-full px-4 py-2 border rounded-lg backdrop-blur-sm text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent border-gray-600"
-                style={{ backgroundColor: '#333333' }}
-                disabled={isLoading}
-              />
-            </div>
-          )}
-        </div>
+        <GlowingButton type="submit" disabled={isLoading} fullWidth borderVariant="rainbow" aria-label="Run scan">
+          {isLoading ? <AnimatedLoadingLabel label={loadingLabel} /> : 'Run scan'}
+        </GlowingButton>
       </form>
     </div>
   )
 }
 
 export default InputPanel
-
