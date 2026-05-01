@@ -141,9 +141,10 @@ function GlowingButton({
   'aria-label': ariaLabel,
   fullWidth,
   borderVariant,
+  title,
   ...props
 }) {
-  return (
+  const button = (
     <StyledButton
       type={type}
       disabled={disabled}
@@ -152,12 +153,23 @@ function GlowingButton({
       aria-label={ariaLabel}
       style={fullWidth ? { width: '100%' } : undefined}
       {...props}
+      title={disabled ? undefined : title}
     >
       <StarBottom $borderVariant={borderVariant} />
       <StarTop $borderVariant={borderVariant} />
       <ButtonContent>{children}</ButtonContent>
     </StyledButton>
   )
+
+  if (title && disabled) {
+    return (
+      <span className="inline-flex max-w-full shrink-0" title={title}>
+        {button}
+      </span>
+    )
+  }
+
+  return button
 }
 
 export default GlowingButton

@@ -24,14 +24,14 @@ These docs are written for:
 - founders or product owners reviewing codebase risk at a high level
 - consultants or internal reviewers preparing a security snapshot
 
-## Important usage notes
+## Summary
 
 - SecLens analyzes GitHub repositories on demand.
 - Private repositories may require a GitHub token with read access.
-- Reports are evidence-bound to the files selected for the scan.
+- Reports are **evidence-bound** to the files selected for that run (**Stage 02** ingestion with configurable caps); they are launch-readiness style snapshots, not proof of full-repo coverage.
+- Successful API responses can include a **correlation ID** and **token usage** telemetry (useful when reporting issues to operators).
 - Exports are available in Markdown, text, and PDF formats.
-- These docs describe the current application behavior and intended user workflow.
 
-## Safety note
+## Scope of this documentation
 
-This documentation intentionally does not contain secrets, live credentials, or private operational values. Keep tokens, keys, and populated environment values out of docs and source control.
+All pages in this `docs/` folder are self-contained for **this** repository. They link only to other files in the same folder and do not point to documentation, design archives, or specs kept outside the project.

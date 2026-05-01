@@ -8,12 +8,16 @@ function DownloadButton({ format, onDownload, disabled }) {
   }
 
   const formatInfo = formats[format]
+  const title = disabled
+    ? 'Wait for the current download to finish before starting another'
+    : `Download consolidated report as ${formatInfo.label} (.${formatInfo.ext})`
 
   return (
     <GlowingButton
       onClick={() => onDownload(format)}
       disabled={disabled}
       aria-label={`Download as ${formatInfo.label}`}
+      title={title}
     >
       <span>{formatInfo.label}</span>
     </GlowingButton>

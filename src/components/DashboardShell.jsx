@@ -2,16 +2,8 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useEffect, useMemo, useState } from 'react'
 import { DIMENSION_CATALOG } from '../../lib/shared/dimensions'
-import InputPanel from './InputPanel'
-
-const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'dimensions', label: 'Dimensions' },
-  { id: 'report', label: 'Report' },
-  { id: 'evidence', label: 'Evidence' },
-  { id: 'exports', label: 'Exports' },
-]
-
+import { getDefaultDocsSlug, getSeclensDocsEntries } from '../seclensDocsManifest.js'
+import { IconChartConfidence, IconFiles, IconGithubRepo } from './SecLensIcons'
 const STATUS_LABELS = {
   healthy: 'Healthy',
   attention: 'Attention',
@@ -40,6 +32,36 @@ const MAX_RUNNING_ESTIMATE = 96
 
 function cn(...parts) {
   return parts.filter(Boolean).join(' ')
+}
+
+function formatElapsedHms(elapsedMs) {
+  const totalSeconds = Math.max(0, Math.floor(elapsedMs / 1000))
+  const h = Math.floor(totalSeconds / 3600)
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const s = totalSeconds % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+function catalogOrderForDimensionId(dimensionId) {
+  const definition = DIMENSION_CATALOG.find((item) => item.id === dimensionId)
+  return definition?.order ?? Number.MAX_SAFE_INTEGER
+}
+
+function isTerminalDimensionProgress(progress) {
+  const normalized = String(progress || '').toLowerCase()
+  return normalized === 'ready' || normalized === 'partial' || normalized === 'failed'
+}
+
+/** True when this dimension may show as complete in the running scan list (catalog order, top to bottom). */
+function canRevealCompletionInOrder(dimension, dimensions) {
+  if (!isTerminalDimensionProgress(dimension.progress)) return false
+  const selfOrder = catalogOrderForDimensionId(dimension.dimensionId)
+  for (const other of dimensions) {
+    const otherOrder = catalogOrderForDimensionId(other.dimensionId)
+    if (otherOrder >= selfOrder) continue
+    if (!isTerminalDimensionProgress(other.progress)) return false
+  }
+  return true
 }
 
 function dimensionIconTone(icon) {
@@ -158,18 +180,6 @@ function DimensionGlyph({ icon }) {
   )
 }
 
-function formatTimestamp(value) {
-  if (!value) return 'No scan yet'
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(new Date(value))
-  } catch {
-    return value
-  }
-}
-
 function normalizeReportMarkdown(input) {
   if (!input) return input
   const trimmed = String(input).trim()
@@ -191,6 +201,66 @@ function progressTone(progress) {
   }
   if (progress === 'failed') return 'text-[var(--sl-danger-text)] bg-[var(--sl-danger-bg)]'
   return 'seclens-muted bg-[var(--sl-panel-muted)]'
+}
+
+function ProgressStatusGlyph({ progress }) {
+  const p = String(progress || 'queued').toLowerCase()
+  const shared = {
+    className: 'h-[14px] w-[14px] shrink-0',
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2.1,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': true,
+  }
+  if (p === 'ready') {
+    return (
+      <svg {...shared}>
+        <path d="M20 6L9 17l-5-5" />
+      </svg>
+    )
+  }
+  if (p === 'partial') {
+    return (
+      <svg {...shared}>
+        <path d="M10.29 3.86L1.82 18a1 1 0 00.86 1.5h18.64a1 1 0 00.86-1.5L13.71 3.86a1 1 0 00-1.72 0z" />
+        <path d="M12 9v4M12 17h.01" />
+      </svg>
+    )
+  }
+  if (p === 'failed') {
+    return (
+      <svg {...shared}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M15 9l-6 6M9 9l6 6" />
+      </svg>
+    )
+  }
+  if (p === 'reviewing') {
+    return (
+      <svg {...shared}>
+        <circle cx="12" cy="12" r="3.2" />
+        <path d="M12 2v2.5M12 19.5V22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2 12h2.5M19.5 12H22M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" opacity="0.45" />
+      </svg>
+    )
+  }
+  if (p === 'synthesizing') {
+    return (
+      <svg {...shared}>
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h7" />
+        <path d="M14 2v6h6" />
+        <path d="M8 13h5M8 17h4" />
+      </svg>
+    )
+  }
+  return (
+    <svg {...shared}>
+      <circle cx="12" cy="12" r="9" opacity="0.35" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  )
 }
 
 function confidenceTone(confidence) {
@@ -215,22 +285,99 @@ function overallStatusCopy(status) {
 function summaryCards(summary) {
   const totals = summary?.totals || {}
   return [
-    { label: 'Dimensions Reviewed', value: `${totals.dimensionsReviewed || 0}/${totals.totalDimensions || 0}`, accent: 'blue' },
-    { label: 'Findings', value: totals.findingsAdmitted || 0, accent: 'red' },
-    { label: 'Controls', value: totals.observedControls || 0, accent: 'green' },
-    { label: 'Unverified', value: totals.unverifiedControls || 0, accent: 'amber' },
-    { label: 'Files Reviewed', value: totals.totalFilesExamined || 0, accent: 'violet' },
-    { label: 'High Confidence', value: totals.highConfidenceDimensions || 0, accent: 'pink' },
+    {
+      label: 'Dimensions Reviewed',
+      value: `${totals.dimensionsReviewed || 0}/${totals.totalDimensions || 0}`,
+      accent: 'blue',
+      tooltip: 'How many planned security dimensions finished review in this run.',
+    },
+    {
+      label: 'Findings',
+      value: totals.findingsAdmitted || 0,
+      accent: 'red',
+      tooltip: 'Confirmed security issues admitted with evidence citations.',
+    },
+    {
+      label: 'Controls',
+      value: totals.observedControls || 0,
+      accent: 'green',
+      tooltip: 'Security controls observed as present in reviewed code.',
+    },
+    {
+      label: 'Unverified',
+      value: totals.unverifiedControls || 0,
+      accent: 'amber',
+      tooltip: 'Potential controls that were seen but not proven strongly enough.',
+    },
+    {
+      label: 'Files Reviewed',
+      value: totals.totalFilesExamined || 0,
+      accent: 'violet',
+      tooltip: 'Unique security-relevant files examined in this run.',
+    },
+    {
+      label: 'High Confidence',
+      value: totals.highConfidenceDimensions || 0,
+      accent: 'pink',
+      tooltip: 'Dimensions with high confidence based on retained evidence quality and coverage.',
+    },
   ]
 }
 
-function accentClass(accent) {
-  if (accent === 'red') return 'from-[#ff5b4f]/18 to-transparent text-[var(--sl-danger-text)]'
-  if (accent === 'green') return 'from-[#4dbd74]/18 to-transparent text-[var(--sl-success-text)]'
-  if (accent === 'amber') return 'from-[#de8b1d]/18 to-transparent text-[var(--sl-warn-text)]'
-  if (accent === 'violet') return 'from-[#7c6cf2]/18 to-transparent text-[#7c6cf2]'
-  if (accent === 'pink') return 'from-[#de1d8d]/18 to-transparent text-[#de1d8d]'
-  return 'from-[#0a72ef]/18 to-transparent text-[var(--sl-info-text)]'
+/** Visual treatment for idle-state posture metric tiles (six-up grid). */
+function postureSummaryMetricSkin(accent) {
+  if (accent === 'red') {
+    return {
+      outer:
+        'bg-gradient-to-br from-[#ff5b4f]/75 via-[#ff5b4f]/28 to-[#5c1f24]/35 shadow-[0_6px_28px_-6px_rgba(255,91,79,0.35)]',
+      inner: 'bg-gradient-to-br from-[rgba(255,91,79,0.14)] via-[var(--sl-panel-muted)] to-[var(--sl-panel)]',
+      bar: 'bg-[#ff5b4f] shadow-[0_0_12px_rgba(255,91,79,0.45)]',
+      value: 'text-[var(--sl-danger-text)]',
+    }
+  }
+  if (accent === 'green') {
+    return {
+      outer:
+        'bg-gradient-to-br from-[#4dbd74]/70 via-[#4dbd74]/25 to-[#143d24]/35 shadow-[0_6px_28px_-6px_rgba(77,189,116,0.28)]',
+      inner: 'bg-gradient-to-br from-[rgba(77,189,116,0.12)] via-[var(--sl-panel-muted)] to-[var(--sl-panel)]',
+      bar: 'bg-[#4dbd74] shadow-[0_0_12px_rgba(77,189,116,0.35)]',
+      value: 'text-[var(--sl-success-text)]',
+    }
+  }
+  if (accent === 'amber') {
+    return {
+      outer:
+        'bg-gradient-to-br from-[#f0a020]/75 via-[#de8b1d]/22 to-[#4a3208]/40 shadow-[0_6px_28px_-6px_rgba(222,139,29,0.28)]',
+      inner: 'bg-gradient-to-br from-[rgba(222,139,29,0.12)] via-[var(--sl-panel-muted)] to-[var(--sl-panel)]',
+      bar: 'bg-[#de8b1d] shadow-[0_0_12px_rgba(222,139,29,0.35)]',
+      value: 'text-[var(--sl-warn-text)]',
+    }
+  }
+  if (accent === 'violet') {
+    return {
+      outer:
+        'bg-gradient-to-br from-[#9d8cff]/65 via-[#7c6cf2]/28 to-[#2a2454]/45 shadow-[0_6px_28px_-6px_rgba(124,108,242,0.3)]',
+      inner: 'bg-gradient-to-br from-[rgba(124,108,242,0.12)] via-[var(--sl-panel-muted)] to-[var(--sl-panel)]',
+      bar: 'bg-[#9d8cff] shadow-[0_0_12px_rgba(157,140,255,0.35)]',
+      value: 'seclens-text',
+    }
+  }
+  if (accent === 'pink') {
+    return {
+      outer:
+        'bg-gradient-to-br from-[#ff5f9a]/65 via-[#de1d8d]/25 to-[#4a1535]/42 shadow-[0_6px_28px_-6px_rgba(222,29,141,0.28)]',
+      inner: 'bg-gradient-to-br from-[rgba(222,29,141,0.11)] via-[var(--sl-panel-muted)] to-[var(--sl-panel)]',
+      bar: 'bg-[#ff74c8] shadow-[0_0_12px_rgba(255,116,200,0.35)]',
+      value: 'seclens-text',
+    }
+  }
+  return {
+    outer:
+      'bg-gradient-to-br from-[#56ccf2]/65 via-[#0a72ef]/32 to-[#0c2248]/45 shadow-[0_6px_28px_-6px_rgba(10,114,239,0.32)]',
+    inner: 'bg-gradient-to-br from-[rgba(86,204,242,0.1)] via-[var(--sl-panel-muted)] to-[var(--sl-panel)]',
+    bar: 'bg-[#56ccf2] shadow-[0_0_14px_rgba(86,204,242,0.4)]',
+    value: 'text-[var(--sl-info-text)]',
+  }
 }
 
 function stateBar(summary) {
@@ -247,6 +394,43 @@ function stateBar(summary) {
   }))
 }
 
+/** Traffic-light status counts; rendered directly under Start a scan on the dashboard. */
+export function TrafficLightReportSection({ dashboard, className }) {
+  const summary = dashboard?.summary
+  const states = stateBar(summary)
+  return (
+    <article className={cn('seclens-panel flex min-h-0 flex-col px-6 py-6', className)} aria-label="Traffic light report">
+      <div className="mb-3 flex shrink-0 items-center justify-between">
+        <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Traffic Light Panel</p>
+      </div>
+      <div className="grid min-h-0 flex-1 grid-cols-2 gap-3 content-start">
+        {states.map((item) => (
+          <div
+            key={item.id}
+            className="rounded-[18px] border border-[var(--sl-border-soft)] bg-[var(--sl-panel-muted)] px-4 py-5"
+          >
+            <div className="mx-auto flex w-[84px] flex-col items-center gap-3 rounded-[999px] bg-[rgba(8,10,14,0.92)] px-3 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <span
+                className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 text-[25px] font-semibold leading-none text-white tabular-nums shadow-[0_0_24px_rgba(0,0,0,0.35)]"
+                style={{
+                  background: item.color,
+                  boxShadow: `0 0 20px ${item.color}55, inset 0 1px 2px rgba(255,255,255,0.24)`,
+                }}
+              >
+                {item.count}
+              </span>
+            </div>
+            <div className="mt-4 text-center">
+              <p className="seclens-text text-[15px] font-medium leading-6">{item.label}</p>
+              <div className="mx-auto mt-2 h-1.5 w-14 rounded-full" style={{ background: item.color }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </article>
+  )
+}
+
 function confidenceBars(summary) {
   const totals = summary?.totals || {}
   const max = Math.max(1, totals.highConfidenceDimensions || 0, totals.mediumConfidenceDimensions || 0, totals.lowConfidenceDimensions || 0)
@@ -260,118 +444,47 @@ function confidenceBars(summary) {
   }))
 }
 
-function Rail({
-  activeView,
-  onViewChange,
-  status,
-  timestamp,
-  reportReady,
-  onScan,
-  isScanning,
-  scanButtonLabel,
-  theme,
-  onToggleTheme,
-  onRefresh,
-  canRefresh,
-  onExport,
-  canExport,
-}) {
-  return (
-    <aside className="w-full shrink-0 xl:w-[320px] xl:min-w-[320px]">
-      <div className="seclens-panel sticky top-4 overflow-hidden">
-        <div className="seclens-accent-blue px-5 py-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">SecLens</p>
-              <h2 className="seclens-text mt-2 text-[24px] font-semibold tracking-tight">Launch Dashboard</h2>
-            </div>
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="seclens-button-secondary h-10 px-3"
-            >
-              {theme === 'dark' ? 'Light' : 'Dark'}
-            </button>
-          </div>
-        </div>
-
-        <div className="px-3 py-3">
-          <div className="space-y-3">
-            <InputPanel onScan={onScan} isLoading={isScanning} loadingLabel={scanButtonLabel} compact />
-
-            <div className="seclens-panel px-4 py-4">
-              <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Actions</p>
-              <div className="mt-3 space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={onRefresh} disabled={!canRefresh} className="seclens-button-secondary h-11 justify-center">
-                    Refresh
-                  </button>
-                  <button type="button" onClick={onExport} disabled={!canExport} className="seclens-button-secondary h-11 justify-center">
-                    Export
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <nav className="seclens-panel p-2">
-              <ul className="space-y-1">
-                {NAV_ITEMS.map((item) => (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      onClick={() => onViewChange(item.id)}
-                      className={cn(
-                        'w-full rounded-[12px] px-3 py-3 text-left text-sm transition-colors',
-                        activeView === item.id ? 'bg-[var(--sl-text)] text-[var(--sl-panel)]' : 'seclens-muted hover:bg-[var(--sl-panel-muted)]'
-                      )}
-                    >
-                      {item.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
-              <div className="seclens-panel px-4 py-4">
-                <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Scan Status</p>
-                <p className="seclens-text mt-2 text-sm font-medium">{status}</p>
-                <p className="seclens-muted mt-1 text-sm">{formatTimestamp(timestamp)}</p>
-              </div>
-              <div className="seclens-panel px-4 py-4">
-                <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Report Gate</p>
-                <p className="seclens-text mt-2 text-sm">{reportReady ? 'Ready to export' : 'Waiting on review completion'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </aside>
-  )
-}
-
-function RunningPostureEstimate({ dashboard }) {
-  const dimensions = dashboard?.dimensions || []
+function ScanProgressReportColumn({ dashboard }) {
+  const dimensions = useMemo(() => {
+    const list = [...(dashboard?.dimensions || [])]
+    list.sort((left, right) => catalogOrderForDimensionId(left.dimensionId) - catalogOrderForDimensionId(right.dimensionId))
+    return list
+  }, [dashboard?.dimensions])
   const dimensionRuntime = dashboard?.dimensionRuntime || {}
-  const runState = String(dashboard?.runState || '').toLowerCase()
   const [nowMs, setNowMs] = useState(() => Date.now())
+  const scanStartedMs = useMemo(() => {
+    const parsed = Date.parse(dashboard?.startedAt || '')
+    return Number.isNaN(parsed) ? null : parsed
+  }, [dashboard?.startedAt])
+  const scanCompletedMs = useMemo(() => {
+    const parsed = Date.parse(dashboard?.completedAt || '')
+    return Number.isNaN(parsed) ? null : parsed
+  }, [dashboard?.completedAt])
+  const runStateLower = String(dashboard?.runState || '').toLowerCase()
+  const runFinished = runStateLower === 'completed' || runStateLower === 'failed'
+  const runCompleted = runStateLower === 'completed'
 
   useEffect(() => {
+    if (runFinished && scanCompletedMs != null) return
     const timer = window.setInterval(() => {
       setNowMs(Date.now())
     }, 1000)
     return () => window.clearInterval(timer)
-  }, [])
+  }, [runFinished, scanCompletedMs])
 
-  const reviewedCount = dimensions.filter(
-    (dimension) => dimension.progress === 'ready' || dimension.progress === 'partial' || dimension.progress === 'failed'
-  ).length
+  const doneIds = dimensions
+    .filter((dimension) => canRevealCompletionInOrder(dimension, dimensions))
+    .map((dimension) => dimension.dimensionId)
+  const isHoldingAtPreComplete = !runCompleted && doneIds.length === dimensions.length && dimensions.length > 0
+  const heldDimensionId = isHoldingAtPreComplete ? dimensions[dimensions.length - 1].dimensionId : null
+  const completedCount = isHoldingAtPreComplete ? Math.max(0, doneIds.length - 1) : doneIds.length
+  const elapsedEndMs = runFinished && scanCompletedMs != null ? scanCompletedMs : nowMs
+  const elapsedHms =
+    scanStartedMs != null ? formatElapsedHms(Math.max(0, elapsedEndMs - scanStartedMs)) : formatElapsedHms(0)
 
   const estimateFromRuntime = (dimension) => {
     const progress = String(dimension.progress || '').toLowerCase()
     if (progress === 'ready' || progress === 'partial' || progress === 'failed') return 100
-    if (runState === 'synthesizing') return 100
     if (progress !== 'reviewing') return 0
 
     const runtime = dimensionRuntime?.[dimension.dimensionId] || null
@@ -386,29 +499,48 @@ function RunningPostureEstimate({ dashboard }) {
   }
 
   return (
-    <section className="mb-5 space-y-4">
-      <div className="seclens-panel px-4 py-4">
-        <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Posture</p>
-        <div className="mt-2 flex items-center justify-between gap-4">
-          <h2 className="seclens-text text-[20px] font-semibold tracking-tight">Dimension Review In Progress</h2>
+    <article className="seclens-panel flex min-h-[240px] flex-1 flex-col overflow-hidden">
+      <div className="seclens-border-soft shrink-0 border-b px-6 py-5">
+        <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Progress report</p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
+          <h2 className="seclens-text text-[18px] font-semibold tracking-tight sm:text-[20px]">Dimension review in progress</h2>
           <p className="seclens-muted text-xs tabular-nums">
-            Reviewed dimensions: {reviewedCount}/{dimensions.length || 0}
+            <span>
+              Completed: {completedCount}/{dimensions.length || 0}
+            </span>
+            <span className="mx-1.5" aria-hidden>
+              ·
+            </span>
+            <span title={runFinished ? 'Total run duration for this scan' : 'Elapsed since this scan started'}>{elapsedHms}</span>
           </p>
         </div>
-        <p className="seclens-muted mt-0.5 text-[11px]">
-          Estimates are replaced by final posture cards when scan completes.
+        <p className="seclens-muted mt-1 text-[11px] leading-relaxed">
+          Dimensions complete in catalog order while the scan runs; estimates are replaced by final numbers when each dimension
+          finishes.
         </p>
-
-        <div className="mt-3 space-y-1.5">
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+        <div className="space-y-1.5">
           {dimensions.map((dimension) => {
             const definition = DIMENSION_CATALOG.find((item) => item.id === dimension.dimensionId)
-            const isDone = dimension.progress === 'ready' || dimension.progress === 'partial' || dimension.progress === 'failed'
-            const estimate = isDone ? 100 : estimateFromRuntime(dimension)
+            const isDone = canRevealCompletionInOrder(dimension, dimensions) && dimension.dimensionId !== heldDimensionId
+            const estimate = isDone
+              ? 100
+              : dimension.dimensionId === heldDimensionId
+                ? 99
+              : isTerminalDimensionProgress(dimension.progress)
+                ? 0
+                : estimateFromRuntime(dimension)
             return (
               <div key={dimension.dimensionId} className="rounded-[11px] border border-[var(--sl-border-soft)] px-2.5 py-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] bg-[var(--sl-panel-muted)] seclens-text">
+                    <span
+                      className={cn(
+                        'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]',
+                        dimensionIconTone(definition?.icon)
+                      )}
+                    >
                       <DimensionGlyph icon={definition?.icon} />
                     </span>
                     <div className="min-w-0">
@@ -417,10 +549,10 @@ function RunningPostureEstimate({ dashboard }) {
                   </div>
                   <span className="seclens-text shrink-0 text-[12px] tabular-nums">{estimate}%</span>
                 </div>
-                <div className="mt-1.5 h-1 rounded-full bg-[var(--sl-panel-muted)]">
+                <div className="mt-1.5 h-1 w-full min-w-0 rounded-full bg-[var(--sl-panel-muted)]">
                   <div
                     className={cn(
-                      'h-1 rounded-full transition-[width] duration-700 ease-out',
+                      'h-1 max-w-full rounded-full transition-[width] duration-700 ease-out',
                       isDone ? 'bg-gradient-to-r from-[#1f7a3f] to-[#4dbd74]' : 'bg-gradient-to-r from-[#0a72ef] via-[#56ccf2] to-[#de1d8d]'
                     )}
                     style={{ width: `${estimate}%` }}
@@ -431,204 +563,342 @@ function RunningPostureEstimate({ dashboard }) {
           })}
         </div>
       </div>
-    </section>
+    </article>
   )
 }
 
-function PostureHero({ dashboard, isScanning }) {
-  const summary = dashboard?.summary
-  if (isScanning) {
-    return <RunningPostureEstimate dashboard={dashboard} />
-  }
+function IdleProgressReportColumn({ dashboard, dimensions }) {
+  const ordered = useMemo(() => {
+    const list = [...(dimensions || [])]
+    list.sort((left, right) => catalogOrderForDimensionId(left.dimensionId) - catalogOrderForDimensionId(right.dimensionId))
+    return list
+  }, [dimensions])
 
+  const scanStartedMs = useMemo(() => {
+    const parsed = Date.parse(dashboard?.startedAt || '')
+    return Number.isNaN(parsed) ? null : parsed
+  }, [dashboard?.startedAt])
+  const scanCompletedMs = useMemo(() => {
+    const parsed = Date.parse(dashboard?.completedAt || '')
+    return Number.isNaN(parsed) ? null : parsed
+  }, [dashboard?.completedAt])
+  const persistedRunDuration =
+    scanStartedMs != null && scanCompletedMs != null ? formatElapsedHms(Math.max(0, scanCompletedMs - scanStartedMs)) : null
+
+  const completedCount = useMemo(
+    () => ordered.filter((dimension) => canRevealCompletionInOrder(dimension, ordered)).length,
+    [ordered]
+  )
+
+  return (
+    <article className="seclens-panel flex min-h-[240px] flex-1 flex-col overflow-hidden">
+      <div className="seclens-border-soft shrink-0 border-b px-6 py-5">
+        <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Progress report</p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
+          <h2 className="seclens-text text-[18px] font-semibold tracking-tight sm:text-[20px]">Dimension status</h2>
+          {persistedRunDuration ? (
+            <p className="seclens-muted text-xs tabular-nums">
+              <span>
+                Completed: {completedCount}/{ordered.length || 0}
+              </span>
+              <span className="mx-1.5" aria-hidden>
+                ·
+              </span>
+              <span title="Total run duration for the latest scan">{persistedRunDuration}</span>
+            </p>
+          ) : null}
+        </div>
+        <p className="seclens-muted mt-1 text-sm leading-relaxed">Per-dimension progress from the latest run.</p>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+        <div className="space-y-2">
+          {ordered.map((dimension) => {
+            const definition = DIMENSION_CATALOG.find((item) => item.id === dimension.dimensionId)
+            return (
+              <div
+                key={dimension.dimensionId}
+                className="flex items-center justify-between gap-3 rounded-[11px] border border-[var(--sl-border-soft)] px-3 py-2.5"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    className={cn(
+                      'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]',
+                      dimensionIconTone(definition?.icon)
+                    )}
+                  >
+                    <DimensionGlyph icon={definition?.icon} />
+                  </span>
+                  <p className="seclens-text truncate text-[13px] font-medium">{dimension.label}</p>
+                </div>
+                <span
+                  className={cn(
+                    'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-medium',
+                    progressTone(dimension.progress)
+                  )}
+                >
+                  <ProgressStatusGlyph progress={dimension.progress} />
+                  {PROGRESS_CHIP_LABELS[dimension.progress]}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function CoverageConfidenceColumn({ dashboard, summary }) {
   const ingestion = dashboard?.telemetry?.ingestion || null
-  const states = stateBar(summary)
   const confidences = confidenceBars(summary)
   const totalFilesExamined = ingestion?.selectedFileCount ?? summary?.totals?.totalFilesExamined ?? 0
   const excludedNonGermane = ingestion?.nonGermaneExcludedCount ?? 0
   const eligibleFiles = ingestion?.totalEligibleFiles ?? totalFilesExamined
   const filesWithNoIssue = summary?.totals?.filesExaminedWithoutIssue ?? 0
+
+  return (
+    <article className="seclens-panel flex h-full min-h-[260px] flex-col px-6 py-6">
+      <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Coverage & Confidence</p>
+      <div className="mt-5 flex min-h-0 flex-1 flex-col justify-between gap-5">
+        <div>
+          <div className="mb-2 flex items-center justify-between gap-2 text-sm">
+            <span className="seclens-muted inline-flex min-w-0 items-center gap-2">
+              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] bg-[color:rgba(10,114,239,0.12)] text-[var(--sl-info-text)]">
+                <IconFiles className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 leading-snug">Security-relevant files examined</span>
+            </span>
+            <span className="seclens-text shrink-0 tabular-nums">{totalFilesExamined}</span>
+          </div>
+          <div className="h-3 rounded-full bg-[var(--sl-panel-muted)]">
+            <div
+              className="h-3 rounded-full bg-gradient-to-r from-[#0a72ef] via-[#56ccf2] to-[#de1d8d]"
+              style={{
+                width: `${Math.min(
+                  100,
+                  ((totalFilesExamined / Math.max(1, eligibleFiles + (summary?.totals?.omittedFilesRelevant || 0))) * 100)
+                )}%`,
+              }}
+            />
+          </div>
+          <p className="seclens-muted mt-2 text-sm">
+            {filesWithNoIssue} reviewed files did not surface a confirmed issue in this run.
+          </p>
+          {excludedNonGermane > 0 ? (
+            <p className="seclens-muted mt-2 text-sm">
+              {excludedNonGermane} non-relevant files were left out of the security review counts.
+            </p>
+          ) : null}
+        </div>
+
+        <div className="space-y-3">
+          <div className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.1em] seclens-subtle">
+            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] bg-[color:rgba(222,29,141,0.12)] text-[#de1d8d]">
+              <IconChartConfidence className="h-4 w-4" />
+            </span>
+            Confidence mix
+          </div>
+          {confidences.map((item) => (
+            <div key={item.label}>
+              <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                <span className="seclens-muted inline-flex items-center gap-2">
+                  <span className="h-2 w-2 shrink-0 rounded-full ring-2 ring-[var(--sl-border-soft)]" style={{ background: item.color }} aria-hidden />
+                  {item.label} confidence
+                </span>
+                <span className="seclens-text tabular-nums">{item.count}</span>
+              </div>
+              <div className="h-2 rounded-full bg-[var(--sl-panel-muted)]">
+                <div className="h-2 rounded-full" style={{ width: item.width, background: item.color }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="seclens-accent-pink rounded-[14px] px-4 py-4">
+          <p className="seclens-text text-sm leading-6">
+            {(summary?.totals?.findingsAdmitted || 0) > 0
+              ? 'Confirmed issues are backed by cited evidence and paired with concrete remediation guidance.'
+              : 'No confirmed launch-impacting issues were admitted in this run across the reviewed dimensions.'}
+          </p>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function PostureHero({ dashboard, isScanning }) {
+  const summary = dashboard?.summary
+  const rawDimensions = dashboard?.dimensions || []
+  const orderedForScan = useMemo(() => {
+    const list = [...(dashboard?.dimensions || [])]
+    list.sort((left, right) => catalogOrderForDimensionId(left.dimensionId) - catalogOrderForDimensionId(right.dimensionId))
+    return list
+  }, [dashboard?.dimensions])
+
+  const repo = dashboard?.repository
+  const repoLabel =
+    (repo && typeof repo === 'object' && (repo.displayName || repo.url || [repo.owner, repo.name].filter(Boolean).join('/'))) ||
+    'Repository'
+
   const repoProfile = dashboard?.repoProfile || null
   const profileList = Array.isArray(repoProfile?.profiles) ? repoProfile.profiles : []
-  const applicabilityRows = (dashboard?.dimensions || [])
-    .map((dimension) => ({
-      id: dimension.dimensionId,
-      label: dimension.shortLabel || dimension.label,
-      weightPct: Math.round((dimension?.applicability?.weight || 0) * 100),
-      status: dimension?.applicability?.status || 'applicable',
-    }))
+  const applicabilityRows = rawDimensions
+    .map((dimension) => {
+      const serverWeightPct = Math.round((dimension?.applicability?.weight || 0) * 100)
+      const serverStatus = dimension?.applicability?.status || 'applicable'
+      const pendingApplicabilityUi =
+        isScanning && !isTerminalDimensionProgress(dimension.progress)
+      return {
+        id: dimension.dimensionId,
+        label: dimension.shortLabel || dimension.label,
+        weightPct: pendingApplicabilityUi ? 0 : serverWeightPct,
+        status: pendingApplicabilityUi ? 'still_working' : serverStatus,
+      }
+    })
     .sort((left, right) => right.weightPct - left.weightPct)
+
+  const completedCount = orderedForScan.filter((dimension) => canRevealCompletionInOrder(dimension, orderedForScan)).length
 
   return (
     <section className="mb-5 space-y-4">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_360px] xl:items-stretch">
-        <article className="seclens-panel px-6 py-6">
-          <div>
-            <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Posture</p>
-            <h2 className="seclens-text mt-2 text-[40px] font-semibold tracking-tight">
-              {STATUS_LABELS[summary?.overallStatus || 'unknown']}
-            </h2>
-            <p className="seclens-muted mt-4 text-[15px] leading-8">
-              {overallStatusCopy(summary?.overallStatus || 'unknown')}
-            </p>
-          </div>
-
-          <div className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-3">
-            {summaryCards(summary).map((card) => (
-              <div key={card.label} className={cn('rounded-[16px] bg-gradient-to-br p-[1px]', accentClass(card.accent))}>
-                <div className="seclens-panel flex h-[124px] flex-col justify-between rounded-[15px] px-4 py-4">
-                  <p className="seclens-subtle text-[10px] font-medium uppercase leading-4 tracking-[0.1em]">
-                    {card.label}
-                  </p>
-                  <p className="seclens-text text-[30px] font-semibold tracking-tight tabular-nums">{card.value}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="seclens-panel flex h-full flex-col px-6 py-6">
-          <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Coverage & Confidence</p>
-          <div className="mt-5 flex flex-1 flex-col justify-between gap-5">
-            <div>
-              <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="seclens-muted">Security-relevant files examined</span>
-                <span className="seclens-text tabular-nums">{totalFilesExamined}</span>
-              </div>
-              <div className="h-3 rounded-full bg-[var(--sl-panel-muted)]">
-                <div
-                  className="h-3 rounded-full bg-gradient-to-r from-[#0a72ef] via-[#56ccf2] to-[#de1d8d]"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      ((totalFilesExamined / Math.max(1, eligibleFiles + (summary?.totals?.omittedFilesRelevant || 0))) * 100)
-                    )}%`,
-                  }}
-                />
-              </div>
-              <p className="seclens-muted mt-2 text-sm">
-                {filesWithNoIssue} reviewed files did not surface a confirmed issue in this run.
+      <div className="grid gap-4 xl:grid-cols-2 xl:items-stretch">
+        <article className="seclens-panel flex min-h-[280px] flex-col px-6 py-6 xl:h-full xl:min-h-0">
+          {isScanning ? (
+            <>
+              <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Posture</p>
+              <h2 className="seclens-text mt-2 text-[22px] font-semibold tracking-tight sm:text-[26px]">Review in flight</h2>
+              <p className="seclens-muted mt-3 text-[15px] leading-7">
+                Launch posture finalizes as dimensions complete. Per-dimension progress stays on the right; coverage and applicability
+                sit together in the row under posture.
               </p>
-              {excludedNonGermane > 0 ? (
-                <p className="seclens-muted mt-2 text-sm">
-                  {excludedNonGermane} non-relevant files were left out of the security review counts.
+              <div className="seclens-surface mt-5 rounded-[14px] px-4 py-3">
+                <p className="seclens-subtle flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.1em]">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-[8px] bg-[var(--sl-panel-muted)] seclens-text">
+                    <IconGithubRepo className="h-3.5 w-3.5" />
+                  </span>
+                  Target repository
                 </p>
-              ) : null}
-            </div>
-
-            <div className="space-y-3">
-              {confidences.map((item) => (
-                <div key={item.label}>
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="seclens-muted">{item.label} confidence</span>
-                    <span className="seclens-text tabular-nums">{item.count}</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-[var(--sl-panel-muted)]">
-                    <div className="h-2 rounded-full" style={{ width: item.width, background: item.color }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="seclens-accent-pink rounded-[14px] px-4 py-4">
-              <p className="seclens-text text-sm leading-6">
-                {(summary?.totals?.findingsAdmitted || 0) > 0
-                  ? 'Confirmed issues are backed by cited evidence and paired with concrete remediation guidance.'
-                  : 'No confirmed launch-impacting issues were admitted in this run across the reviewed dimensions.'}
+                <p className="seclens-text mt-2 break-all font-mono text-[13px] leading-snug">{repoLabel}</p>
+              </div>
+              <p className="seclens-muted mt-4 text-sm tabular-nums">
+                Dimensions completed: {completedCount}/{orderedForScan.length || 0}
               </p>
-            </div>
-          </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Posture</p>
+                <h2 className="seclens-text mt-2 text-[28px] font-semibold tracking-tight xl:text-[36px]">
+                  {STATUS_LABELS[summary?.overallStatus || 'unknown']}
+                </h2>
+                <p className="seclens-muted mt-4 text-[15px] leading-8">{overallStatusCopy(summary?.overallStatus || 'unknown')}</p>
+              </div>
+              <div className="mt-8 grid flex-1 grid-cols-2 content-start gap-3 sm:gap-4">
+                {summaryCards(summary).map((card) => {
+                  const skin = postureSummaryMetricSkin(card.accent)
+                  return (
+                    <div
+                      key={card.label}
+                      title={card.tooltip}
+                      className={cn('rounded-[18px] p-px transition-transform duration-200 hover:-translate-y-0.5', skin.outer)}
+                    >
+                      <div
+                        className={cn(
+                          'flex min-h-[118px] gap-3 rounded-[17px] border border-[var(--sl-border-soft)] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_2px_12px_rgba(0,0,0,0.2)]',
+                          skin.inner
+                        )}
+                      >
+                        <div className={cn('mt-0.5 w-1 shrink-0 self-stretch rounded-full', skin.bar)} aria-hidden />
+                        <div className="flex min-w-0 flex-1 flex-col justify-between gap-3">
+                          <p className="seclens-subtle text-[10px] font-medium uppercase leading-4 tracking-[0.12em]">{card.label}</p>
+                          <p className={cn('text-[24px] font-semibold tracking-tight tabular-nums xl:text-[28px]', skin.value)}>{card.value}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </article>
+
+        <div className="flex min-h-0 flex-col gap-4 xl:h-full">
+          {isScanning ? (
+            <ScanProgressReportColumn dashboard={dashboard} />
+          ) : (
+            <IdleProgressReportColumn dashboard={dashboard} dimensions={rawDimensions} />
+          )}
+        </div>
       </div>
 
-      <article className="seclens-panel px-6 py-6">
-        {profileList.length ? (
-          <div className="seclens-surface mb-4 rounded-[16px] px-4 py-4">
+      {profileList.length ? (
+        <article className="seclens-panel px-6 py-6">
+          <div className="seclens-surface rounded-[16px] px-4 py-4">
             <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Repository Profile</p>
             <p className="seclens-text mt-2 text-sm">
               {profileList.join(', ')} ({repoProfile?.confidence || 'unknown'} confidence)
             </p>
             <p className="seclens-muted mt-2 text-sm">{repoProfile?.rationale || 'Profile rationale unavailable.'}</p>
           </div>
-        ) : null}
-
-        <div className="mb-3 flex items-center justify-between">
-          <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Traffic Light Panel</p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {states.map((item) => (
-            <div
-              key={item.id}
-              className="rounded-[18px] border border-[var(--sl-border-soft)] bg-[var(--sl-panel-muted)] px-4 py-5"
-            >
-              <div className="mx-auto flex w-[84px] flex-col items-center gap-3 rounded-[999px] bg-[rgba(8,10,14,0.92)] px-3 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <span
-                  className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 text-[25px] font-semibold leading-none text-white tabular-nums shadow-[0_0_24px_rgba(0,0,0,0.35)]"
-                  style={{
-                    background: item.color,
-                    boxShadow: `0 0 20px ${item.color}55, inset 0 1px 2px rgba(255,255,255,0.24)`,
-                  }}
-                >
-                  {item.count}
-                </span>
-              </div>
-              <div className="mt-4 text-center">
-                <p className="seclens-text text-[15px] font-medium leading-6">{item.label}</p>
-                <div className="mx-auto mt-2 h-1.5 w-14 rounded-full" style={{ background: item.color }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </article>
-
-      {applicabilityRows.length ? (
-        <article className="seclens-panel px-6 py-6">
-          <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Dimension Applicability</p>
-          <div className="mt-4 space-y-3">
-            {applicabilityRows.map((row) => (
-              <div key={row.id}>
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="seclens-muted">{row.label}</span>
-                  <span className="seclens-text tabular-nums">{row.weightPct}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-[var(--sl-panel-muted)]">
-                  <div
-                    className={cn(
-                      'h-2 rounded-full',
-                      row.status === 'not_applicable' ? 'bg-[#8b8b8f]' : 'bg-gradient-to-r from-[#0a72ef] to-[#56ccf2]'
-                    )}
-                    style={{ width: `${row.weightPct}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
         </article>
       ) : null}
+
+      <div className={cn('grid gap-4', applicabilityRows.length > 0 ? 'xl:grid-cols-2 xl:items-stretch' : '')}>
+        {applicabilityRows.length > 0 ? (
+          <article className="seclens-panel flex h-full min-h-[260px] flex-col px-6 py-6">
+            <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Dimension Applicability</p>
+            <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto">
+              {applicabilityRows.map((row) => (
+                <div key={row.id}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="seclens-muted">{row.label}</span>
+                    <span className="seclens-text tabular-nums">{row.weightPct}%</span>
+                  </div>
+                  <div className="h-2 w-full min-w-0 overflow-hidden rounded-full bg-[var(--sl-panel-muted)]">
+                    <div
+                      className={cn(
+                        'h-2 max-w-full rounded-full',
+                        row.status === 'not_applicable' ? 'bg-[#8b8b8f]' : 'bg-gradient-to-r from-[#0a72ef] to-[#56ccf2]'
+                      )}
+                      style={{ width: `${row.weightPct}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+        ) : null}
+        <div className="min-w-0 xl:h-full">
+          <CoverageConfidenceColumn dashboard={dashboard} summary={summary} />
+        </div>
+      </div>
     </section>
   )
 }
 
 function DimensionTable({ dimensions, selectedDimensionId, onSelectDimension }) {
   return (
-    <div className="seclens-panel overflow-hidden">
-      <div className="seclens-border-soft flex items-center justify-between border-b px-5 py-4">
+    <div className="seclens-panel flex min-h-0 flex-col overflow-x-auto overflow-y-hidden xl:h-full">
+      <div className="seclens-border-soft flex shrink-0 items-center justify-between border-b px-5 py-4">
         <div>
           <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Dimensions</p>
           <h3 className="seclens-text mt-1 text-[24px] font-semibold tracking-tight">Dimension review list</h3>
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] border-collapse">
+      <div className="min-h-0 flex-1 overflow-x-auto overflow-y-visible">
+        <table className="w-full min-w-[900px] border-collapse text-left">
           <thead className="seclens-surface">
-            <tr className="text-left">
-              <th className="px-5 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Dimension</th>
-              <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Status</th>
-              <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Progress</th>
-              <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Findings</th>
-              <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Controls</th>
-              <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Reviewed Paths</th>
-              <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Confidence</th>
+            <tr>
+              <th className="min-w-[16rem] whitespace-normal px-5 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">
+                Dimension
+              </th>
+              <th className="whitespace-nowrap px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Status</th>
+              <th className="whitespace-nowrap px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Findings</th>
+              <th className="whitespace-nowrap px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Controls</th>
+              <th className="whitespace-nowrap px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Reviewed Paths</th>
+              <th className="min-w-[8.5rem] whitespace-nowrap px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">
+                Confidence
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -642,37 +912,33 @@ function DimensionTable({ dimensions, selectedDimensionId, onSelectDimension }) 
                     'cursor-pointer border-b border-[var(--sl-border-soft)] transition-colors hover:bg-[var(--sl-panel-muted)]',
                     isSelected ? 'bg-[var(--sl-panel-muted)]' : ''
                   )}
+                  title={`Show ${dimension.label} in the detail panel`}
                   onClick={() => onSelectDimension(dimension.dimensionId)}
                 >
-                  <td className="px-5 py-4">
-                    <div className="flex items-start gap-3">
-                      <span className={cn('mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-[12px]', dimensionIconTone(definition?.icon))}>
+                  <td className="align-top px-5 py-4">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className={cn('mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]', dimensionIconTone(definition?.icon))}>
                         <DimensionGlyph icon={definition?.icon} />
                       </span>
-                      <div>
-                        <p className="seclens-text text-sm font-medium">{dimension.label}</p>
-                        <p className="seclens-muted mt-1 max-w-[32ch] text-sm line-clamp-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="seclens-text text-sm font-medium leading-snug">{dimension.label}</p>
+                        <p className="seclens-muted mt-1 text-sm leading-relaxed break-words">
                           {dimension.summary.whatRemainsUnclear || dimension.summary.whatLooksStrong}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="align-top whitespace-nowrap px-4 py-4">
                     <span className={cn('inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium', statusTone(dimension.status))}>
                       {STATUS_CHIP_LABELS[dimension.status]}
                     </span>
                   </td>
-                  <td className="px-4 py-4">
-                    <span className={cn('inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium', progressTone(dimension.progress))}>
-                      {PROGRESS_CHIP_LABELS[dimension.progress]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 seclens-text tabular-nums">{dimension.findings.length}</td>
-                  <td className="px-4 py-4 seclens-text tabular-nums">
+                  <td className="align-top whitespace-nowrap px-4 py-4 seclens-text tabular-nums">{dimension.findings.length}</td>
+                  <td className="align-top whitespace-nowrap px-4 py-4 seclens-text tabular-nums">
                     {dimension.observedControls.length}/{dimension.unverifiedControls.length}
                   </td>
-                  <td className="px-4 py-4 seclens-text tabular-nums">{dimension.evidence.reviewedPaths.length}</td>
-                  <td className={cn('px-4 py-4 text-sm font-medium uppercase tracking-[0.08em]', confidenceTone(dimension.coverage.confidence))}>
+                  <td className="align-top whitespace-nowrap px-4 py-4 seclens-text tabular-nums">{dimension.evidence.reviewedPaths.length}</td>
+                  <td className={cn('align-top whitespace-nowrap px-4 py-4 text-sm font-medium uppercase tracking-[0.08em]', confidenceTone(dimension.coverage.confidence))}>
                     {dimension.coverage.confidence}
                   </td>
                 </tr>
@@ -688,35 +954,36 @@ function DimensionTable({ dimensions, selectedDimensionId, onSelectDimension }) 
 function DetailPanel({ dimension }) {
   if (!dimension) {
     return (
-      <div className="seclens-panel px-6 py-6">
+      <div className="seclens-panel flex min-h-0 flex-col justify-center px-6 py-6 xl:h-full">
         <p className="seclens-muted text-sm">Select a dimension to inspect its evidence, uncertainty, and next actions.</p>
       </div>
     )
   }
 
   const sections = [
-    { title: 'Confirmed', body: dimension.summary.whatLooksStrong },
-    { title: 'Launch Action', body: dimension.summary.whatRemainsUnclear },
+    { id: 'looks-good', title: 'What looks good', body: dimension.summary.whatLooksStrong },
+    { id: 'launch-action', title: 'Launch Action', body: dimension.summary.whatRemainsUnclear },
     {
+      id: 'attention-first',
       title: 'Attention First',
       body:
         dimension.findings[0]?.claim ||
         dimension.unverifiedControls[0]?.claim ||
         'No admitted issue outranked the current recommendation queue for this dimension.',
     },
-    { title: 'Next Check', body: dimension.summary.whatToCheckNext },
+    { id: 'next-check', title: 'Next Check', body: dimension.summary.whatToCheckNext },
   ]
   const evidenceEntries = Array.from(
     new Set([...(dimension.evidence.topCitations || []), ...(dimension.evidence.reviewedPaths || [])])
   )
 
   return (
-    <div className="seclens-panel px-6 py-6">
+    <div className="seclens-panel flex min-h-0 flex-col px-6 py-6 xl:h-full">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Selected Dimension</p>
+          <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Selected dimension</p>
           <h3 className="seclens-text mt-2 text-[28px] font-semibold tracking-tight">{dimension.label}</h3>
-          <p className="seclens-muted mt-3 max-w-[60ch] text-sm leading-6">{dimension.coverage.coverageSummary}</p>
+          <p className="seclens-muted mt-3 text-sm leading-6 xl:max-w-none">{dimension.coverage.coverageSummary}</p>
         </div>
         <div className="flex gap-2">
           <span className={cn('whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium', statusTone(dimension.status))}>
@@ -728,22 +995,25 @@ function DetailPanel({ dimension }) {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
+      <div className="mt-6 grid shrink-0 grid-cols-1 gap-4">
         {sections.map((section) => (
-          <div key={section.title} className="seclens-surface rounded-[16px] p-4">
+          <div key={section.id} className="seclens-surface rounded-[16px] p-4">
             <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">{section.title}</p>
             <p className="seclens-text mt-3 text-sm leading-7">{section.body}</p>
           </div>
         ))}
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 shrink-0">
         <div className="seclens-surface rounded-[16px] p-4">
-          <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Evidence Paths & Citations</p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Evidence paths & citations</p>
+          <div className="mt-3 flex flex-col gap-2">
             {evidenceEntries.length ? (
               evidenceEntries.map((entry) => (
-                <code key={entry} className="rounded-[10px] bg-[var(--sl-panel)] px-3 py-2 text-[13px] seclens-text shadow-[inset_0_0_0_1px_var(--sl-border)]">
+                <code
+                  key={entry}
+                  className="block w-full min-w-0 break-words rounded-[10px] bg-[var(--sl-panel)] px-3 py-2 text-[13px] leading-normal seclens-text shadow-[inset_0_0_0_1px_var(--sl-border)]"
+                >
                   {entry}
                 </code>
               ))
@@ -753,6 +1023,8 @@ function DetailPanel({ dimension }) {
           </div>
         </div>
       </div>
+
+      <div className="min-h-0 flex-1" aria-hidden />
     </div>
   )
 }
@@ -784,31 +1056,103 @@ function RecommendationQueue({ items }) {
   )
 }
 
+function DocsSurface({ title, markdown, docsEntries, activeSlug, onSelectSlug }) {
+  return (
+    <div className="seclens-panel px-6 py-6">
+      <div className="seclens-border-soft border-b pb-4">
+        <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Documentation</p>
+        {docsEntries?.length > 1 ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {docsEntries.map((doc) => (
+              <button
+                key={doc.slug}
+                type="button"
+                onClick={() => onSelectSlug(doc.slug)}
+                title={`Open documentation: ${doc.label}`}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors',
+                  activeSlug === doc.slug
+                    ? 'bg-[var(--sl-text)] text-[var(--sl-panel)]'
+                    : 'seclens-muted bg-[var(--sl-panel-muted)] hover:seclens-text'
+                )}
+              >
+                {doc.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <h3 className={cn('seclens-text text-[24px] font-semibold tracking-tight', docsEntries?.length > 1 ? 'mt-4' : 'mt-2')}>
+          {title}
+        </h3>
+      </div>
+      <div className="prose seclens-report mt-6 max-w-none">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+      </div>
+    </div>
+  )
+}
+
 function ReportSurface({ report, canExport, onExport, onDownload, isDownloading, readinessReasons }) {
+  const actionsLocked = !canExport || isDownloading
+  const lockHint = isDownloading
+    ? 'Wait for the current download or export to finish'
+    : 'Export and downloads stay disabled until the consolidated report is launch-ready'
+  const exportMarkdownTitle = actionsLocked ? lockHint : 'Export consolidated report as Markdown (.md)'
+  const downloadTextTitle = actionsLocked ? lockHint : 'Download consolidated report as plain text (.txt)'
+  const downloadPdfTitle = actionsLocked ? lockHint : 'Download consolidated report as PDF (.pdf)'
+
   return (
     <div className="seclens-panel px-6 py-6">
       <div className="seclens-border-soft flex flex-col gap-4 border-b pb-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Consolidated Report</p>
-          <h3 className="seclens-text mt-2 text-[24px] font-semibold tracking-tight">Premium export artifact</h3>
+          <h3 className="seclens-text text-[24px] font-semibold tracking-tight">Consolidated report</h3>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={onExport} disabled={!canExport || isDownloading} className="seclens-button-primary whitespace-nowrap">
-            {isDownloading ? 'Preparing export...' : 'Export markdown'}
-          </button>
-          <button type="button" onClick={() => onDownload('text')} disabled={!canExport || isDownloading} className="seclens-button-secondary whitespace-nowrap">
-            Text
-          </button>
-          <button type="button" onClick={() => onDownload('pdf')} disabled={!canExport || isDownloading} className="seclens-button-secondary whitespace-nowrap">
-            PDF
-          </button>
+          <span className="inline-flex" title={exportMarkdownTitle}>
+            <button
+              type="button"
+              onClick={onExport}
+              disabled={!canExport || isDownloading}
+              className="seclens-button-primary whitespace-nowrap"
+            >
+              {isDownloading ? 'Preparing export...' : 'Export markdown'}
+            </button>
+          </span>
+          <span className="inline-flex" title={downloadTextTitle}>
+            <button
+              type="button"
+              onClick={() => onDownload('text')}
+              disabled={!canExport || isDownloading}
+              className="seclens-button-secondary whitespace-nowrap"
+            >
+              Text
+            </button>
+          </span>
+          <span className="inline-flex" title={downloadPdfTitle}>
+            <button
+              type="button"
+              onClick={() => onDownload('pdf')}
+              disabled={!canExport || isDownloading}
+              className="seclens-button-secondary whitespace-nowrap"
+            >
+              PDF
+            </button>
+          </span>
         </div>
       </div>
       {!canExport && readinessReasons?.length ? (
         <div className="seclens-surface seclens-muted mt-5 rounded-[12px] p-4 text-sm leading-6">
+          <p className="seclens-text mb-2 font-medium">Export is disabled for this run</p>
           {readinessReasons.map((reason) => (
             <p key={reason}>{reason}</p>
           ))}
+        </div>
+      ) : !canExport && report?.trim() ? (
+        <div className="seclens-surface seclens-muted mt-5 rounded-[12px] p-4 text-sm leading-6">
+          <p className="seclens-text font-medium">Export is disabled</p>
+          <p className="mt-2">
+            The consolidated report is not marked launch-ready yet. Finish or resolve all dimensions, then try again.
+          </p>
         </div>
       ) : null}
       <div className="prose seclens-report mt-6 max-w-none">
@@ -848,45 +1192,18 @@ function EvidenceIndex({ dimensions }) {
   )
 }
 
-function ExportHistory({ report, timestamp }) {
-  return (
-    <div className="seclens-panel px-6 py-6">
-      <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Export History</p>
-      <h3 className="seclens-text mt-2 text-[24px] font-semibold tracking-tight">Recent generated artifacts</h3>
-      <div className="mt-5 space-y-3">
-        {report ? (
-          <div className="seclens-surface rounded-[12px] px-4 py-4">
-            <p className="seclens-text text-sm font-medium">Latest consolidated report</p>
-            <p className="seclens-muted mt-1 text-sm">Generated {formatTimestamp(timestamp)}</p>
-          </div>
-        ) : (
-          <p className="seclens-muted text-sm">Exports from this session will appear here after the first generated report.</p>
-        )}
-      </div>
-    </div>
-  )
-}
-
 export default function DashboardShell({
   dashboard,
   activeView,
   onViewChange,
   selectedDimensionId,
   onSelectDimension,
-  onRefresh,
-  canRefresh,
   onExport,
   canExport,
   report,
   isDownloading,
-  status,
-  timestamp,
   onDownload,
-  onScan,
   isScanning,
-  scanButtonLabel,
-  theme,
-  onToggleTheme,
 }) {
   const dimensions = dashboard?.dimensions || []
   const filteredDimensions = useMemo(() => dimensions, [dimensions])
@@ -898,36 +1215,42 @@ export default function DashboardShell({
     dimensions[0] ||
     null
 
-  return (
-    <div className="flex min-h-[760px] flex-col gap-5 xl:flex-row">
-      <Rail
-        activeView={activeView}
-        onViewChange={onViewChange}
-        status={status}
-        timestamp={timestamp}
-        reportReady={dashboard?.consolidatedReportAvailable}
-        onScan={onScan}
-        isScanning={isScanning}
-        scanButtonLabel={scanButtonLabel}
-        theme={theme}
-        onToggleTheme={onToggleTheme}
-        onRefresh={onRefresh}
-        canRefresh={canRefresh}
-        onExport={onExport}
-        canExport={canExport}
-      />
+  const reportMarkdown = report || dashboard?.report || null
 
-      <div className="min-w-0 flex-1">
+  const docsEntries = useMemo(() => getSeclensDocsEntries(), [])
+  const [docsSlug, setDocsSlug] = useState(() => getDefaultDocsSlug())
+
+  const activeDoc = useMemo(() => {
+    if (!docsEntries.length) return null
+    return docsEntries.find((d) => d.slug === docsSlug) || docsEntries[0]
+  }, [docsEntries, docsSlug])
+
+  useEffect(() => {
+    if (activeView !== 'docs' || !docsEntries.length) return
+    if (!docsSlug || !docsEntries.some((d) => d.slug === docsSlug)) {
+      setDocsSlug(docsEntries[0].slug)
+    }
+  }, [activeView, docsEntries, docsSlug])
+
+  return (
+    <div className="min-h-[760px]">
+      <div>
         {(activeView === 'dashboard' || activeView === 'dimensions') && (
           <>
             <PostureHero dashboard={dashboard} isScanning={isScanning} />
             <section className="space-y-5">
-              <DimensionTable
-                dimensions={filteredDimensions}
-                selectedDimensionId={selectedDimension?.dimensionId}
-                onSelectDimension={onSelectDimension}
-              />
-              <DetailPanel dimension={selectedDimension} />
+              <div className="grid gap-5 xl:grid-cols-3 xl:items-stretch">
+                <div className="min-w-0 xl:col-span-2 xl:flex xl:min-h-0 xl:flex-col">
+                  <DimensionTable
+                    dimensions={filteredDimensions}
+                    selectedDimensionId={selectedDimension?.dimensionId}
+                    onSelectDimension={onSelectDimension}
+                  />
+                </div>
+                <div className="min-w-0 xl:col-span-1 xl:flex xl:min-h-0 xl:flex-col">
+                  <DetailPanel dimension={selectedDimension} />
+                </div>
+              </div>
               <RecommendationQueue items={dashboard?.recommendationQueue || []} />
             </section>
           </>
@@ -935,7 +1258,7 @@ export default function DashboardShell({
 
         {activeView === 'report' && (
           <ReportSurface
-            report={report}
+            report={reportMarkdown}
             canExport={canExport}
             onExport={onExport}
             onDownload={onDownload}
@@ -945,7 +1268,16 @@ export default function DashboardShell({
         )}
 
         {activeView === 'evidence' && <EvidenceIndex dimensions={dimensions} />}
-        {activeView === 'exports' && <ExportHistory report={report} timestamp={timestamp} />}
+
+        {activeView === 'docs' && activeDoc ? (
+          <DocsSurface
+            title={activeDoc.label}
+            markdown={activeDoc.content || '_No content._'}
+            docsEntries={docsEntries}
+            activeSlug={docsSlug}
+            onSelectSlug={setDocsSlug}
+          />
+        ) : null}
       </div>
     </div>
   )

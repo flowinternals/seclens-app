@@ -10,191 +10,8 @@ import { analyzeSecurity } from '../lib/server/openai.js'
 import { sanitizeLogData, sanitizeHeaders } from '../lib/server/sanitizeLog.js'
 import { sanitizeGitHubUrl } from '../lib/server/sanitize.js'
 import { ReportQualityGateError } from '../lib/server/reportQualityGateError.js'
-import { getIngestionCaps } from '../lib/server/ingestionCaps.js'
-
-/** OpenAI usage → safe telemetry fragment (no extra provider fields). */
-function normalizeUsageFragment(usage) {
-  if (!usage) return null
-  return {
-    prompt_tokens: typeof usage.prompt_tokens === 'number' ? usage.prompt_tokens : 0,
-    completion_tokens:
-      typeof usage.completion_tokens === 'number' ? usage.completion_tokens : 0,
-    total_tokens: typeof usage.total_tokens === 'number' ? usage.total_tokens : 0,
-  }
-}
-
-function estimateUsageCostUsd(totalUsage) {
-  const promptTokens = typeof totalUsage?.prompt_tokens === 'number' ? totalUsage.prompt_tokens : 0
-  const completionTokens =
-    typeof totalUsage?.completion_tokens === 'number' ? totalUsage.completion_tokens : 0
-
-  // Planning assumption used by launch-readiness telemetry logs.
-  const inputCost = (promptTokens / 1_000_000) * 0.15
-  const outputCost = (completionTokens / 1_000_000) * 0.60
-  return Number((inputCost + outputCost).toFixed(5))
-}
-
-function deriveScanProfileName(caps) {
-  const k = `${caps.maxFiles}/${caps.maxBytesPerFile}/${caps.maxTotalBytes}/${caps.maxTreeEntries}`
-  const knownProfiles = {
-    '40/4000/60000/5000': 'stage02-baseline-40/4k/60k',
-    '120/8000/300000/50000': 'stage02-default-120/8k/300k',
-    '200/12000/420000/100000': 'stage02-experimental-200/12k/420k',
-    '250/12000/500000/150000': 'stage02-burn-250/12k/500k',
-    '320/20000/900000/150000': 'stage02-expanded-320/20k/900k',
-  }
-  return knownProfiles[k] || 'custom'
-}
-
-function buildTelemetry(analysisResult, repoData, startedAtMs) {
-  const draft =
-    normalizeUsageFragment(analysisResult.tokenUsage?.draft) ||
-    ({ prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 })
-  const critic = normalizeUsageFragment(analysisResult.tokenUsage?.critic)
-  const rawTotal = analysisResult.tokenUsage?.total || {}
-  const total = {
-    prompt_tokens: typeof rawTotal.prompt_tokens === 'number' ? rawTotal.prompt_tokens : 0,
-    completion_tokens:
-      typeof rawTotal.completion_tokens === 'number' ? rawTotal.completion_tokens : 0,
-    total_tokens: typeof rawTotal.total_tokens === 'number' ? rawTotal.total_tokens : 0,
-  }
-  const caps = getIngestionCaps()
-  const elapsedMs = Math.max(0, Date.now() - startedAtMs)
-  const coverage = repoData?.evidenceBundle?.coverage || null
-  const inventory = repoData?.evidenceBundle?.inventory || null
-  const selectedEvidenceCount =
-    typeof repoData?.ingestion?.selectedFileCount === 'number'
-      ? repoData.ingestion.selectedFileCount
-      : Array.isArray(repoData?.evidenceBundle?.evidence)
-        ? repoData.evidenceBundle.evidence.length
-        : null
-  const totalEvidenceBytes = Array.isArray(repoData?.evidenceBundle?.evidence)
-    ? repoData.evidenceBundle.evidence.reduce((acc, ev) => {
-        const text = ev?.snippets?.[0]?.text || ''
-        return acc + Buffer.byteLength(text, 'utf8')
-      }, 0)
-    : null
-
-  return {
-    correlationId: analysisResult.correlationId,
-    profile: deriveScanProfileName(caps),
-    caps: {
-      maxFiles: caps.maxFiles,
-      maxBytesPerFile: caps.maxBytesPerFile,
-      maxTotalEvidenceBytes: caps.maxTotalBytes,
-      maxTreeEntries: caps.maxTreeEntries,
-    },
-    duration: {
-      elapsedMs,
-      elapsedSeconds: Number((elapsedMs / 1000).toFixed(2)),
-    },
-    estimatedCostUsd: estimateUsageCostUsd(total),
-    criticRepairRan: !!analysisResult.reportValidation?.repairedAfterCritic,
-    ingestion: {
-      strategyVersion: repoData?.ingestion?.strategyVersion ?? null,
-      selectedFileCount: repoData?.ingestion?.selectedFileCount ?? null,
-      omittedFileCount: repoData?.ingestion?.omittedFileCount ?? null,
-      capHits: Array.isArray(repoData?.ingestion?.capHits) ? repoData.ingestion.capHits : [],
-      coverageSummary: repoData?.ingestion?.coverageSummary ?? null,
-      selectedReasonCounts: repoData?.ingestion?.selectedReasonCounts ?? null,
-      anchorCount: repoData?.ingestion?.anchorCount ?? null,
-      relatedContextCount: repoData?.ingestion?.relatedContextCount ?? null,
-      backfillCount: repoData?.ingestion?.backfillCount ?? null,
-      plannedSelectedReasonCounts: repoData?.ingestion?.plannedSelectedReasonCounts ?? null,
-      plannedAnchorCount: repoData?.ingestion?.plannedAnchorCount ?? null,
-      plannedRelatedContextCount: repoData?.ingestion?.plannedRelatedContextCount ?? null,
-      plannedBackfillCount: repoData?.ingestion?.plannedBackfillCount ?? null,
-      domainReservationCount: repoData?.ingestion?.domainReservationCount ?? null,
-      domainReservationByDomain: repoData?.ingestion?.domainReservationByDomain ?? null,
-      plannedDomainReservationCount: repoData?.ingestion?.plannedDomainReservationCount ?? null,
-      plannedDomainReservationByDomain: repoData?.ingestion?.plannedDomainReservationByDomain ?? null,
-      totalEvidenceBytes,
-      coverage: coverage
-        ? {
-            maxFilesCapHit: !!coverage.maxFilesCapHit,
-            maxBytesPerFileCapHit: !!coverage.maxBytesPerFileCapHit,
-            maxTotalBytesCapHit: !!coverage.maxTotalBytesCapHit,
-            maxTreeSizeCapHit: !!coverage.maxTreeSizeCapHit,
-          }
-        : null,
-      inventory: inventory
-        ? {
-            totalFilesSeen: inventory.totalFilesSeen,
-            filesSelected:
-              typeof selectedEvidenceCount === 'number' ? selectedEvidenceCount : inventory.filesSelected,
-            filesOmitted: inventory.filesOmitted,
-          }
-        : null,
-    },
-    tokenUsage: {
-      draft,
-      critic,
-      total,
-    },
-    initialValidationCategories: analysisResult.reportValidation?.initialValidationCategories || [],
-    finalValidationCategories: analysisResult.reportValidation?.finalValidationCategories || [],
-    normalizersApplied: analysisResult.reportValidation?.normalizersApplied || [],
-    candidateCounts: analysisResult.reportValidation?.structuredTelemetry?.candidateCounts || null,
-    admittedCounts: analysisResult.reportValidation?.structuredTelemetry?.admittedCounts || null,
-    rejectionReasonCounts: analysisResult.reportValidation?.structuredTelemetry?.rejectionReasonCounts || null,
-    candidateCountByTopic: analysisResult.reportValidation?.structuredTelemetry?.candidateCountByTopic || null,
-    rejectedCitationIntegrityCount:
-      analysisResult.reportValidation?.structuredTelemetry?.rejectedCitationIntegrityCount || 0,
-    templateVersion: analysisResult.reportValidation?.structuredTelemetry?.templateVersion || null,
-    renderMode: analysisResult.reportValidation?.structuredTelemetry?.renderMode || null,
-    markdownRenderMode: analysisResult.reportValidation?.structuredTelemetry?.markdownRenderMode || null,
-    appendixEvidenceCount: analysisResult.reportValidation?.structuredTelemetry?.appendixEvidenceCount ?? null,
-    appendixRenderedCount: analysisResult.reportValidation?.structuredTelemetry?.appendixRenderedCount ?? null,
-    appendixTruncated: !!analysisResult.reportValidation?.structuredTelemetry?.appendixTruncated,
-    representedDomainCount: analysisResult.reportValidation?.structuredTelemetry?.representedDomainCount ?? null,
-    requiredInspectedSurfaceRows:
-      analysisResult.reportValidation?.structuredTelemetry?.requiredInspectedSurfaceRows ?? null,
-    inspectedSurfaceCounts:
-      analysisResult.reportValidation?.structuredTelemetry?.inspectedSurfaceCounts ?? null,
-    inspectedSurfaceCountByTopic:
-      analysisResult.reportValidation?.structuredTelemetry?.inspectedSurfaceCountByTopic || null,
-    inspectedSurfaceSpecificityRate:
-      analysisResult.reportValidation?.structuredTelemetry?.inspectedSurfaceSpecificityRate ?? null,
-    placeholderSectionCount:
-      analysisResult.reportValidation?.structuredTelemetry?.placeholderSectionCount ?? null,
-    genericRecommendationCount:
-      analysisResult.reportValidation?.structuredTelemetry?.genericRecommendationCount ?? null,
-    repoSpecificSectionCount:
-      analysisResult.reportValidation?.structuredTelemetry?.repoSpecificSectionCount ?? null,
-    reportValueScore: analysisResult.reportValidation?.structuredTelemetry?.reportValueScore ?? null,
-    reportValueGatePassed:
-      !!analysisResult.reportValidation?.structuredTelemetry?.reportValueGatePassed,
-    recommendationTypeCounts:
-      analysisResult.reportValidation?.structuredTelemetry?.recommendationTypeCounts || null,
-    analysisPassCount: analysisResult.reportValidation?.structuredTelemetry?.analysisPassCount ?? null,
-    analysisPasses: analysisResult.reportValidation?.structuredTelemetry?.analysisPasses || null,
-    passTypeCounts: analysisResult.reportValidation?.structuredTelemetry?.passTypeCounts || null,
-    passEvidenceCounts: analysisResult.reportValidation?.structuredTelemetry?.passEvidenceCounts || null,
-    passTrimmedEvidenceCounts:
-      analysisResult.reportValidation?.structuredTelemetry?.passTrimmedEvidenceCounts || null,
-    passPromptEstimatedTokens:
-      analysisResult.reportValidation?.structuredTelemetry?.passPromptEstimatedTokens || null,
-    passPromptAvailableInputTokens:
-      analysisResult.reportValidation?.structuredTelemetry?.passPromptAvailableInputTokens || null,
-    candidateCountsByPass: analysisResult.reportValidation?.structuredTelemetry?.candidateCountsByPass || null,
-    admittedCountsByPass: analysisResult.reportValidation?.structuredTelemetry?.admittedCountsByPass || null,
-    observedControlCount: analysisResult.reportValidation?.structuredTelemetry?.observedControlCount ?? null,
-    unverifiedControlCount:
-      analysisResult.reportValidation?.structuredTelemetry?.unverifiedControlCount ?? null,
-    reportSynthesisDedupedFindingCount:
-      analysisResult.reportValidation?.structuredTelemetry?.reportSynthesisDedupedFindingCount ?? null,
-    reportSynthesisDedupedRecommendationCount:
-      analysisResult.reportValidation?.structuredTelemetry?.reportSynthesisDedupedRecommendationCount ?? null,
-    clusterInventory: analysisResult.reportValidation?.structuredTelemetry?.clusterInventory || null,
-    clusterSkipReasons: analysisResult.reportValidation?.structuredTelemetry?.clusterSkipReasons || null,
-    sectionContentByTopicCounts:
-      analysisResult.reportValidation?.structuredTelemetry?.sectionContentByTopicCounts || null,
-    downscopedObservationCount:
-      analysisResult.reportValidation?.structuredTelemetry?.downscopedObservationCount ?? null,
-    lowInformationReport: !!analysisResult.reportValidation?.structuredTelemetry?.lowInformationReport,
-    usedNoFindingsTemplate: !!analysisResult.reportValidation?.structuredTelemetry?.usedNoFindingsTemplate,
-  }
-}
+import { buildScanJobLifecycleTelemetry, buildTelemetry } from '../lib/server/scanTelemetryPayload.js'
+import { tryAppendScanTelemetryLog } from '../lib/server/scanTelemetryLogAppend.js'
 
 export default async function handler(req, res) {
   // Sanitized logging - no sensitive data in production
@@ -409,6 +226,12 @@ export default async function handler(req, res) {
         console.error(
           `[ReportQualityGate] correlationId=${error.correlationId} categories=${categories}`
         )
+        tryAppendScanTelemetryLog({
+          analysisResult: { correlationId: error.correlationId },
+          repoData,
+          requestStartedAtMs,
+          gateError: { categories: error.categories },
+        })
         return res.status(422).json({
           error: 'The report failed SecLens quality checks. Please retry the scan.',
           code: error.code,
@@ -419,6 +242,13 @@ export default async function handler(req, res) {
           }),
         })
       }
+
+      tryAppendScanTelemetryLog({
+        analysisResult: {},
+        repoData,
+        requestStartedAtMs,
+        analysisError: error instanceof Error ? error : new Error(String(error)),
+      })
 
       // Log error details only in development
       if (process.env.NODE_ENV === 'development') {
@@ -459,12 +289,24 @@ export default async function handler(req, res) {
       })
     }
     
-    // Return success response (telemetry: manual testing / cost planning only; no persistence)
+    tryAppendScanTelemetryLog({
+      analysisResult,
+      repoData,
+      requestStartedAtMs,
+    })
+
+    // Return success response (includes telemetry JSON; merge lifecycle so GUI runs match scan-job contract — DEFECT-004)
+    const telemetryPayload = buildTelemetry(analysisResult, repoData, requestStartedAtMs)
+    const lifecycle = buildScanJobLifecycleTelemetry({
+      outcome: 'completed',
+      dashboard: analysisResult.dashboard ?? null,
+      correlationId: analysisResult.correlationId ?? null,
+    })
     return res.status(200).json({
       report,
       reportContractVersion,
       reportValidation,
-      telemetry: buildTelemetry(analysisResult, repoData, requestStartedAtMs),
+      telemetry: { ...lifecycle, ...telemetryPayload },
       ...(analysisResult.dashboard ? { dashboard: analysisResult.dashboard } : {}),
       repository: {
         url: repoData.url,

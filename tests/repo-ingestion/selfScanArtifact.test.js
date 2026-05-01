@@ -32,7 +32,7 @@ describe('local self-scan artifact (DEFECT-001)', () => {
         maxFilesCapHit: expect.any(Boolean),
         notes: expect.any(Array),
       })
-      expect(apiIngestion.strategyVersion).toBe('v2.5')
+      expect(apiIngestion.strategyVersion).toBe('v2.8')
       expect(typeof apiIngestion.selectedReasonCounts).toBe('object')
     } finally {
       rmSync(dir, { recursive: true, force: true })

@@ -60,6 +60,9 @@ config.json
 # Local Stage 02 self-scan artifacts (npm run self-scan)
 .seclens-self-scan/
 
+# Live validation JSON snapshots (GUI / API scan jobs in dev)
+.seclens-live-validation/
+
 # Temporary files
 *.tmp
 *.temp

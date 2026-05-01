@@ -29,10 +29,10 @@ No user workflow in the current app is intended to require write access just to 
 A successful scan can return:
 
 - the Markdown report
-- report validation metadata
-- token usage telemetry
-- repository metadata
-- ingestion metadata
+- report validation metadata (whether the draft passed checks or was repaired by the optional critic pass)
+- token usage telemetry and a **correlation ID** (for operator diagnostics)
+- repository metadata (including scanned ref and commit SHA)
+- ingestion metadata (selection counts, cap hits, coverage summary)
 - a timestamp
 
 ## Can I export the report?
@@ -45,7 +45,7 @@ Yes. Current export formats are:
 
 ## Is the report always complete?
 
-No. SecLens uses bounded selection and ingestion rules, so some scans may be partial. You should always read the coverage information before assuming the report is exhaustive.
+No. SecLens uses bounded selection and ingestion rules, so some scans may be partial. Check the coverage information before assuming the report is exhaustive.
 
 ## What does "coverage" mean in practice?
 
@@ -87,13 +87,11 @@ Use it as:
 - a repeatable project snapshot
 - a prioritization tool for follow-up work
 
-## What is the wrong way to use SecLens?
+## What SecLens is not designed to replace
 
-Do not treat it as:
-
-- a substitute for manual security review
-- a compliance certification
-- proof that no vulnerabilities exist
+- Manual security review
+- Compliance certification
+- Proof that no vulnerabilities exist
 
 ## Can I share the PDF with stakeholders?
 

@@ -143,9 +143,38 @@ pre,
   font-weight: 600;
 }
 
-.seclens-report p,
-.seclens-report li {
+.seclens-report p {
+  margin: 0 0 1em;
   line-height: 1.7;
+}
+
+.seclens-report p:last-child {
+  margin-bottom: 0;
+}
+
+.seclens-report ul,
+.seclens-report ol {
+  margin: 0.5em 0 1em;
+  padding-left: 1.35em;
+}
+
+.seclens-report ul {
+  list-style-type: disc;
+}
+
+.seclens-report ol {
+  list-style-type: decimal;
+}
+
+.seclens-report li {
+  margin: 0.35em 0;
+  line-height: 1.7;
+}
+
+.seclens-report li > ul,
+.seclens-report li > ol {
+  margin-top: 0.35em;
+  margin-bottom: 0.35em;
 }
 
 .seclens-report code {

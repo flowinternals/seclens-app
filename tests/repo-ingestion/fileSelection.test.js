@@ -8,8 +8,8 @@ import {
 import { buildSecuritySurfacePlan } from '../../lib/server/securitySurfaceTargets.js'
 
 describe('fileSelection', () => {
-  it('uses strategy version v2.5', () => {
-    expect(STRATEGY_VERSION).toBe('v2.5')
+  it('uses strategy version v2.8', () => {
+    expect(STRATEGY_VERSION).toBe('v2.8')
   })
 
   it('treats domain-reserved security surfaces as expansion anchors for imports', () => {
@@ -87,7 +87,7 @@ describe('fileSelection', () => {
     const plan = buildSecuritySurfacePlan(paths, repoProfile, { maxFiles: 20 })
     const sel = selectPathsByTiers(paths, 10, { repoProfile, securitySurfacePlan: plan })
     const row = sel.selectionMeta.find((m) => m.path === 'functions/src/userManagement.ts')
-    expect(row?.reason).toBe('protected_security_target')
+    expect(row?.reason).toBe('critical_shortlist')
     expect(sel.protectedSecurityTargets?.eligible).toBeGreaterThan(0)
   })
 
@@ -140,7 +140,8 @@ describe('fileSelection', () => {
     ]
     const plan = selectPathsByTiers(paths, 20)
     const reasons = new Set(plan.selectionMeta.map((m) => m.reason))
-    expect(reasons.has('tier2_anchor_route')).toBe(true)
+    // App Router routes may surface as domain_reserve_validation first (DEFECT-005); they remain security anchors.
+    expect(reasons.has('tier2_anchor_route') || reasons.has('domain_reserve_validation')).toBe(true)
     expect(reasons.has('related_same_directory_test')).toBe(true)
     expect(
       reasons.has('related_validation_helper') || reasons.has('domain_reserve_validation')

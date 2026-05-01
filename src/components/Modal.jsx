@@ -42,9 +42,11 @@ function Modal({ isOpen, onClose, title, children }) {
             {title}
           </h2>
           <button
+            type="button"
             onClick={onClose}
             className="text-gray-400 hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800 rounded-md p-1"
             aria-label="Close modal"
+            title="Close dialog (Escape)"
           >
             <svg
               className="w-6 h-6"

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildMultiPassPlan, shouldFailForPassFailures } from '../../lib/server/multiPassAnalysis.js'
+import { buildMultiPassPlan, passFamilyForPath, shouldFailForPassFailures } from '../../lib/server/multiPassAnalysis.js'
 
 function mockBundle(paths) {
   return {
@@ -56,5 +56,21 @@ describe('multi-pass analysis planning', () => {
     const misc = plan.passes.find((p) => p.family === 'misc_supporting_context')
     expect(misc).toBeUndefined()
     expect(plan.analysisPassCount).toBe(0)
+  })
+
+  it('routes camelCase rate limiter files to the rate-limiting pass (DEFECT-004)', () => {
+    expect(passFamilyForPath('lib/server/rateLimit.js')).toBe('rate_limiting_abuse_controls')
+    expect(passFamilyForPath('src/utils/ratelimitHelper.ts')).toBe('rate_limiting_abuse_controls')
+  })
+
+  it('routes server job and API scan surfaces into a modeled pass instead of misc (DEFECT-004)', () => {
+    expect(passFamilyForPath('lib/server/scanJobs.js')).toBe('validation_input_trust_boundaries')
+    expect(passFamilyForPath('api/scan-jobs.js')).toBe('validation_input_trust_boundaries')
+    expect(passFamilyForPath('api/analyze.js')).toBe('validation_input_trust_boundaries')
+    const bundle = mockBundle(['lib/server/scanJobs.js', 'api/scan-jobs.js', 'lib/server/rateLimit.js'])
+    const plan = buildMultiPassPlan(bundle)
+    expect(plan.analysisPassCount).toBeGreaterThanOrEqual(2)
+    expect(plan.passes.some((p) => p.family === 'validation_input_trust_boundaries')).toBe(true)
+    expect(plan.passes.some((p) => p.family === 'rate_limiting_abuse_controls')).toBe(true)
   })
 })

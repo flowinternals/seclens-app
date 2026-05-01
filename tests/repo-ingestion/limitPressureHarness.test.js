@@ -149,7 +149,7 @@ describe('limit pressure harness', () => {
         filesOmitted: 0,
       },
       selection: {
-        strategyVersion: 'v2.5',
+        strategyVersion: 'v2.8',
         selected: syntheticEvidence.map((ev, i) => ({
           path: ev.path,
           tier: i === 0 ? 'tier1' : 'tier2',

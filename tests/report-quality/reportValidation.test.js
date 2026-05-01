@@ -10,6 +10,8 @@ import {
   hasUnscopedGenericQuickWins,
   hasNoFindingsContradictoryGapAssertions,
   hasNotEvidencedRecommendationDrift,
+  hasConsolidatedSummaryPostureMismatch,
+  hasConsolidatedExecutiveCompletenessMismatch,
 } from '../../lib/server/reportValidation.js'
 import {
   SECTION_TITLES_ORDER,
@@ -617,6 +619,116 @@ describe('validateReport', () => {
     const r = validateReport(report)
     expect(hasNotEvidencedRecommendationDrift(report)).toBe(false)
     expect(r.categories).not.toContain('NOT_EVIDENCED_DRIFT')
+  })
+})
+
+describe('hasConsolidatedSummaryPostureMismatch (DEFECT-004)', () => {
+  function consolidatedShell(summaryRiskMiddle, dimensionProgressBlock) {
+    return `# SecLens Consolidated Report
+
+- **Repository:** a/b (https://github.com/a/b)
+- **Ref:** main
+- **Generated:** 2026-05-01T12:00:00.000Z
+- **Languages:** JavaScript
+- **Summary Risk:** ${summaryRiskMiddle}
+
+## Executive Posture Summary
+
+Body.
+
+## Confirmed Protections
+
+- x
+
+## Priority Risks Requiring Review
+
+- x
+
+## Dimension Summaries
+
+### Example dimension
+
+${dimensionProgressBlock}
+- **Status:** unknown
+
+## Prioritized Next Actions
+
+1. x
+
+## Confidence & Coverage
+
+- x
+
+## Evidence Appendix
+
+- x
+`
+  }
+
+  it('flags Ready to launch when a dimension is partial', () => {
+    const md = consolidatedShell('Ready to launch - label', '- **Progress:** partial')
+    expect(hasConsolidatedSummaryPostureMismatch(md)).toBe(true)
+  })
+
+  it('returns false for Needs additional review with partial dimensions', () => {
+    const md = consolidatedShell('Needs additional review - label', '- **Progress:** partial')
+    expect(hasConsolidatedSummaryPostureMismatch(md)).toBe(false)
+  })
+
+  it('flags Ready with caution when any dimension is partial (DEFECT-004 tightened critic gate)', () => {
+    const md = consolidatedShell('Ready with caution - label', '- **Progress:** partial')
+    expect(hasConsolidatedSummaryPostureMismatch(md)).toBe(true)
+  })
+
+  it('flags optimistic summary when executive shows incomplete dimension completion', () => {
+    const md = `# SecLens Consolidated Report
+
+- **Repository:** a/b (https://github.com/a/b)
+- **Ref:** main
+- **Generated:** 2026-05-01T12:00:00.000Z
+- **Languages:** JavaScript
+- **Summary Risk:** Ready with caution - label
+
+## Executive Posture Summary
+
+SecLens completed 5 of 8 planned security dimensions for this repository. This run surfaced 0 confirmed issue(s).
+
+## Confirmed Protections
+
+- x
+
+## Priority Risks Requiring Review
+
+- x
+
+## Dimension Summaries
+
+### D
+
+- **Progress:** ready
+- **Status:** healthy
+
+## Prioritized Next Actions
+
+1. x
+
+## Confidence & Coverage
+
+- x
+
+## Evidence Appendix
+
+- x
+`
+    expect(hasConsolidatedExecutiveCompletenessMismatch(md)).toBe(true)
+    const r = validateReport(md)
+    expect(r.categories).toContain('SUMMARY_RISK_INCONSISTENT')
+  })
+
+  it('surfaces mismatch via validateReport on consolidated layout', () => {
+    const md = consolidatedShell('Ready to launch - label', '- **Progress:** failed')
+    const r = validateReport(md)
+    expect(r.categories).toContain('SUMMARY_RISK_INCONSISTENT')
   })
 })
 

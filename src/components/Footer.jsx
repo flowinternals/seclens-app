@@ -5,17 +5,21 @@ function Footer({ onOpenPrivacy, onOpenTerms }) {
           <span className="seclens-subtle">© 2025 Sagesilver Pty Ltd</span>
           <span className="seclens-subtle">|</span>
           <button
+            type="button"
             onClick={onOpenPrivacy}
             className="rounded px-2 py-1 transition-colors hover:text-[var(--sl-text)]"
             aria-label="Open Privacy Policy"
+            title="Open Privacy Policy in a dialog"
           >
             Privacy Policy
           </button>
           <span className="seclens-subtle">|</span>
           <button
+            type="button"
             onClick={onOpenTerms}
             className="rounded px-2 py-1 transition-colors hover:text-[var(--sl-text)]"
             aria-label="Open Terms and Conditions"
+            title="Open Terms & Conditions in a dialog"
           >
             Terms & Conditions
           </button>

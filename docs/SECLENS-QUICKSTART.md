@@ -38,12 +38,13 @@ After a successful scan, you can download the report as:
 
 A typical result includes:
 
-- the report itself
+- the report itself (Markdown, structured to the current **report contract** version shown in the UI or API)
 - repository owner, name, branch, and scanned SHA
-- a coverage summary
+- a coverage summary and ingestion metadata (how much of the repo was selected versus omitted)
 - scan metadata such as selected file counts and cap hits
+- optional **telemetry**: correlation ID and model token usage (for your records or when asking for support)
 
-## Important caveat
+## Coverage and scope
 
 SecLens does not claim full repository coverage on every run. Reports are based on the files selected and processed during that scan. If scan caps are hit or files are omitted, the report should be read as scoped, not exhaustive.
 

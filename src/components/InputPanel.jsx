@@ -23,7 +23,16 @@ function AnimatedLoadingLabel({ label }) {
   )
 }
 
-function InputPanel({ onScan, isLoading, compact = false, loadingLabel = 'Scan running' }) {
+function InputPanel({
+  onScan,
+  isLoading,
+  compact = false,
+  loadingLabel = 'Scan running',
+  onExport,
+  canExport = false,
+  isExporting = false,
+  className = '',
+}) {
   const [url, setUrl] = useState(() => {
     if (typeof window === 'undefined') return ''
     try {
@@ -86,8 +95,20 @@ function InputPanel({ onScan, isLoading, compact = false, loadingLabel = 'Scan r
     })
   }
 
+  const showExport = typeof onExport === 'function'
+
+  const runScanTitle = isLoading
+    ? `${loadingLabel} — disabled until the current scan step completes`
+    : 'Submit the repository URL and start a SecLens dimension review'
+
+  const exportTitle = isExporting
+    ? 'Export in progress — wait for the download to finish'
+    : !canExport
+      ? 'Export disabled until the consolidated report is launch-ready'
+      : 'Export consolidated report as Markdown (.md file)'
+
   return (
-    <div className="seclens-panel px-5 py-5">
+    <div className={`seclens-panel px-5 py-5${className ? ` ${className}` : ''}`}>
       <div className="seclens-border-soft border-b pb-4">
         <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Start a scan</p>
         {!compact ? (
@@ -100,8 +121,8 @@ function InputPanel({ onScan, isLoading, compact = false, loadingLabel = 'Scan r
         ) : null}
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-        <div>
+      <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-5">
+        <div className="min-w-0 w-full">
           <label htmlFor="repo-url" className="seclens-text mb-2 block text-sm font-medium">
             Repository URL
           </label>
@@ -114,7 +135,12 @@ function InputPanel({ onScan, isLoading, compact = false, loadingLabel = 'Scan r
               setError('')
             }}
             placeholder="https://github.com/user/repo"
-            className="seclens-input h-12 w-full rounded-[12px] px-4 text-[16px] outline-none transition"
+            title={
+              isLoading
+                ? 'Repository URL (locked while a scan is running)'
+                : 'Public GitHub repository URL to scan, for example https://github.com/org/repo'
+            }
+            className="seclens-input h-12 w-full min-w-0 rounded-[12px] px-4 font-mono text-[15px] outline-none transition sm:text-[16px]"
             disabled={isLoading}
             aria-invalid={error ? 'true' : 'false'}
             aria-describedby={error ? 'repo-url-error' : undefined}
@@ -126,13 +152,25 @@ function InputPanel({ onScan, isLoading, compact = false, loadingLabel = 'Scan r
           ) : null}
         </div>
 
-        <label className="seclens-surface seclens-text flex items-center gap-3 rounded-[12px] px-4 py-3 text-sm">
+        <label
+          className="seclens-surface seclens-text inline-flex w-fit max-w-full cursor-pointer items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm"
+          title={
+            isLoading
+              ? 'Private repository (cannot change while a scan is running)'
+              : 'Enable when the repo is private — you can supply a GitHub token below for clone access'
+          }
+        >
           <input
             type="checkbox"
             checked={isPrivate}
             onChange={(event) => setIsPrivate(event.target.checked)}
             disabled={isLoading}
-            className="h-4 w-4"
+            title={
+              isLoading
+                ? 'Private repository option is locked while a scan runs'
+                : 'Toggle when scanning a private GitHub repository'
+            }
+            className="h-4 w-4 shrink-0"
           />
           Private repository
         </label>
@@ -148,15 +186,42 @@ function InputPanel({ onScan, isLoading, compact = false, loadingLabel = 'Scan r
               value={token}
               onChange={(event) => setToken(event.target.value)}
               placeholder="ghp_... or github_pat_..."
-              className="seclens-input h-12 w-full rounded-[12px] px-4 text-[16px] outline-none transition"
+              title={
+                isLoading
+                  ? 'GitHub token (locked while a scan is running)'
+                  : 'Personal access token with repo read access — used only for this scan request'
+              }
+              className="seclens-input h-12 w-full min-w-0 rounded-[12px] px-4 font-mono text-[15px] outline-none transition sm:text-[16px]"
               disabled={isLoading}
             />
           </div>
         ) : null}
 
-        <GlowingButton type="submit" disabled={isLoading} fullWidth borderVariant="rainbow" aria-label="Run scan">
-          {isLoading ? <AnimatedLoadingLabel label={loadingLabel} /> : 'Run scan'}
-        </GlowingButton>
+        <div className="flex flex-wrap items-center gap-3">
+          <GlowingButton
+            type="submit"
+            disabled={isLoading}
+            borderVariant="rainbow"
+            className="min-w-[10.5rem] shrink-0"
+            aria-label="Run scan"
+            title={runScanTitle}
+          >
+            {isLoading ? <AnimatedLoadingLabel label={loadingLabel} /> : 'Run scan'}
+          </GlowingButton>
+          {showExport ? (
+            <span className="inline-flex shrink-0" title={exportTitle}>
+              <button
+                type="button"
+                onClick={() => onExport()}
+                disabled={!canExport || isExporting}
+                className="seclens-button-secondary h-12 shrink-0 px-5"
+                aria-label={isExporting ? 'Exporting report' : 'Export consolidated report as Markdown'}
+              >
+                {isExporting ? 'Exporting…' : 'Export'}
+              </button>
+            </span>
+          ) : null}
+        </div>
       </form>
     </div>
   )

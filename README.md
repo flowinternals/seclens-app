@@ -4,17 +4,19 @@ On-demand security analysis for GitHub repositories.
 
 ## Important Notes
 
-- **Design documents:** `D:\Assets\flowinternals-seclens-app-Assets\design\mvp4 - launch-readiness\`
+- **Design documents:** `D:\Assets\flowinternals-seclens-app-Assets\design\mvp4 - launch-readiness\` (report maturity, dimension redesign, security posture)
+- **Architecture / PRD (Assets):** `design/architecture.md`, `design/prd.md` in the same Assets repo
 - **Secrets:** use environment variables only; never commit keys, tokens, or populated secret files
-- **Scope:** this README reflects the current Stage 1 / Stage 2 architecture
+- **Scope:** this README reflects the **MVP4** pipeline: Stage **02** ingestion (`strategyVersion` **v2**), versioned report contract, validator, optional critic, bounded caps
 
 ## Features
 
-- On-demand GitHub repository security analysis
+- On-demand GitHub repository security analysis (public repos; optional token for private or rate limits)
 - Markdown, text, and PDF report exports
-- Report-quality validation with optional critic repair
-- Deterministic Stage 02 repository ingestion with line-addressable excerpts
-- Local self-scan harness for repeatable launch-readiness checks
+- Report-quality validation with optional critic repair (`SECLENS_CRITIC_ENABLED`)
+- Deterministic **Stage 02** repository ingestion (`strategyVersion` **v2**) with line-addressable excerpts and honest coverage metadata
+- Analyze responses include **correlation ID** and **token usage** telemetry for support and tuning
+- Local **self-scan** harness for repeatable launch-readiness checks (`.seclens-self-scan/`)
 
 ## Technology Stack
 
@@ -32,10 +34,10 @@ On-demand security analysis for GitHub repositories.
 
 ### Security
 
-- Content Security Policy and hardened response headers
+- Content Security Policy and hardened response headers (MVP4 design track `03` targets further tightening)
 - DOMPurify and backend input validation
 - CORS allowlist
-- In-memory rate limiting
+- In-memory rate limiting per serverless instance (see MVP4 `03` for persistent-limit direction)
 
 ## Prerequisites
 
@@ -306,11 +308,21 @@ Endpoints:
 
 ## Launch Readiness
 
-Current MVP4 work is tracked in:
+MVP4 work is organized under:
 
 ```text
 D:\Assets\flowinternals-seclens-app-Assets\design\mvp4 - launch-readiness\
 ```
+
+High-level tracks:
+
+| Folder | Focus |
+|--------|--------|
+| `01 - report maturity and intrinsic value` | Golden fixtures, contract and validator behavior, intrinsic report value |
+| `02.1 - dimension-redesign` | Cross-repo launch-readiness assessment, repo profiling, recall-first policy; run telemetry policy in `SCAN-TELEMETRY-LOG.md` (same `mvp4 - launch-readiness` folder) |
+| `03 - security posture and abuse controls` | Rate limits, bot/abuse controls, CSP, private token handling—**verify live behavior** against this README and code |
+
+Product-level snapshots: `design/architecture.md` and `design/prd.md` in the Assets repo.
 
 ## Support
 

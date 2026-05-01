@@ -2,7 +2,7 @@
 
 ## Overview
 
-SecLens is a web application that analyzes a GitHub repository and produces a structured security report. It is designed to give users a fast, evidence-based snapshot of repository risk without requiring a full manual review first.
+SecLens is a web application that analyzes a GitHub repository and produces a structured security report oriented toward **launch-readiness style** risk and hygiene. It is designed to give you a fast, **evidence-based snapshot** of repository risk without replacing a full manual review.
 
 SecLens is most useful when you want to:
 
@@ -17,11 +17,12 @@ SecLens analyzes repository content fetched from GitHub and builds a report from
 
 The scan output can include:
 
-- a Markdown security report
+- a Markdown security report (versioned **report contract**; validated before you see it)
 - repository URL, owner, name, language, default branch, scanned ref, and scanned SHA
-- ingestion strategy metadata
+- ingestion strategy metadata (for example **Stage 02**, `strategyVersion` **v2**)
 - selected and omitted file counts
 - coverage notes and cap-hit indicators
+- **Telemetry** such as a correlation ID and token usage (draft, optional critic pass, totals), when exposed by your deployment
 
 SecLens also performs a pre-scan eligibility pass. Non-germane files such as Markdown and plain-text documentation, PDFs, Office documents, images, and video or media assets are excluded before the security-relevant file counts are calculated.
 
@@ -200,7 +201,7 @@ Retrying is reasonable when:
 - the GitHub API returned a transient issue
 - a download failed after report generation
 
-Do not simply retry without checking inputs when:
+Fix the underlying issue before retrying when:
 
 - the repository URL is invalid
 - the token is invalid or expired

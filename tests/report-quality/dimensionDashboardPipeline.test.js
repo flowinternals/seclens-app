@@ -3,6 +3,7 @@ import {
   createDashboardPayload,
   createEmptyDimensionResult,
   createMockDashboardPayload,
+  summarizeDashboard,
   validateDimensionResult,
 } from '../../lib/shared/dimensions.js'
 import {
@@ -68,7 +69,9 @@ describe('dimension dashboard pipeline', () => {
     expect(dashboard.summary.totals.findingsAdmitted).toBe(1)
     expect(dashboard.summary.totals.observedControls).toBe(1)
     expect(dashboard.summary.overallStatus).toBe('review_needed')
-    expect(dashboard.recommendationQueue).toHaveLength(1)
+    expect(dashboard.recommendationQueue.length).toBeGreaterThanOrEqual(1)
+    expect(dashboard.recommendationQueue.some((row) => /ownership checks/i.test(row.text))).toBe(true)
+    expect(dashboard.recommendationQueue.some((row) => /Missing ownership binding/i.test(row.text))).toBe(true)
     expect(dashboard.consolidatedReportAvailable).toBe(true)
   })
 
@@ -89,7 +92,7 @@ describe('dimension dashboard pipeline', () => {
   it('creates a useful skipped dimension result for low-signal runs', () => {
     const result = assembleSkippedDimensionResult('data_access_persistence')
     expect(result.status).toBe('unknown')
-    expect(result.progress).toBe('failed')
+    expect(result.progress).toBe('partial')
     expect(result.coverage.confidence).toBe('low')
     expect(result.summary.whatToCheckNext).toMatch(/review/i)
   })
@@ -156,6 +159,86 @@ describe('dimension dashboard pipeline', () => {
 
   it('keeps ordinary slashes readable in exported text sanitization', () => {
     expect(sanitizeText('Config / Policy / Rules')).toBe('Config / Policy / Rules')
+  })
+
+  it('does not block export readiness when a dimension is skipped for no_relevant_evidence but still applicable', () => {
+    const repoProfile = {
+      profiles: ['backend API'],
+      primaryProfile: 'backend API',
+      confidence: 'high',
+      rationale: 'fixture',
+    }
+    const dimensions = [
+      createEmptyDimensionResult('auth_session_authorization', {
+        status: 'healthy',
+        progress: 'ready',
+        findings: [],
+        observedControls: [],
+        unverifiedControls: [],
+        recommendations: [],
+        coverage: {
+          reviewedFiles: 1,
+          omittedFilesRelevant: 0,
+          capLimited: false,
+          confidence: 'high',
+          coverageSummary: 'Reviewed auth.',
+        },
+        evidence: { topCitations: ['lib/a.ts:1'], reviewedPaths: ['lib/a.ts'] },
+      }),
+      assembleSkippedDimensionResult('data_access_persistence', 'no_relevant_evidence', repoProfile),
+    ]
+    const dashboard = createDashboardPayload({
+      repository: { owner: 'a', name: 'b', url: 'https://github.com/a/b' },
+      dimensions,
+      repoProfile,
+      runState: 'completed',
+    })
+    expect(dashboard.consolidatedReportAvailable).toBe(true)
+    expect(dashboard.reportReadinessReasons).toHaveLength(0)
+  })
+
+  it('downgrades overall posture when applicable dimensions are incomplete and no findings were admitted (DEFECT-004)', () => {
+    const repoProfile = {
+      profiles: ['full stack'],
+      primaryProfile: 'full stack',
+      confidence: 'high',
+      rationale: 'fixture',
+    }
+    const dimensions = [
+      createEmptyDimensionResult('auth_session_authorization', {
+        status: 'healthy',
+        progress: 'ready',
+        findings: [],
+        observedControls: [{ id: 'oc', claim: 'Session middleware observed.', confidence: 'high' }],
+        unverifiedControls: [],
+        recommendations: [],
+        applicability: { status: 'applicable', required: true, weight: 1, rationale: 'Applicable.' },
+        coverage: {
+          reviewedFiles: 2,
+          omittedFilesRelevant: 0,
+          capLimited: false,
+          confidence: 'high',
+          coverageSummary: 'Auth reviewed.',
+        },
+        evidence: { topCitations: ['lib/a.ts:1'], reviewedPaths: ['lib/a.ts'] },
+      }),
+      assembleSkippedDimensionResult('data_access_persistence', 'no_relevant_evidence', repoProfile),
+    ]
+    const summary = summarizeDashboard(dimensions)
+    expect(summary.totals.findingsAdmitted).toBe(0)
+    expect(summary.overallStatus).toBe('unknown')
+    const dashboard = createDashboardPayload({
+      repository: { owner: 'a', name: 'b', url: 'https://github.com/a/b' },
+      dimensions,
+      repoProfile,
+      runState: 'completed',
+    })
+    const report = renderConsolidatedReport({
+      repository: dashboard.repository,
+      dashboard,
+    })
+    expect(report).toMatch(/\*\*Summary Risk:\*\*[^\n]*Needs additional review/i)
+    expect(validateReport(report).ok).toBe(true)
   })
 
   it('does not block report readiness when skipped dimensions are profile-not-applicable', () => {
