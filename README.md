@@ -1,332 +1,97 @@
 # SecLens Web Application
 
-On-demand security analysis for GitHub repositories.
+SecLens provides on-demand security analysis for GitHub repositories.
 
-## Important Notes
+## Quick Start
 
-- **Design documents:** `D:\Assets\flowinternals-seclens-app-Assets\design\mvp4 - launch-readiness\` (report maturity, dimension redesign, security posture)
-- **Architecture / PRD (Assets):** `design/architecture.md`, `design/prd.md` in the same Assets repo
-- **Secrets:** use environment variables only; never commit keys, tokens, or populated secret files
-- **Scope:** this README reflects the **MVP4** pipeline: Stage **02** ingestion (`strategyVersion` **v2**), versioned report contract, validator, optional critic, bounded caps
-
-## Features
-
-- On-demand GitHub repository security analysis (public repos; optional token for private or rate limits)
-- Markdown, text, and PDF report exports
-- Report-quality validation with optional critic repair (`SECLENS_CRITIC_ENABLED`)
-- Deterministic **Stage 02** repository ingestion (`strategyVersion` **v2**) with line-addressable excerpts and honest coverage metadata
-- Analyze responses include **correlation ID** and **token usage** telemetry for support and tuning
-- Local **self-scan** harness for repeatable launch-readiness checks (`.seclens-self-scan/`)
-
-## Technology Stack
-
-### Frontend
-
-- React
-- Vite
-- Tailwind CSS
-
-### Backend
-
-- Vercel serverless route handlers
-- OpenAI API
-- GitHub API
-
-### Security
-
-- Content Security Policy and hardened response headers (MVP4 design track `03` targets further tightening)
-- DOMPurify and backend input validation
-- CORS allowlist
-- In-memory rate limiting per serverless instance (see MVP4 `03` for persistent-limit direction)
-
-## Prerequisites
+### Prerequisites
 
 - Node.js 20+
 - npm
-- Git
-- OpenAI API key
-- Vercel account for deployment
 
-## Installation
-
-1. Clone the repository:
+### Install
 
 ```bash
 git clone https://github.com/flowinternals/seclens-app.git
 cd seclens-app
-```
-
-2. Install dependencies:
-
-```bash
 npm install
 ```
 
-3. Create `.env.local` from `.env.example` and set real values:
+### Configure Environment
 
-```env
-OPENAI_API_KEY=your_openai_api_key_here
-VITE_API_URL=http://localhost:3000
-GITHUB_TOKEN=your_github_token_here
-GITHUB_API_TOKEN=your_github_token_here
-CORS_ALLOWLIST=http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173
-PORT=3001
-NODE_ENV=development
-SECLENS_CRITIC_ENABLED=true
-SECLENS_ANALYSIS_MODEL=gpt-4o-mini
-SECLENS_CRITIC_MODEL=gpt-4o-mini
-SECLENS_MAX_ANALYSIS_TOKENS=6144
-SECLENS_MAX_CRITIC_TOKENS=10000
-SECLENS_MAX_FILES_FETCHED=200
-SECLENS_MAX_BYTES_PER_FILE=12000
-SECLENS_MAX_TOTAL_BYTES_TO_MODEL=420000
-SECLENS_MAX_REPO_TREE_ENTRIES=100000
-```
+Create `.env.local` from `.env.example` and set required values.
 
-Never commit `.env.local` or any file containing populated credentials.
+Minimum required variables:
 
-## Repository Ingestion (MVP4 Stage 02)
+- `OPENAI_API_KEY`
+- `VITE_API_URL`
 
-Stage 02 ingestion:
+Optional variables:
 
-- resolves the repository `default_branch` and commit SHA
-- uses a deterministic tiered + related-context file-selection strategy (`v2`)
-- builds line-addressable evidence excerpts using `path:start-end`
-- applies bounded `SECLENS_MAX_*` caps
-- returns branch/ref metadata and an ingestion summary in `/api/analyze`
+- `GITHUB_TOKEN`
+- `GITHUB_API_TOKEN`
+- `CORS_ALLOWLIST`
+- `PORT`
+- `NODE_ENV`
+- `SECLENS_ALLOW_NO_ORIGIN_IN_PROD`
+- `SECLENS_SERVER_API_KEY`
 
-The default JSON response does **not** include full omitted-path inventories or raw evidence payloads.
+Never commit `.env.local` or any populated secrets.
 
-### Local Self-Scan
+## Run Locally
 
-Run:
-
-```bash
-npm run self-scan
-```
-
-This writes `.seclens-self-scan/evidence-latest.json` with:
-
-- the normalized evidence `bundle`
-- ingestion summary metadata
-- selection, omission, citation, and coverage data for repeatable QA comparison
-
-Default local ref label is `local-working-tree` unless `SECLENS_SELF_SCAN_LABEL` is set.
-
-### Stage 02 Coverage Profiles
-
-Recommended launch-readiness defaults:
-
-```env
-SECLENS_MAX_FILES_FETCHED=200
-SECLENS_MAX_BYTES_PER_FILE=12000
-SECLENS_MAX_TOTAL_BYTES_TO_MODEL=420000
-SECLENS_MAX_REPO_TREE_ENTRIES=100000
-SECLENS_MAX_ANALYSIS_TOKENS=6144
-SECLENS_MAX_CRITIC_TOKENS=10000
-```
-
-Optional deep QA profile for explicit high-coverage validation runs:
-
-```env
-SECLENS_MAX_FILES_FETCHED=250
-SECLENS_MAX_BYTES_PER_FILE=12000
-SECLENS_MAX_TOTAL_BYTES_TO_MODEL=500000
-SECLENS_MAX_REPO_TREE_ENTRIES=150000
-SECLENS_MAX_ANALYSIS_TOKENS=6144
-SECLENS_MAX_CRITIC_TOKENS=10000
-```
-
-Coverage honesty remains required: reports are evidence-bound to selected scanned files and disclosed cap hits.
-
-Guidance file:
-
-```text
-tests/fixtures/SELF-SCAN-OBSERVATIONS.md
-```
-
-## Development
-
-### Start Both Frontend and API
+Start frontend and API together:
 
 ```bash
 npm run dev:full
 ```
 
-This starts:
-
-- frontend dev server on `http://localhost:3000`
-- API server on `http://localhost:3001`
-
-### Start Separately
+Or start separately:
 
 ```bash
-npm run dev:api
 npm run dev
+npm run dev:api
 ```
 
-### Report-Quality Testing
-
-For local MVP4 testing, set:
-
-```env
-SECLENS_CRITIC_ENABLED=true
-```
-
-Then restart `npm run dev:api` or `npm run dev:full`.
-
-If critic repair is disabled, failed reports return:
-
-```text
-422 REPORT_QUALITY_GATE
-```
-
-### Build
+## Build
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Deployment
+## API Usage
 
-SecLens is deployed on Vercel.
+Primary analysis endpoint:
 
-Required Vercel environment variables:
+- `POST /api/analyze`
 
-| Variable | Description | Required |
-|---|---|---|
-| `OPENAI_API_KEY` | OpenAI API key for analysis | Yes |
-| `CORS_ALLOWLIST` | Allowed production origins | Yes |
-| `GITHUB_TOKEN` | Higher GitHub rate limits / private repo access | No |
-| `SECLENS_CRITIC_ENABLED` | Enable critic repair in staging/prod tests | Recommended |
-| `SECLENS_ANALYSIS_MODEL` | Primary analysis model | No |
-| `SECLENS_CRITIC_MODEL` | Critic model | No |
-| `SECLENS_MAX_ANALYSIS_TOKENS` | Analysis token cap | No |
-| `SECLENS_MAX_CRITIC_TOKENS` | Critic token cap | No |
-| `SECLENS_MAX_FILES_FETCHED` | Stage 02 file-selection cap | No |
-| `SECLENS_MAX_BYTES_PER_FILE` | Stage 02 per-file excerpt cap | No |
-| `SECLENS_MAX_TOTAL_BYTES_TO_MODEL` | Stage 02 total evidence cap | No |
-| `SECLENS_MAX_REPO_TREE_ENTRIES` | Stage 02 tree cap | No |
-
-## Project Structure
-
-```text
-seclens-app/
-├── api/                    # Vercel route handlers
-│   ├── analyze.js         # Main analysis endpoint
-│   └── download/          # Export endpoints
-├── lib/
-│   ├── prompts/           # Output contract, evidence rules, critic rules
-│   └── server/            # Ingestion, validation, downloads, rate limiting
-├── scripts/               # Local helper scripts (including self-scan)
-├── src/                   # Frontend application
-├── tests/                 # Repo-ingestion and report-quality tests
-├── public/                # Static assets
-├── vercel.json           # Vercel routing and headers
-├── vite.config.js        # Vite configuration
-└── package.json          # Scripts and dependencies
-```
-
-## Security Notes
-
-- Secrets must stay in environment variables, not in source or docs
-- `.env.local` and `.seclens-self-scan/` are gitignored local artifacts
-- Quality-gate debug artifacts are development helpers and should remain local-only
-- Production logs should not contain tokens, keys, or raw secret material
-
-## Download Endpoints
-
-Shared server-side download utilities live in:
-
-```text
-lib/server/downloadUtils.js
-```
-
-Endpoints:
-
-- `/api/download/markdown`
-- `/api/download/text`
-- `/api/download/pdf`
-
-## API Endpoints
-
-### `/api/analyze`
-
-**Method:** `POST`
-
-**Body:**
+Example request body:
 
 ```json
 {
   "repositoryUrl": "https://github.com/user/repo",
-  "githubToken": "optional_personal_access_token",
-  "analysisModel": "optional_openai_model_id_from_local_catalog"
+  "githubToken": "optional_token",
+  "analysisModel": "optional_model"
 }
 ```
 
-**Success response shape:**
+## Deployment
 
-```json
-{
-  "report": "Security analysis report in markdown format...",
-  "reportContractVersion": "2.0.4-mvp4",
-  "reportValidation": {
-    "ok": true,
-    "repairedAfterCritic": false
-  },
-  "telemetry": {
-    "correlationId": "uuid",
-    "tokenUsage": {
-      "draft": { "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0 },
-      "critic": null,
-      "total": { "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0 }
-    }
-  },
-  "repository": {
-    "url": "https://github.com/user/repo",
-    "owner": "user",
-    "name": "repo",
-    "language": "JavaScript",
-    "defaultBranch": "main",
-    "scannedRef": "main",
-    "scannedSha": "commitsha"
-  },
-  "ingestion": {
-    "strategyVersion": "v2",
-    "selectedFileCount": 40,
-    "omittedFileCount": 120,
-    "selectedReasonCounts": { "tier1_priority": 8, "tier2_anchor_route": 12, "related_middleware": 4 },
-    "anchorCount": 18,
-    "relatedContextCount": 11,
-    "backfillCount": 9,
-    "capHits": ["MAX_FILES_FETCHED"],
-    "coverageSummary": "Partial coverage due to configured caps."
-  },
-  "timestamp": "2026-01-09T12:00:00Z"
-}
-```
+Deploy on Vercel (or compatible Node/serverless environment) with environment variables configured securely.
 
-## Launch Readiness
+At minimum in production:
 
-MVP4 work is organized under:
+- `OPENAI_API_KEY`
+- `CORS_ALLOWLIST`
 
-```text
-D:\Assets\flowinternals-seclens-app-Assets\design\mvp4 - launch-readiness\
-```
+## Security Notes
 
-High-level tracks:
-
-| Folder | Focus |
-|--------|--------|
-| `01 - report maturity and intrinsic value` | Golden fixtures, contract and validator behavior, intrinsic report value |
-| `02.1 - dimension-redesign` | Cross-repo launch-readiness assessment, repo profiling, recall-first policy; run telemetry policy in `SCAN-TELEMETRY-LOG.md` (same `mvp4 - launch-readiness` folder) |
-| `03 - security posture and abuse controls` | Rate limits, bot/abuse controls, CSP, private token handling—**verify live behavior** against this README and code |
-
-Product-level snapshots: `design/architecture.md` and `design/prd.md` in the Assets repo.
+- Keep secrets only in environment variables.
+- Do not expose keys or tokens in logs, docs, screenshots, or commits.
+- Rotate credentials immediately if exposure is suspected.
 
 ## Support
 
 - Issues: [GitHub Issues](https://github.com/flowinternals/seclens-app/issues)
 - Repository: [https://github.com/flowinternals/seclens-app](https://github.com/flowinternals/seclens-app)
-- Design documents: `D:\Assets\flowinternals-seclens-app-Assets\design\mvp4 - launch-readiness\`

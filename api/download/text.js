@@ -6,6 +6,7 @@
 import { corsHeaders } from '../../lib/server/cors.js'
 import { markdownToPlainText, generateFilename, setDownloadHeaders, handleDownloadError } from '../../lib/server/downloadUtils.js'
 import { validateString, validateRepoName } from '../../lib/server/validation.js'
+import { enforceProductionAccessGuard } from '../../lib/server/productionAccessGuard.js'
 
 export default async function handler(req, res) {
   const origin = req.headers.origin
@@ -15,6 +16,11 @@ export default async function handler(req, res) {
   Object.entries(headers).forEach(([key, value]) => {
     res.setHeader(key, value)
   })
+  const isOriginAllowed = Boolean(headers['Access-Control-Allow-Origin'])
+
+  if (!enforceProductionAccessGuard({ req, res, origin, isOriginAllowed })) {
+    return
+  }
   
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })

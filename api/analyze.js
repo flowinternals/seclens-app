@@ -12,6 +12,7 @@ import { sanitizeGitHubUrl } from '../lib/server/sanitize.js'
 import { ReportQualityGateError } from '../lib/server/reportQualityGateError.js'
 import { buildScanJobLifecycleTelemetry, buildTelemetry } from '../lib/server/scanTelemetryPayload.js'
 import { tryAppendScanTelemetryLog } from '../lib/server/scanTelemetryLogAppend.js'
+import { enforceProductionAccessGuard } from '../lib/server/productionAccessGuard.js'
 
 export default async function handler(req, res) {
   // Sanitized logging - no sensitive data in production
@@ -47,6 +48,7 @@ export default async function handler(req, res) {
     
     // Check CORS - allow requests from same origin (no origin header) or allowed origins
     const headers = corsHeaders(origin)
+    const isOriginAllowed = Boolean(headers['Access-Control-Allow-Origin'])
     
     // If no origin header (same-origin request from proxy), allow only in development
     if (!origin) {
@@ -79,6 +81,10 @@ export default async function handler(req, res) {
     // Only allow POST requests
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' })
+    }
+
+    if (!enforceProductionAccessGuard({ req, res, origin, isOriginAllowed })) {
+      return
     }
     
     console.log('Processing POST request...')
