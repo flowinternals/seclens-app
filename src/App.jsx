@@ -9,8 +9,14 @@ import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsAndConditions from './components/TermsAndConditions'
 import { createMockDashboardPayload, getDimensionDefinition } from '../lib/shared/dimensions'
 import { buildRepositoryDisplay, createQueuedDashboard } from '../lib/server/dimensionAnalysis.js'
+import {
+  DEFAULT_OPENAI_MODEL_ID,
+  OPENAI_MODEL_CATALOG,
+  getOpenAIModelById,
+} from '../lib/shared/openaiModels'
 
 const initialDashboard = createMockDashboardPayload()
+const MODEL_STORAGE_KEY = 'seclens-analysis-model'
 
 function buildScanButtonLabel(dashboard) {
   const runState = String(dashboard?.runState || '').toLowerCase()
@@ -53,9 +59,15 @@ function App() {
   const [showTermsModal, setShowTermsModal] = useState(false)
   const [activeView, setActiveView] = useState('dashboard')
   const [selectedDimensionId, setSelectedDimensionId] = useState(initialDashboard.selectedDimensionId)
+  const [selectedModel, setSelectedModel] = useState(() => {
+    if (typeof window === 'undefined') return DEFAULT_OPENAI_MODEL_ID
+    const stored = window.localStorage.getItem(MODEL_STORAGE_KEY)
+    return getOpenAIModelById(stored)?.id || DEFAULT_OPENAI_MODEL_ID
+  })
 
   const jobIdRef = useRef(null)
   const pollTimerRef = useRef(null)
+  const selectedModelRef = useRef(selectedModel)
   /** True from scan click until the job finishes or fails to start — drives UI while waiting for POST / jobId. */
   const scanSessionActiveRef = useRef(false)
 
@@ -73,6 +85,13 @@ function App() {
       window.localStorage.setItem('seclens-theme', theme)
     }
   }, [theme])
+
+  useEffect(() => {
+    selectedModelRef.current = selectedModel
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(MODEL_STORAGE_KEY, selectedModel)
+    }
+  }, [selectedModel])
 
   useEffect(() => {
     if (!selectedDimensionId && dashboard?.selectedDimensionId) {
@@ -160,6 +179,8 @@ function App() {
         body: JSON.stringify({
           repositoryUrl: url,
           githubToken: tokenForThisScan?.trim() ? tokenForThisScan.trim() : undefined,
+          // Use ref so a rapid "model change -> run scan" click does not send stale model state.
+          analysisModel: selectedModelRef.current,
         }),
       })
 
@@ -246,6 +267,11 @@ function App() {
             onViewChange={setActiveView}
             theme={theme}
             onToggleTheme={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
+            selectedModel={selectedModel}
+            modelOptions={OPENAI_MODEL_CATALOG}
+            onModelChange={(nextModel) =>
+              setSelectedModel(getOpenAIModelById(nextModel)?.id || DEFAULT_OPENAI_MODEL_ID)
+            }
           />
         </header>
 

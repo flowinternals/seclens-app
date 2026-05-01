@@ -1,4 +1,5 @@
 import { IconBookOpen, IconDashboard, IconMoonNight, IconReportDoc, IconSunBright } from './SecLensIcons'
+import { formatUsdPerMillionTokens } from '../../lib/shared/openaiModels'
 
 /** Demo-only signed-in state for header layout (not wired to auth). */
 const MOCK_SIGNED_IN_USER = {
@@ -48,9 +49,18 @@ function toolbarIconButton(tone, { active = false, disabled = false } = {}) {
   )
 }
 
-export default function HeaderToolbar({ activeView, onViewChange, theme, onToggleTheme }) {
+export default function HeaderToolbar({
+  activeView,
+  onViewChange,
+  theme,
+  onToggleTheme,
+  selectedModel,
+  modelOptions = [],
+  onModelChange,
+}) {
   const mockUser = MOCK_SIGNED_IN_USER
   const avatarInitials = initialsFromUser(mockUser)
+  const selectedModelMeta = modelOptions.find((model) => model.id === selectedModel) || null
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
@@ -92,10 +102,28 @@ export default function HeaderToolbar({ activeView, onViewChange, theme, onToggl
       >
         {theme === 'dark' ? <IconSunBright className="h-5 w-5" /> : <IconMoonNight className="h-5 w-5" />}
       </button>
+      <label
+        className="ml-1 flex min-w-0 max-w-[22rem] items-center gap-2.5 border-l border-[var(--sl-border-soft)] pl-3 sm:max-w-[24rem] sm:pl-4"
+        title="Select the OpenAI model used for scan analysis and telemetry."
+      >
+        <span className="seclens-muted shrink-0 text-[10px] font-medium uppercase tracking-[0.08em]">Model</span>
+        <select
+          value={selectedModel}
+          onChange={(event) => onModelChange?.(event.target.value)}
+          className="seclens-input h-10 min-w-0 flex-1 rounded-xl px-3 text-xs sm:text-sm"
+          aria-label="Select OpenAI analysis model"
+        >
+          {modelOptions.map((model) => (
+            <option key={model.id} value={model.id}>
+              {`${model.label} (${formatUsdPerMillionTokens(model.inputCostPer1MUsd)} in / ${formatUsdPerMillionTokens(model.outputCostPer1MUsd)} out)`}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <div
         className="ml-1 flex min-w-0 max-w-full items-center gap-2.5 border-l border-[var(--sl-border-soft)] pl-3 sm:ml-2 sm:gap-3 sm:pl-4"
-        title="Demo account (not signed in to a live session)"
+        title={`Demo account (not signed in to a live session)${selectedModelMeta ? ` • Model ${selectedModelMeta.label}` : ''}`}
         aria-label={`Demo signed-in user, ${mockUser.email}`}
       >
         <div className="min-w-0 text-right">

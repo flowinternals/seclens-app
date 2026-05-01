@@ -303,6 +303,10 @@ describe('structured report pipeline', () => {
       evidence_citations: ['app/api/account/update/route.ts:10-60'],
       evidence_ref_ids: ['ev_001'],
       evidence_categories: ['control_helper'],
+      claimed_security_property: 'Protected routes require valid session identity before state change.',
+      trust_assumption: 'Session identity is bound to the acting user at this handler boundary.',
+      bypass_or_uncertainty: 'No bypass path is visible in the cited snippet.',
+      adversarial_outcome: 'observed_control',
       confidence: 'medium',
       scoped_to_scan: true,
     }
@@ -709,6 +713,10 @@ describe('structured report pipeline', () => {
       evidence_citations: ['app/api/account/update/route.ts:10-60'],
       evidence_ref_ids: ['ev_001'],
       evidence_categories: ['control_helper'],
+      claimed_security_property: 'Protected routes require valid session identity before state change.',
+      trust_assumption: 'Session identity is bound to the acting user at this handler boundary.',
+      bypass_or_uncertainty: 'No bypass path is visible in the cited snippet.',
+      adversarial_outcome: 'observed_control',
       confidence: 'medium',
       scoped_to_scan: true,
     }
@@ -720,6 +728,59 @@ describe('structured report pipeline', () => {
     })
     expect(report).toContain('Observed control:')
     expect(report).toContain('Seen in:')
+  })
+
+  it('downscopes high-signal observed controls lacking adversarial challenge fields', () => {
+    const candidate = {
+      candidate_id: 'oc_hs_1',
+      kind: 'observed_control',
+      topic: 'rate_limit',
+      title: 'Observed limiter',
+      severity: 'Info',
+      claim: 'Rate limiting middleware is present.',
+      specific_code_behavior: '',
+      missing_control_or_unsafe_condition: '',
+      impact: '',
+      evidence_citations: ['app/api/account/update/route.ts:10-60'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['control_helper'],
+      confidence: 'medium',
+      scoped_to_scan: true,
+    }
+    const admission = admitCandidates([candidate], mockBundle())
+    expect(admission.admitted.observedControls).toHaveLength(0)
+    expect(admission.admitted.unverifiedControls).toHaveLength(1)
+    expect(
+      admission.rejections.some((r) =>
+        String(r.reason).startsWith('downscoped_to_unverified_control:missing_adversarial_challenge')
+      )
+    ).toBe(true)
+  })
+
+  it('keeps high-signal observed controls when adversarial challenge fields are present', () => {
+    const candidate = {
+      candidate_id: 'oc_hs_2',
+      kind: 'observed_control',
+      topic: 'session',
+      title: 'Session guard with explicit binding',
+      severity: 'Info',
+      claim: 'Session guard checks actor identity before sensitive action.',
+      specific_code_behavior: '',
+      missing_control_or_unsafe_condition: '',
+      impact: '',
+      evidence_citations: ['app/api/account/update/route.ts:10-60'],
+      evidence_ref_ids: ['ev_001'],
+      evidence_categories: ['control_helper'],
+      claimed_security_property: 'Only authenticated owners can update account records.',
+      trust_assumption: 'Session token identity and ownership mapping are reliable.',
+      bypass_or_uncertainty: 'No bypass path is visible in cited scope.',
+      adversarial_outcome: 'observed_control',
+      confidence: 'medium',
+      scoped_to_scan: true,
+    }
+    const admission = admitCandidates([candidate], mockBundle())
+    expect(admission.admitted.observedControls).toHaveLength(1)
+    expect(admission.admitted.unverifiedControls).toHaveLength(0)
   })
 
   it('renders unverified controls as intentional follow-up areas', () => {

@@ -32,7 +32,7 @@ describe('dimension dashboard pipeline', () => {
       dimensions: [
         createEmptyDimensionResult('auth_session_authorization', {
           status: 'healthy',
-          progress: 'ready',
+          progress: 'completed',
           observedControls: [{ id: 'oc-1', claim: 'Observed auth control' }],
           coverage: {
             reviewedFiles: 3,
@@ -48,7 +48,7 @@ describe('dimension dashboard pipeline', () => {
         }),
         createEmptyDimensionResult('validation_input_trust_boundaries', {
           status: 'review_needed',
-          progress: 'ready',
+          progress: 'completed',
           findings: [{ id: 'f-1', claim: 'Missing ownership binding' }],
           recommendations: [{ id: 'r-1', text: 'Add ownership checks', priority: 'high' }],
           coverage: {
@@ -112,7 +112,7 @@ describe('dimension dashboard pipeline', () => {
     expect(result.applicability.required).toBe(false)
     expect(result.applicability.rationale).toMatch(/CI-only repo/i)
     expect(result.status).toBe('healthy')
-    expect(result.progress).toBe('ready')
+    expect(result.progress).toBe('completed')
     expect(result.summary.whatRemainsUnclear).toMatch(/no additional launch-signoff action/i)
     expect(result.summary.whatToCheckNext).not.toMatch(/rerun|review/i)
   })
@@ -125,7 +125,7 @@ describe('dimension dashboard pipeline', () => {
         recommendations: [{ id: 'r-1', text: 'Verify route guards and token refresh behavior end to end.' }],
       },
       reviewedPaths: ['src/auth/routeGuard.ts'],
-      runtime: { progress: 'ready' },
+      runtime: { progress: 'completed' },
     })
 
     expect(result.status).toBe('attention')
@@ -149,7 +149,7 @@ describe('dimension dashboard pipeline', () => {
         quickWins: [],
       },
       reviewedPaths: [],
-      runtime: { progress: 'ready' },
+      runtime: { progress: 'completed' },
     })
 
     expect(result.applicability.status).toBe('not_applicable')
@@ -171,7 +171,7 @@ describe('dimension dashboard pipeline', () => {
     const dimensions = [
       createEmptyDimensionResult('auth_session_authorization', {
         status: 'healthy',
-        progress: 'ready',
+        progress: 'completed',
         findings: [],
         observedControls: [],
         unverifiedControls: [],
@@ -207,7 +207,7 @@ describe('dimension dashboard pipeline', () => {
     const dimensions = [
       createEmptyDimensionResult('auth_session_authorization', {
         status: 'healthy',
-        progress: 'ready',
+        progress: 'completed',
         findings: [],
         observedControls: [{ id: 'oc', claim: 'Session middleware observed.', confidence: 'high' }],
         unverifiedControls: [],

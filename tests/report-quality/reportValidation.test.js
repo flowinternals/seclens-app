@@ -705,7 +705,7 @@ SecLens completed 5 of 8 planned security dimensions for this repository. This r
 
 ### D
 
-- **Progress:** ready
+- **Progress:** completed
 - **Status:** healthy
 
 ## Prioritized Next Actions

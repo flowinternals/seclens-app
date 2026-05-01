@@ -6,9 +6,9 @@ import { parseTelemetryLog } from '../../lib/server/cr5Readiness.js'
 import { tryAppendScanTelemetryLog } from '../../lib/server/scanTelemetryLogAppend.js'
 
 const TABLE_HEADER =
-  '| Timestamp (UTC) | Repo | Profile | Max Files | Bytes/File | Total Evidence Bytes | Tree Cap | Selected/Omitted | Cap Hits | Duration | Contract | Validation | Critic | Draft In | Draft Out | Critic In | Critic Out | Total Tokens | Est. Cost USD | QA Verdict | Correlation ID |'
+  '| Timestamp (UTC) | Repo | Profile | Max Files | Bytes/File | Total Evidence Bytes | Tree Cap | Selected/Omitted | Cap Hits | Duration | Contract | Validation | Critic | Draft In | Draft Out | Critic In | Critic Out | Total Tokens | Est. Cost USD | QA Verdict | Correlation ID | Analysis Model |'
 const TABLE_SEP =
-  '|---|---|---|---:|---:|---:|---:|---|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---|---|'
+  '|---|---|---|---:|---:|---:|---:|---|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---|---|---|'
 
 describe('tryAppendScanTelemetryLog', () => {
   let prevTelemetryLog

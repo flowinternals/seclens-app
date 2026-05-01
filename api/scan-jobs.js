@@ -1,6 +1,7 @@
 import { corsHeaders } from '../lib/server/cors.js'
 import { rateLimit } from '../lib/server/rateLimit.js'
 import { createScanJob, getScanJobResponse, buildScanJobTelemetryCaps } from '../lib/server/scanJobs.js'
+import { getOpenAIModelById } from '../lib/shared/openaiModels.js'
 
 export default async function handler(req, res) {
   const origin = req.headers?.origin || req.headers?.['origin']
@@ -29,15 +30,26 @@ export default async function handler(req, res) {
       })
     }
 
-    const { repositoryUrl, githubToken } = req.body || {}
+    const { repositoryUrl, githubToken, analysisModel } = req.body || {}
+    const requestedAnalysisModel = typeof analysisModel === 'string' ? analysisModel.trim() : ''
+    const resolvedRequestedModel = requestedAnalysisModel
+      ? getOpenAIModelById(requestedAnalysisModel)?.id || null
+      : null
     if (!repositoryUrl || typeof repositoryUrl !== 'string') {
       return res.status(400).json({ error: 'Repository URL is required' })
+    }
+    if (requestedAnalysisModel && !resolvedRequestedModel) {
+      return res.status(400).json({
+        error: `Invalid analysis model '${requestedAnalysisModel}'. Please reselect a supported model.`,
+      })
     }
 
     try {
       const job = await createScanJob({
         repositoryUrl,
         githubToken: typeof githubToken === 'string' && githubToken.trim() ? githubToken.trim() : undefined,
+        analysisModel: resolvedRequestedModel || undefined,
+        requestedAnalysisModel: requestedAnalysisModel || null,
       })
       return res.status(202).json({
         ...job,

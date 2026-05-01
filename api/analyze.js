@@ -103,7 +103,7 @@ export default async function handler(req, res) {
     res.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining.toString())
     
     // Validate request body
-    const { repositoryUrl, githubToken } = req.body || {}
+    const { repositoryUrl, githubToken, analysisModel } = req.body || {}
     
     // Debug logging for production issues
     if (!isDev) {
@@ -216,7 +216,7 @@ export default async function handler(req, res) {
     let reportValidation
     let analysisResult
     try {
-      analysisResult = await analyzeSecurity(repoData)
+      analysisResult = await analyzeSecurity(repoData, { analysisModel })
       report = analysisResult.report
       reportContractVersion = analysisResult.reportContractVersion
       reportValidation = analysisResult.reportValidation
@@ -227,7 +227,11 @@ export default async function handler(req, res) {
           `[ReportQualityGate] correlationId=${error.correlationId} categories=${categories}`
         )
         tryAppendScanTelemetryLog({
-          analysisResult: { correlationId: error.correlationId },
+          analysisResult: {
+            correlationId: error.correlationId,
+            analysisModel: analysisModel || null,
+            requestedAnalysisModel: analysisModel || null,
+          },
           repoData,
           requestStartedAtMs,
           gateError: { categories: error.categories },
@@ -244,7 +248,10 @@ export default async function handler(req, res) {
       }
 
       tryAppendScanTelemetryLog({
-        analysisResult: {},
+        analysisResult: {
+          analysisModel: analysisModel || null,
+          requestedAnalysisModel: analysisModel || null,
+        },
         repoData,
         requestStartedAtMs,
         analysisError: error instanceof Error ? error : new Error(String(error)),
@@ -301,6 +308,7 @@ export default async function handler(req, res) {
       outcome: 'completed',
       dashboard: analysisResult.dashboard ?? null,
       correlationId: analysisResult.correlationId ?? null,
+      analysisModel: analysisResult.analysisModel ?? analysisModel ?? null,
     })
     return res.status(200).json({
       report,

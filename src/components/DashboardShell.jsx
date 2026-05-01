@@ -19,11 +19,8 @@ const STATUS_CHIP_LABELS = {
 }
 
 const PROGRESS_CHIP_LABELS = {
-  queued: 'Queued',
-  reviewing: 'Reviewing',
-  synthesizing: 'Synth',
-  ready: 'Ready',
-  partial: 'Partial',
+  progressing: 'Progressing',
+  completed: 'Completed',
   failed: 'Failed',
 }
 
@@ -49,19 +46,19 @@ function catalogOrderForDimensionId(dimensionId) {
 
 function isTerminalDimensionProgress(progress) {
   const normalized = String(progress || '').toLowerCase()
-  return normalized === 'ready' || normalized === 'partial' || normalized === 'failed'
+  return normalized === 'completed' || normalized === 'ready' || normalized === 'failed'
 }
 
-/** True when this dimension may show as complete in the running scan list (catalog order, top to bottom). */
-function canRevealCompletionInOrder(dimension, dimensions) {
-  if (!isTerminalDimensionProgress(dimension.progress)) return false
-  const selfOrder = catalogOrderForDimensionId(dimension.dimensionId)
-  for (const other of dimensions) {
-    const otherOrder = catalogOrderForDimensionId(other.dimensionId)
-    if (otherOrder >= selfOrder) continue
-    if (!isTerminalDimensionProgress(other.progress)) return false
-  }
-  return true
+function normalizeProgress(progress) {
+  const normalized = String(progress || '').toLowerCase()
+  if (normalized === 'failed') return 'failed'
+  if (normalized === 'partial') return 'failed'
+  if (normalized === 'completed' || normalized === 'ready') return 'completed'
+  return 'progressing'
+}
+
+function isCompletedDimensionProgress(progress) {
+  return normalizeProgress(progress) === 'completed'
 }
 
 function dimensionIconTone(icon) {
@@ -196,15 +193,15 @@ function statusTone(status) {
 }
 
 function progressTone(progress) {
-  if (progress === 'reviewing' || progress === 'synthesizing') {
+  if (progress === 'progressing') {
     return 'text-[var(--sl-info-text)] bg-[color:rgba(10,114,239,0.12)]'
   }
   if (progress === 'failed') return 'text-[var(--sl-danger-text)] bg-[var(--sl-danger-bg)]'
-  return 'seclens-muted bg-[var(--sl-panel-muted)]'
+  return 'text-[var(--sl-success-text)] bg-[color:rgba(31,122,63,0.14)]'
 }
 
 function ProgressStatusGlyph({ progress }) {
-  const p = String(progress || 'queued').toLowerCase()
+  const p = normalizeProgress(progress)
   const shared = {
     className: 'h-[14px] w-[14px] shrink-0',
     viewBox: '0 0 24 24',
@@ -215,18 +212,10 @@ function ProgressStatusGlyph({ progress }) {
     strokeLinejoin: 'round',
     'aria-hidden': true,
   }
-  if (p === 'ready') {
+  if (p === 'completed') {
     return (
       <svg {...shared}>
         <path d="M20 6L9 17l-5-5" />
-      </svg>
-    )
-  }
-  if (p === 'partial') {
-    return (
-      <svg {...shared}>
-        <path d="M10.29 3.86L1.82 18a1 1 0 00.86 1.5h18.64a1 1 0 00.86-1.5L13.71 3.86a1 1 0 00-1.72 0z" />
-        <path d="M12 9v4M12 17h.01" />
       </svg>
     )
   }
@@ -238,20 +227,11 @@ function ProgressStatusGlyph({ progress }) {
       </svg>
     )
   }
-  if (p === 'reviewing') {
+  if (p === 'progressing') {
     return (
       <svg {...shared}>
         <circle cx="12" cy="12" r="3.2" />
         <path d="M12 2v2.5M12 19.5V22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2 12h2.5M19.5 12H22M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" opacity="0.45" />
-      </svg>
-    )
-  }
-  if (p === 'synthesizing') {
-    return (
-      <svg {...shared}>
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h7" />
-        <path d="M14 2v6h6" />
-        <path d="M8 13h5M8 17h4" />
       </svg>
     )
   }
@@ -267,6 +247,12 @@ function confidenceTone(confidence) {
   if (confidence === 'high') return 'text-[var(--sl-success-text)]'
   if (confidence === 'medium') return 'text-[var(--sl-warn-text)]'
   return 'seclens-muted'
+}
+
+function toSentenceCase(value) {
+  const text = String(value || '').trim().toLowerCase()
+  if (!text) return ''
+  return `${text[0].toUpperCase()}${text.slice(1)}`
 }
 
 function overallStatusCopy(status) {
@@ -462,7 +448,6 @@ function ScanProgressReportColumn({ dashboard }) {
   }, [dashboard?.completedAt])
   const runStateLower = String(dashboard?.runState || '').toLowerCase()
   const runFinished = runStateLower === 'completed' || runStateLower === 'failed'
-  const runCompleted = runStateLower === 'completed'
 
   useEffect(() => {
     if (runFinished && scanCompletedMs != null) return
@@ -472,20 +457,16 @@ function ScanProgressReportColumn({ dashboard }) {
     return () => window.clearInterval(timer)
   }, [runFinished, scanCompletedMs])
 
-  const doneIds = dimensions
-    .filter((dimension) => canRevealCompletionInOrder(dimension, dimensions))
-    .map((dimension) => dimension.dimensionId)
-  const isHoldingAtPreComplete = !runCompleted && doneIds.length === dimensions.length && dimensions.length > 0
-  const heldDimensionId = isHoldingAtPreComplete ? dimensions[dimensions.length - 1].dimensionId : null
-  const completedCount = isHoldingAtPreComplete ? Math.max(0, doneIds.length - 1) : doneIds.length
+  const completedCount = dimensions.filter((dimension) => isCompletedDimensionProgress(dimension.progress)).length
   const elapsedEndMs = runFinished && scanCompletedMs != null ? scanCompletedMs : nowMs
   const elapsedHms =
     scanStartedMs != null ? formatElapsedHms(Math.max(0, elapsedEndMs - scanStartedMs)) : formatElapsedHms(0)
+  const firstPendingIndex = dimensions.findIndex((dimension) => normalizeProgress(dimension.progress) === 'progressing')
 
   const estimateFromRuntime = (dimension) => {
     const progress = String(dimension.progress || '').toLowerCase()
-    if (progress === 'ready' || progress === 'partial' || progress === 'failed') return 100
-    if (progress !== 'reviewing') return 0
+    if (progress === 'completed' || progress === 'failed') return 100
+    if (progress !== 'progressing') return 0
 
     const runtime = dimensionRuntime?.[dimension.dimensionId] || null
     if (runtime?.startedAt) {
@@ -515,22 +496,23 @@ function ScanProgressReportColumn({ dashboard }) {
           </p>
         </div>
         <p className="seclens-muted mt-1 text-[11px] leading-relaxed">
-          Dimensions complete in catalog order while the scan runs; estimates are replaced by final numbers when each dimension
-          finishes.
+          Progress is shown as progressing, completed, or failed.
         </p>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
         <div className="space-y-1.5">
           {dimensions.map((dimension) => {
             const definition = DIMENSION_CATALOG.find((item) => item.id === dimension.dimensionId)
-            const isDone = canRevealCompletionInOrder(dimension, dimensions) && dimension.dimensionId !== heldDimensionId
-            const estimate = isDone
-              ? 100
-              : dimension.dimensionId === heldDimensionId
-                ? 99
-              : isTerminalDimensionProgress(dimension.progress)
-                ? 0
-                : estimateFromRuntime(dimension)
+            const progress = normalizeProgress(dimension.progress)
+            const isDone = progress === 'completed'
+            const isFailed = progress === 'failed'
+            const rowIndex = dimensions.findIndex((item) => item.dimensionId === dimension.dimensionId)
+            const estimate =
+              isDone || isFailed
+                ? 100
+                : rowIndex === firstPendingIndex
+                  ? estimateFromRuntime({ ...dimension, progress })
+                  : 0
             return (
               <div key={dimension.dimensionId} className="rounded-[11px] border border-[var(--sl-border-soft)] px-2.5 py-2">
                 <div className="flex items-center justify-between gap-2">
@@ -585,10 +567,7 @@ function IdleProgressReportColumn({ dashboard, dimensions }) {
   const persistedRunDuration =
     scanStartedMs != null && scanCompletedMs != null ? formatElapsedHms(Math.max(0, scanCompletedMs - scanStartedMs)) : null
 
-  const completedCount = useMemo(
-    () => ordered.filter((dimension) => canRevealCompletionInOrder(dimension, ordered)).length,
-    [ordered]
-  )
+  const completedCount = useMemo(() => ordered.filter((dimension) => isCompletedDimensionProgress(dimension.progress)).length, [ordered])
 
   return (
     <article className="seclens-panel flex min-h-[240px] flex-1 flex-col overflow-hidden">
@@ -614,6 +593,7 @@ function IdleProgressReportColumn({ dashboard, dimensions }) {
         <div className="space-y-2">
           {ordered.map((dimension) => {
             const definition = DIMENSION_CATALOG.find((item) => item.id === dimension.dimensionId)
+            const progress = normalizeProgress(dimension.progress)
             return (
               <div
                 key={dimension.dimensionId}
@@ -633,11 +613,11 @@ function IdleProgressReportColumn({ dashboard, dimensions }) {
                 <span
                   className={cn(
                     'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-medium',
-                    progressTone(dimension.progress)
+                    progressTone(progress)
                   )}
                 >
-                  <ProgressStatusGlyph progress={dimension.progress} />
-                  {PROGRESS_CHIP_LABELS[dimension.progress]}
+                  <ProgressStatusGlyph progress={progress} />
+                  {PROGRESS_CHIP_LABELS[progress]}
                 </span>
               </div>
             )
@@ -650,7 +630,15 @@ function IdleProgressReportColumn({ dashboard, dimensions }) {
 
 function CoverageConfidenceColumn({ dashboard, summary }) {
   const ingestion = dashboard?.telemetry?.ingestion || null
-  const confidences = confidenceBars(summary)
+  const runStateLower = String(dashboard?.runState || '').toLowerCase()
+  const confidenceReady = runStateLower === 'completed'
+  const confidences = confidenceReady
+    ? confidenceBars(summary)
+    : [
+        { label: 'High', count: 0, color: '#4dbd74', width: '0%' },
+        { label: 'Medium', count: 0, color: '#de8b1d', width: '0%' },
+        { label: 'Low', count: 0, color: '#de1d8d', width: '0%' },
+      ]
   const totalFilesExamined = ingestion?.selectedFileCount ?? summary?.totals?.totalFilesExamined ?? 0
   const excludedNonGermane = ingestion?.nonGermaneExcludedCount ?? 0
   const eligibleFiles = ingestion?.totalEligibleFiles ?? totalFilesExamined
@@ -742,22 +730,24 @@ function PostureHero({ dashboard, isScanning }) {
 
   const repoProfile = dashboard?.repoProfile || null
   const profileList = Array.isArray(repoProfile?.profiles) ? repoProfile.profiles : []
+  const runStateLower = String(dashboard?.runState || '').toLowerCase()
+  const applicabilityReadyToRate = runStateLower === 'completed'
+  const applicabilityUnavailable = runStateLower === 'failed'
   const applicabilityRows = rawDimensions
     .map((dimension) => {
       const serverWeightPct = Math.round((dimension?.applicability?.weight || 0) * 100)
       const serverStatus = dimension?.applicability?.status || 'applicable'
-      const pendingApplicabilityUi =
-        isScanning && !isTerminalDimensionProgress(dimension.progress)
       return {
         id: dimension.dimensionId,
         label: dimension.shortLabel || dimension.label,
-        weightPct: pendingApplicabilityUi ? 0 : serverWeightPct,
-        status: pendingApplicabilityUi ? 'still_working' : serverStatus,
+        weightPct: applicabilityReadyToRate ? serverWeightPct : 0,
+        status: applicabilityReadyToRate ? serverStatus : applicabilityUnavailable ? 'retry_needed' : 'still_working',
+        displayText: applicabilityReadyToRate ? `${serverWeightPct}%` : applicabilityUnavailable ? 'Unavailable' : 'Pending',
       }
     })
     .sort((left, right) => right.weightPct - left.weightPct)
 
-  const completedCount = orderedForScan.filter((dimension) => canRevealCompletionInOrder(dimension, orderedForScan)).length
+  const completedCount = orderedForScan.filter((dimension) => isCompletedDimensionProgress(dimension.progress)).length
 
   return (
     <section className="mb-5 space-y-4">
@@ -852,7 +842,7 @@ function PostureHero({ dashboard, isScanning }) {
                 <div key={row.id}>
                   <div className="mb-1 flex items-center justify-between text-sm">
                     <span className="seclens-muted">{row.label}</span>
-                    <span className="seclens-text tabular-nums">{row.weightPct}%</span>
+                    <span className="seclens-text tabular-nums">{row.displayText}</span>
                   </div>
                   <div className="h-2 w-full min-w-0 overflow-hidden rounded-full bg-[var(--sl-panel-muted)]">
                     <div
@@ -878,74 +868,64 @@ function PostureHero({ dashboard, isScanning }) {
 
 function DimensionTable({ dimensions, selectedDimensionId, onSelectDimension }) {
   return (
-    <div className="seclens-panel flex min-h-0 flex-col overflow-x-auto overflow-y-hidden xl:h-full">
+    <div className="seclens-panel flex min-h-0 flex-col overflow-hidden xl:h-full">
       <div className="seclens-border-soft flex shrink-0 items-center justify-between border-b px-5 py-4">
         <div>
           <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Dimensions</p>
           <h3 className="seclens-text mt-1 text-[24px] font-semibold tracking-tight">Dimension review list</h3>
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-x-auto overflow-y-visible">
-        <table className="w-full min-w-[900px] border-collapse text-left">
-          <thead className="seclens-surface">
-            <tr>
-              <th className="min-w-[16rem] whitespace-normal px-5 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">
-                Dimension
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Status</th>
-              <th className="whitespace-nowrap px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Findings</th>
-              <th className="whitespace-nowrap px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Controls</th>
-              <th className="whitespace-nowrap px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">Reviewed Paths</th>
-              <th className="min-w-[8.5rem] whitespace-nowrap px-4 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">
-                Confidence
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {dimensions.map((dimension) => {
-              const definition = DIMENSION_CATALOG.find((item) => item.id === dimension.dimensionId)
-              const isSelected = selectedDimensionId === dimension.dimensionId
-              return (
-                <tr
-                  key={dimension.dimensionId}
-                  className={cn(
-                    'cursor-pointer border-b border-[var(--sl-border-soft)] transition-colors hover:bg-[var(--sl-panel-muted)]',
-                    isSelected ? 'bg-[var(--sl-panel-muted)]' : ''
-                  )}
-                  title={`Show ${dimension.label} in the detail panel`}
-                  onClick={() => onSelectDimension(dimension.dimensionId)}
-                >
-                  <td className="align-top px-5 py-4">
-                    <div className="flex min-w-0 items-start gap-3">
-                      <span className={cn('mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]', dimensionIconTone(definition?.icon))}>
-                        <DimensionGlyph icon={definition?.icon} />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="seclens-text text-sm font-medium leading-snug">{dimension.label}</p>
-                        <p className="seclens-muted mt-1 text-sm leading-relaxed break-words">
-                          {dimension.summary.whatRemainsUnclear || dimension.summary.whatLooksStrong}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="align-top whitespace-nowrap px-4 py-4">
-                    <span className={cn('inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium', statusTone(dimension.status))}>
-                      {STATUS_CHIP_LABELS[dimension.status]}
-                    </span>
-                  </td>
-                  <td className="align-top whitespace-nowrap px-4 py-4 seclens-text tabular-nums">{dimension.findings.length}</td>
-                  <td className="align-top whitespace-nowrap px-4 py-4 seclens-text tabular-nums">
-                    {dimension.observedControls.length}/{dimension.unverifiedControls.length}
-                  </td>
-                  <td className="align-top whitespace-nowrap px-4 py-4 seclens-text tabular-nums">{dimension.evidence.reviewedPaths.length}</td>
-                  <td className={cn('align-top whitespace-nowrap px-4 py-4 text-sm font-medium uppercase tracking-[0.08em]', confidenceTone(dimension.coverage.confidence))}>
-                    {dimension.coverage.confidence}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="seclens-surface grid grid-cols-[minmax(0,1fr)_90px_70px_90px_110px_100px] gap-x-2 border-b border-[var(--sl-border-soft)] px-5 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">
+          <div>Dimension</div>
+          <div>Status</div>
+          <div>Findings</div>
+          <div>Controls</div>
+          <div>Reviewed Paths</div>
+          <div>Confidence</div>
+        </div>
+        {dimensions.map((dimension) => {
+          const definition = DIMENSION_CATALOG.find((item) => item.id === dimension.dimensionId)
+          const isSelected = selectedDimensionId === dimension.dimensionId
+          return (
+            <div
+              key={dimension.dimensionId}
+              className={cn(
+                'grid cursor-pointer grid-cols-[minmax(0,1fr)_90px_70px_90px_110px_100px] gap-x-2 border-b border-[var(--sl-border-soft)] px-5 py-4 transition-colors hover:bg-[var(--sl-panel-muted)]',
+                isSelected ? 'bg-[var(--sl-panel-muted)]' : ''
+              )}
+              title={`Show ${dimension.label} in the detail panel`}
+              onClick={() => onSelectDimension(dimension.dimensionId)}
+            >
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className={cn('mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]', dimensionIconTone(definition?.icon))}>
+                    <DimensionGlyph icon={definition?.icon} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="seclens-text text-sm font-medium leading-snug">{dimension.label}</p>
+                    <p className="seclens-muted mt-1 line-clamp-3 text-sm leading-relaxed break-words">
+                      {dimension.summary.whatRemainsUnclear || dimension.summary.whatLooksStrong}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-1 text-sm">
+                <span className={cn('inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-medium', statusTone(dimension.status))}>
+                  {STATUS_CHIP_LABELS[dimension.status]}
+                </span>
+              </div>
+              <div className="seclens-text pt-1 text-sm tabular-nums">{dimension.findings.length}</div>
+              <div className="seclens-text pt-1 text-sm tabular-nums">
+                {dimension.observedControls.length}/{dimension.unverifiedControls.length}
+              </div>
+              <div className="seclens-text pt-1 text-sm tabular-nums">{dimension.evidence.reviewedPaths.length}</div>
+              <div className={cn('pt-1 text-sm font-medium tracking-[0.08em]', confidenceTone(dimension.coverage.confidence))}>
+                {toSentenceCase(dimension.coverage.confidence)}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -976,6 +956,7 @@ function DetailPanel({ dimension }) {
   const evidenceEntries = Array.from(
     new Set([...(dimension.evidence.topCitations || []), ...(dimension.evidence.reviewedPaths || [])])
   )
+  const detailProgress = normalizeProgress(dimension.progress)
 
   return (
     <div className="seclens-panel flex min-h-0 flex-col px-6 py-6 xl:h-full">
@@ -989,8 +970,8 @@ function DetailPanel({ dimension }) {
           <span className={cn('whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium', statusTone(dimension.status))}>
             {STATUS_CHIP_LABELS[dimension.status]}
           </span>
-          <span className={cn('whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium', progressTone(dimension.progress))}>
-            {PROGRESS_CHIP_LABELS[dimension.progress]}
+          <span className={cn('whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium', progressTone(detailProgress))}>
+            {PROGRESS_CHIP_LABELS[detailProgress]}
           </span>
         </div>
       </div>
@@ -1157,7 +1138,7 @@ function ReportSurface({ report, canExport, onExport, onDownload, isDownloading,
       ) : null}
       <div className="prose seclens-report mt-6 max-w-none">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {normalizeReportMarkdown(report || 'The consolidated report will appear here once all required dimensions are ready.')}
+          {normalizeReportMarkdown(report || 'The consolidated report will appear here once all required dimensions are completed.')}
         </ReactMarkdown>
       </div>
     </div>

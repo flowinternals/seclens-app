@@ -260,7 +260,8 @@ Endpoints:
 ```json
 {
   "repositoryUrl": "https://github.com/user/repo",
-  "githubToken": "optional_personal_access_token"
+  "githubToken": "optional_personal_access_token",
+  "analysisModel": "optional_openai_model_id_from_local_catalog"
 }
 ```
 
