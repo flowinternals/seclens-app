@@ -5,10 +5,11 @@ import {
   selectPathsByTiers,
   STRATEGY_VERSION,
 } from '../../lib/server/fileSelection.js'
+import { buildSecuritySurfacePlan } from '../../lib/server/securitySurfaceTargets.js'
 
 describe('fileSelection', () => {
-  it('uses strategy version v2.4', () => {
-    expect(STRATEGY_VERSION).toBe('v2.4')
+  it('uses strategy version v2.5', () => {
+    expect(STRATEGY_VERSION).toBe('v2.5')
   })
 
   it('treats domain-reserved security surfaces as expansion anchors for imports', () => {
@@ -62,6 +63,49 @@ describe('fileSelection', () => {
   it('classifies routes and middleware as tier 2', () => {
     expect(classifyRepoPath('src/routes/users.ts').tier).toBe(2)
     expect(classifyRepoPath('src/middleware/auth.ts').tier).toBe(2)
+  })
+
+  it('DEFECT-002: promotes callable auth/admin modules under functions/src to tier 2', () => {
+    expect(classifyRepoPath('functions/src/userManagement.ts').tier).toBe(2)
+    expect(classifyRepoPath('functions/src/inviteManagement.ts').tier).toBe(2)
+    expect(classifyRepoPath('functions/src/__tests__/userManagement.rbac.test.ts').tier).toBe(3)
+  })
+
+  it('DEFECT-002: maps userManagement to auth_session domain for reservation', () => {
+    expect(classifySelectionDomain('functions/src/userManagement.ts')).toBe('auth_session')
+    expect(classifySelectionDomain('functions/src/inviteManagement.ts')).toBe('invite_token_claims')
+  })
+
+  it('DEFECT-003: tags protected security targets when surface plan drives selection', () => {
+    const paths = ['package.json', 'functions/src/userManagement.ts']
+    const repoProfile = {
+      profiles: ['backend API'],
+      primaryProfile: 'backend API',
+      confidence: 'high',
+      rationale: 'fixture',
+    }
+    const plan = buildSecuritySurfacePlan(paths, repoProfile, { maxFiles: 20 })
+    const sel = selectPathsByTiers(paths, 10, { repoProfile, securitySurfacePlan: plan })
+    const row = sel.selectionMeta.find((m) => m.path === 'functions/src/userManagement.ts')
+    expect(row?.reason).toBe('protected_security_target')
+    expect(sel.protectedSecurityTargets?.eligible).toBeGreaterThan(0)
+  })
+
+  it('DEFECT-002: includes userManagement.ts before tier-3 backfill under tight file caps', () => {
+    const paths = ['package.json', 'firebase.json']
+    for (let i = 0; i < 60; i++) {
+      paths.push(`functions/src/zz_pad_${String(i).padStart(3, '0')}.ts`)
+    }
+    paths.push('functions/src/userManagement.ts')
+    const plan = selectPathsByTiers(paths, 25, {
+      repoProfile: {
+        profiles: ['backend API'],
+        primaryProfile: 'backend API',
+        confidence: 'high',
+        rationale: 'fixture',
+      },
+    })
+    expect(plan.selected).toContain('functions/src/userManagement.ts')
   })
 
   it('classifies ordinary modules and documentation/config artifacts as tier 3', () => {

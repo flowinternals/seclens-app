@@ -29,7 +29,7 @@ function makeBundle(evidenceCount = 6, snippetChars = 12000) {
       filesOmitted: 0,
     },
     selection: {
-      strategyVersion: 'v2.4',
+      strategyVersion: 'v2.5',
       selected: evidence.map((ev, i) => ({
         path: ev.path,
         tier: i === 0 ? 'tier1' : 'tier2',

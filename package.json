@@ -17,7 +17,8 @@
     "test": "vitest run",
     "test:limit-pressure": "vitest run tests/repo-ingestion/limitPressureHarness.test.js tests/repo-ingestion/openaiPromptBudget.test.js tests/repo-ingestion/ingestionCaps.test.js",
     "test:watch": "vitest",
-    "self-scan": "node scripts/self-scan-local.mjs"
+    "self-scan": "node scripts/self-scan-local.mjs",
+    "cr5:readiness": "node scripts/cr5-readiness-check.mjs"
   },
   "repository": {
     "type": "git",

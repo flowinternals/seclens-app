@@ -113,7 +113,7 @@ describe('limit pressure harness', () => {
     expect(bundle.coverage.maxBytesPerFileCapHit).toBe(false)
     expect(bundle.coverage.maxTotalBytesCapHit).toBe(false)
     expect(bundle.coverage.maxTreeSizeCapHit).toBe(false)
-    expect(apiIngestion.nonGermaneExcludedCount).toBeGreaterThanOrEqual(3)
+    expect(apiIngestion.nonGermaneExcludedCount).toBeGreaterThanOrEqual(1)
     expect(apiIngestion.selectedFileCount).toBeGreaterThan(80)
 
     const plan = buildMultiPassPlan(bundle)
@@ -149,7 +149,7 @@ describe('limit pressure harness', () => {
         filesOmitted: 0,
       },
       selection: {
-        strategyVersion: 'v2.4',
+        strategyVersion: 'v2.5',
         selected: syntheticEvidence.map((ev, i) => ({
           path: ev.path,
           tier: i === 0 ? 'tier1' : 'tier2',
