@@ -8,7 +8,7 @@ import { corsHeaders } from '../lib/server/cors.js'
 import { fetchRepositoryContent } from '../lib/server/github.js'
 import { analyzeSecurity } from '../lib/server/openai.js'
 import { sanitizeLogData, sanitizeHeaders } from '../lib/server/sanitizeLog.js'
-import { sanitizeGitHubUrl } from '../lib/server/sanitize.js'
+import { isGitHubComHostUrlString, sanitizeGitHubUrl } from '../lib/server/sanitize.js'
 import { ReportQualityGateError } from '../lib/server/reportQualityGateError.js'
 import { buildScanJobLifecycleTelemetry, buildTelemetry } from '../lib/server/scanTelemetryPayload.js'
 import { tryAppendScanTelemetryLog } from '../lib/server/scanTelemetryLogAppend.js'
@@ -134,7 +134,7 @@ export default async function handler(req, res) {
     try {
       // Decode URL if it's encoded (but keep original if decode fails)
       const decoded = decodeURIComponent(trimmedUrl)
-      if (decoded !== trimmedUrl && decoded.includes('github.com')) {
+      if (decoded !== trimmedUrl && isGitHubComHostUrlString(decoded)) {
         trimmedUrl = decoded
       }
     } catch {
