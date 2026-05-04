@@ -30,6 +30,14 @@ describe('sanitizeMarkdown (dangerous URL schemes)', () => {
     )
   })
 
+  it('rewrites unquoted dangerous href using non-regex attribute parse', () => {
+    expect(sanitizeMarkdown('<a href=javascript:alert(1)>t</a>')).toBe('<a href=#>t</a>')
+  })
+
+  it('blocks non-allowlisted URL schemes (e.g. file) in markdown links', () => {
+    expect(sanitizeMarkdown('[x](file:///etc/passwd)')).toBe('[x](#)')
+  })
+
   it('still strips script, iframe, and strips inline event handler prefixes', () => {
     expect(sanitizeMarkdown('<script>1</script>hi')).toBe('hi')
     expect(sanitizeMarkdown('<iframe src="x"></iframe>')).toBe('')
