@@ -11,6 +11,13 @@ describe('GitHub URL sanitizer preserves explicit refs (CR-006)', () => {
     expect(sanitizeServerUrl('https://github.com/org/repo')).toBe('https://github.com/org/repo')
   })
 
+  it('accepts scheme in non-lowercase (HTTP / HTTPS)', () => {
+    expect(sanitizeClientUrl('HTTP://github.com/org/repo')).toBe('https://github.com/org/repo')
+    expect(sanitizeServerUrl('HTTPS://github.com/org/repo/tree/main')).toBe(
+      'https://github.com/org/repo/tree/main'
+    )
+  })
+
   it('preserves explicit /tree/staging ref', () => {
     const input = 'https://github.com/org/repo/tree/staging'
     expect(sanitizeClientUrl(input)).toBe(input)

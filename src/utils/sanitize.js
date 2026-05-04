@@ -66,7 +66,7 @@ export function sanitizeGitHubUrl(url) {
   const unsafeTreeRefPattern = /\/tree\/[^?#]*(\.\.|@{|\\|\s)/;
   if (unsafeTreeRefPattern.test(trimmed)) return null;
 
-  const normalized = trimmed.startsWith('http://') || trimmed.startsWith('https://') ? trimmed : `https://${trimmed}`;
+  const normalized = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
   let parsed;
   try {
     parsed = new URL(normalized);
