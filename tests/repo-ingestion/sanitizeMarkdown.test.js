@@ -37,4 +37,21 @@ describe('sanitizeMarkdown (dangerous URL schemes)', () => {
     expect(withClick).not.toContain('onclick')
     expect(withClick).toContain('https://a')
   })
+
+  it('strips nested and obfuscated script openings (no regex tag-strip bypass)', () => {
+    expect(sanitizeMarkdown('<script><script>alert(1)</script></script>')).toBe('')
+    expect(sanitizeMarkdown('<ScRiPt>x</ScRiPt>y')).toBe('y')
+    expect(sanitizeMarkdown('<scr<script>ipt>1</script>')).toBe('<scr')
+  })
+
+  it('strips iframes with attributes and leaves safe tags', () => {
+    expect(sanitizeMarkdown('<p>ok</p><iframe src="https://e"></iframe>')).toBe('<p>ok</p>')
+    expect(sanitizeMarkdown('before<IFRAME src=x></IFRAME>after')).toBe('beforeafter')
+  })
+
+  it('does not strip non-handler attributes that contain the letters "on" (e.g. longitude)', () => {
+    const s = sanitizeMarkdown('<a href="https://a" data-longitude="10">m</a>')
+    expect(s).toContain('data-longitude="10"')
+    expect(s).toContain('https://a')
+  })
 })
