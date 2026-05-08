@@ -15,8 +15,15 @@ const ADVISORY_FINGERPRINTS = new Set([
   // Intentional fixture-only fake secret from Stage 1 history.
   '551bba9255f40d1af0eea3d40be39dae1d366bb7:tests/fixtures/repos/node-express-issues/server.js:generic-secret:10',
   // Historical false positives: identifier/env-var references, not credential values.
-  '304053a7eddbe1163d939fb439ec536b2c635516:api/auth/provision-account.js:generic-secret:89',
   '304053a7eddbe1163d939fb439ec536b2c635516:api/billing/webhook.js:generic-secret:73',
+])
+
+// Some fixtures are stable by file/line, but their Fingerprint changes with
+// different commits (e.g. branch splits, rebases, merge commits in CI). Treat
+// these locations as advisory regardless of commit SHA to avoid brittle
+// per-SHA allowlists.
+const ADVISORY_LOCATIONS = new Set([
+  'api/auth/provision-account.js:generic-secret:89',
 ])
 
 function resolveGitleaksBinary() {
@@ -46,7 +53,13 @@ function isCanaryFinding(f) {
 
 function isAdvisoryFixtureFinding(f) {
   const fingerprint = f.Fingerprint || ''
-  return ADVISORY_FINGERPRINTS.has(fingerprint)
+  if (ADVISORY_FINGERPRINTS.has(fingerprint)) return true
+
+  const file = f.File || ''
+  const ruleId = f.RuleID || ''
+  const line = typeof f.StartLine === 'number' ? String(f.StartLine) : ''
+  const locKey = `${file}:${ruleId}:${line}`
+  return ADVISORY_LOCATIONS.has(locKey)
 }
 
 function githubNotice(message) {
@@ -126,6 +139,16 @@ if (advisoryFixtureFindings.length > 0) {
 }
 
 if (otherFindings.length > 0) {
+  // Emit structured details for CI troubleshooting so we can quickly
+  // identify and allowlist intentional fixtures without weakening rules.
+  console.error('\nNon-advisory gitleaks finding fingerprints:')
+  for (const f of otherFindings) {
+    const fp = f.Fingerprint || '<no-fingerprint>'
+    const file = f.File || '<no-file>'
+    const ruleId = f.RuleID || '<no-rule>'
+    const line = typeof f.StartLine === 'number' ? String(f.StartLine) : '<no-line>'
+    console.error(`- ${fp} | ${file} | ${ruleId} | ${line}`)
+  }
   console.error(
     `\nGitleaks reported ${otherFindings.length} other finding(s). Fix or allowlist before merge.\n`
   )

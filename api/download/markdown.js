@@ -7,6 +7,8 @@ import { corsHeaders } from '../../lib/server/cors.js'
 import { prepareMarkdown, generateFilename, setDownloadHeaders, handleDownloadError } from '../../lib/server/downloadUtils.js'
 import { validateString, validateRepoName } from '../../lib/server/validation.js'
 import { enforceProductionAccessGuard } from '../../lib/server/productionAccessGuard.js'
+import { authenticateRequest } from '../../lib/server/adminAuth.js'
+import { logProtectedEndpointRejection, sendAuthFailureJson } from '../../lib/server/apiAuth.js'
 
 export default async function handler(req, res) {
   const origin = req.headers.origin
@@ -27,6 +29,17 @@ export default async function handler(req, res) {
   }
   
   try {
+    const authResult = await authenticateRequest(req)
+    if (!authResult.ok) {
+      logProtectedEndpointRejection({
+        req,
+        endpoint: '/api/download/markdown',
+        statusCode: authResult.status || 401,
+        reasonCode: authResult.reasonCode,
+      })
+      return sendAuthFailureJson(res, authResult)
+    }
+
     const { report, repository } = req.body
     
     // Validate inputs

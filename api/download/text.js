@@ -4,9 +4,17 @@
  */
 
 import { corsHeaders } from '../../lib/server/cors.js'
-import { markdownToPlainText, generateFilename, setDownloadHeaders, handleDownloadError } from '../../lib/server/downloadUtils.js'
+import {
+  appendMandatoryDisclaimer,
+  markdownToPlainText,
+  generateFilename,
+  setDownloadHeaders,
+  handleDownloadError,
+} from '../../lib/server/downloadUtils.js'
 import { validateString, validateRepoName } from '../../lib/server/validation.js'
 import { enforceProductionAccessGuard } from '../../lib/server/productionAccessGuard.js'
+import { authenticateRequest } from '../../lib/server/adminAuth.js'
+import { logProtectedEndpointRejection, sendAuthFailureJson } from '../../lib/server/apiAuth.js'
 
 export default async function handler(req, res) {
   const origin = req.headers.origin
@@ -27,6 +35,17 @@ export default async function handler(req, res) {
   }
   
   try {
+    const authResult = await authenticateRequest(req)
+    if (!authResult.ok) {
+      logProtectedEndpointRejection({
+        req,
+        endpoint: '/api/download/text',
+        statusCode: authResult.status || 401,
+        reasonCode: authResult.reasonCode,
+      })
+      return sendAuthFailureJson(res, authResult)
+    }
+
     const { report, repository } = req.body
     
     // Validate inputs
@@ -36,7 +55,7 @@ export default async function handler(req, res) {
     if (!repoCheck.valid) return res.status(400).json({ error: repoCheck.error })
     
     // Convert markdown to sanitized plain text
-    const sanitizedText = markdownToPlainText(reportCheck.value)
+    const sanitizedText = markdownToPlainText(appendMandatoryDisclaimer(reportCheck.value))
     const filename = generateFilename('txt', repoCheck.value || 'report')
     
     // Set headers for file download
