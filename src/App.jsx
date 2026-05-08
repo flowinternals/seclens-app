@@ -3,20 +3,39 @@ import ResultsPanel from './components/ResultsPanel'
 import InputPanel from './components/InputPanel'
 import { TrafficLightReportSection } from './components/DashboardShell'
 import HeaderToolbar from './components/HeaderToolbar'
+import AdminTelemetrySidebar from './components/AdminTelemetrySidebar'
+import BillingSidebar from './components/BillingSidebar'
 import Footer from './components/Footer'
 import Modal from './components/Modal'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsAndConditions from './components/TermsAndConditions'
-import { createMockDashboardPayload, getDimensionDefinition } from '../lib/shared/dimensions'
+import { getDimensionDefinition } from '../lib/shared/dimensions'
 import { buildRepositoryDisplay, createQueuedDashboard } from '../lib/server/dimensionAnalysis.js'
 import {
   DEFAULT_OPENAI_MODEL_ID,
   OPENAI_MODEL_CATALOG,
   getOpenAIModelById,
 } from '../lib/shared/openaiModels'
+import { useAuth } from './context/AuthContext'
 
-const initialDashboard = createMockDashboardPayload()
 const MODEL_STORAGE_KEY = 'seclens-analysis-model'
+
+/** Neutral repo URL for first-load / idle dashboard (no prior scan results). */
+const IDLE_REPO_URL = 'https://github.com/example/placeholder'
+
+function createIdleDashboard() {
+  const dash = createQueuedDashboard(buildRepositoryDisplay(IDLE_REPO_URL))
+  return {
+    ...dash,
+    selectedDimensionId: null,
+    summary: dash.summary ? { ...dash.summary, selectedDimensionId: null } : dash.summary,
+  }
+}
+
+const IDLE_BOOTSTRAP = (() => {
+  const dashboard = createIdleDashboard()
+  return { dashboard, repository: dashboard.repository }
+})()
 
 function buildScanButtonLabel(dashboard) {
   const runState = String(dashboard?.runState || '').toLowerCase()
@@ -44,21 +63,24 @@ function buildScanButtonLabel(dashboard) {
 }
 
 function App() {
+  const { user, isAuthenticated, isAdmin, getIdToken, signOutUser } = useAuth()
   const [theme, setTheme] = useState(() => {
     if (typeof window === 'undefined') return 'light'
     const stored = window.localStorage.getItem('seclens-theme')
     if (stored === 'light' || stored === 'dark') return stored
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
-  const [dashboard, setDashboard] = useState(initialDashboard)
+  const [dashboard, setDashboard] = useState(() => IDLE_BOOTSTRAP.dashboard)
   const [report, setReport] = useState(null)
-  const [repository, setRepository] = useState(initialDashboard.repository)
+  const [repository, setRepository] = useState(() => IDLE_BOOTSTRAP.repository)
   const [error, setError] = useState(null)
   const [isDownloading, setIsDownloading] = useState(false)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false)
+  const [isBillingOpen, setIsBillingOpen] = useState(false)
   const [activeView, setActiveView] = useState('dashboard')
-  const [selectedDimensionId, setSelectedDimensionId] = useState(initialDashboard.selectedDimensionId)
+  const [selectedDimensionId, setSelectedDimensionId] = useState(null)
   const [selectedModel, setSelectedModel] = useState(() => {
     if (typeof window === 'undefined') return DEFAULT_OPENAI_MODEL_ID
     const stored = window.localStorage.getItem(MODEL_STORAGE_KEY)
@@ -68,7 +90,7 @@ function App() {
   const jobIdRef = useRef(null)
   const pollTimerRef = useRef(null)
   const selectedModelRef = useRef(selectedModel)
-  /** True from scan click until the job finishes or fails to start — drives UI while waiting for POST / jobId. */
+  /** True from scan click until the job finishes or fails to start - drives UI while waiting for POST / jobId. */
   const scanSessionActiveRef = useRef(false)
 
   const stopPolling = () => {
@@ -99,6 +121,18 @@ function App() {
     }
   }, [dashboard, selectedDimensionId])
 
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) {
+      setIsAdminPanelOpen(false)
+    }
+  }, [isAuthenticated, isAdmin])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setIsBillingOpen(false)
+    }
+  }, [isAuthenticated])
+
   const reportContent = report || dashboard?.report || null
   const runStateLower = String(dashboard?.runState || '').toLowerCase()
   const isRunActive = Boolean(
@@ -113,9 +147,19 @@ function App() {
     pollTimerRef.current = setTimeout(async () => {
       if (!jobIdRef.current) return
       try {
-        const response = await fetch(`/api/scan-jobs?jobId=${encodeURIComponent(jobIdRef.current)}`)
+        const idToken = await getIdToken()
+        const response = await fetch(`/api/scan-jobs?jobId=${encodeURIComponent(jobIdRef.current)}`, {
+          headers: {
+            ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+          },
+        })
         const data = await response.json()
         if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error(
+              'This advisory result is no longer available in the current session. Please run the scan again or export results immediately after completion.'
+            )
+          }
           throw new Error(data?.error || `Polling failed with ${response.status}`)
         }
 
@@ -153,6 +197,12 @@ function App() {
   }
 
   const handleScan = async (input) => {
+    if (!isAuthenticated) {
+      setError('Sign in to run an advisory scan.')
+      scanSessionActiveRef.current = false
+      return
+    }
+
     stopPolling()
     jobIdRef.current = null
     setError(null)
@@ -171,10 +221,12 @@ function App() {
     }
 
     try {
+      const idToken = await getIdToken()
       const response = await fetch('/api/scan-jobs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           repositoryUrl: url,
@@ -184,7 +236,16 @@ function App() {
         }),
       })
 
-      const data = await response.json()
+      const contentType = response.headers.get('content-type')
+      const raw = await response.text()
+      let data = {}
+      if (contentType && contentType.includes('application/json') && raw) {
+        try {
+          data = JSON.parse(raw)
+        } catch {
+          data = {}
+        }
+      }
       if (!response.ok) {
         throw new Error(data?.error || `Could not start scan (${response.status})`)
       }
@@ -197,19 +258,28 @@ function App() {
     } catch (scanError) {
       scanSessionActiveRef.current = false
       setError(scanError.message || 'An error occurred while starting the scan.')
+      setDashboard(IDLE_BOOTSTRAP.dashboard)
+      setRepository(IDLE_BOOTSTRAP.repository)
+      setSelectedDimensionId(null)
     }
   }
 
   const handleDownload = async (format) => {
     if (!reportContent) return
+    if (!isAuthenticated) {
+      setError('Sign in to export reports.')
+      return
+    }
 
     setIsDownloading(true)
 
     try {
+      const idToken = await getIdToken()
       const response = await fetch(`/api/download/${format}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           report: reportContent,
@@ -272,6 +342,14 @@ function App() {
             onModelChange={(nextModel) =>
               setSelectedModel(getOpenAIModelById(nextModel)?.id || DEFAULT_OPENAI_MODEL_ID)
             }
+            user={user}
+            isAuthenticated={isAuthenticated}
+            isAdmin={isAdmin}
+            isAdminPanelOpen={isAdminPanelOpen}
+            isBillingOpen={isBillingOpen}
+            onToggleAdminPanel={() => setIsAdminPanelOpen((current) => !current)}
+            onOpenBilling={() => setIsBillingOpen(true)}
+            onSignOut={signOutUser}
           />
         </header>
 
@@ -287,9 +365,6 @@ function App() {
               onScan={handleScan}
               isLoading={isRunActive && !error}
               loadingLabel={scanButtonLabel}
-              onExport={() => handleDownload('markdown')}
-              canExport={Boolean(reportContent && dashboard?.consolidatedReportAvailable)}
-              isExporting={isDownloading}
               className={showIntakeTrafficRow ? 'h-full min-h-0 lg:flex lg:flex-col' : ''}
             />
           </div>
@@ -337,6 +412,9 @@ function App() {
       >
         <TermsAndConditions />
       </Modal>
+
+      <AdminTelemetrySidebar isOpen={isAdminPanelOpen && isAuthenticated && isAdmin} onClose={() => setIsAdminPanelOpen(false)} />
+      <BillingSidebar isOpen={isBillingOpen && isAuthenticated} onClose={() => setIsBillingOpen(false)} />
     </div>
   )
 }

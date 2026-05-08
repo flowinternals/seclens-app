@@ -1,11 +1,5 @@
-import { IconBookOpen, IconDashboard, IconMoonNight, IconReportDoc, IconSunBright } from './SecLensIcons'
+import { IconAdminShield, IconBillingCard, IconBookOpen, IconDashboard, IconMoonNight, IconReportDoc, IconSunBright } from './SecLensIcons'
 import { formatUsdPerMillionTokens } from '../../lib/shared/openaiModels'
-
-/** Demo-only signed-in state for header layout (not wired to auth). */
-const MOCK_SIGNED_IN_USER = {
-  email: 'alex.morgan@flowinternals.example',
-  displayName: 'Alex Morgan',
-}
 
 function initialsFromUser({ email, displayName }) {
   const parts = String(displayName || '')
@@ -36,6 +30,10 @@ function toolbarIconButton(tone, { active = false, disabled = false } = {}) {
       'border-violet-400/40 bg-gradient-to-br from-[rgba(124,108,242,0.38)] to-[rgba(186,170,255,0.14)] text-[#ddd4ff] hover:border-violet-300/50 hover:from-[rgba(124,108,242,0.48)] hover:to-[rgba(186,170,255,0.22)]',
     docs:
       'border-amber-400/45 bg-gradient-to-br from-[rgba(222,139,29,0.36)] to-[rgba(255,193,111,0.14)] text-[#ffe3bc] hover:border-amber-300/60 hover:from-[rgba(222,139,29,0.46)] hover:to-[rgba(255,193,111,0.24)]',
+    admin:
+      'border-cyan-400/45 bg-gradient-to-br from-[rgba(10,114,239,0.38)] to-[rgba(86,204,242,0.16)] text-[#d5f4ff] hover:border-cyan-300/60 hover:from-[rgba(10,114,239,0.5)] hover:to-[rgba(86,204,242,0.24)]',
+    billing:
+      'border-pink-400/45 bg-gradient-to-br from-[rgba(222,29,141,0.38)] to-[rgba(255,116,200,0.16)] text-[#ffd9ef] hover:border-pink-300/60 hover:from-[rgba(222,29,141,0.5)] hover:to-[rgba(255,116,200,0.24)]',
     themeSun:
       'border-amber-200/45 bg-gradient-to-br from-[rgba(255,200,112,0.38)] to-[rgba(255,236,200,0.14)] text-[#fff8e7] hover:border-amber-100/55 hover:from-[rgba(255,200,112,0.5)] hover:to-[rgba(255,236,200,0.22)]',
     themeMoon:
@@ -57,11 +55,19 @@ export default function HeaderToolbar({
   selectedModel,
   modelOptions = [],
   onModelChange,
+  user = null,
+  isAuthenticated = false,
+  isAdmin = false,
+  isAdminPanelOpen = false,
+  isBillingOpen = false,
+  onToggleAdminPanel,
+  onSignOut,
+  onOpenBilling,
 }) {
-  const mockUser = MOCK_SIGNED_IN_USER
-  const avatarInitials = initialsFromUser(mockUser)
-  const selectedModelMeta = modelOptions.find((model) => model.id === selectedModel) || null
-
+  const avatarInitials = initialsFromUser({
+    email: user?.email,
+    displayName: user?.displayName,
+  })
   return (
     <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
       <button
@@ -71,7 +77,7 @@ export default function HeaderToolbar({
           active: activeView === 'dashboard' || activeView === 'dimensions',
         })}
         aria-label="Open launch readiness dashboard"
-        title="Open launch readiness dashboard — posture, dimensions, and coverage"
+        title="Open launch readiness dashboard - posture, dimensions, and coverage"
       >
         <IconDashboard className="h-5 w-5" />
       </button>
@@ -93,6 +99,28 @@ export default function HeaderToolbar({
       >
         <IconBookOpen className="h-5 w-5" />
       </button>
+      {isAuthenticated && isAdmin ? (
+        <button
+          type="button"
+          onClick={onToggleAdminPanel}
+          className={toolbarIconButton('admin', { active: isAdminPanelOpen })}
+          aria-label="Open admin tools"
+          title="Open admin telemetry panel"
+        >
+          <IconAdminShield className="h-5 w-5" />
+        </button>
+      ) : null}
+      {isAuthenticated ? (
+        <button
+          type="button"
+          onClick={onOpenBilling}
+          className={toolbarIconButton('billing', { active: isBillingOpen })}
+          aria-label="Open billing drawer"
+          title="Open billing drawer"
+        >
+          <IconBillingCard className="h-5 w-5" />
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={onToggleTheme}
@@ -123,19 +151,40 @@ export default function HeaderToolbar({
 
       <div
         className="ml-1 flex min-w-0 max-w-full items-center gap-2.5 border-l border-[var(--sl-border-soft)] pl-3 sm:ml-2 sm:gap-3 sm:pl-4"
-        title={`Demo account (not signed in to a live session)${selectedModelMeta ? ` • Model ${selectedModelMeta.label}` : ''}`}
-        aria-label={`Demo signed-in user, ${mockUser.email}`}
+        title={isAuthenticated ? 'Signed-in account' : 'No signed-in account'}
+        aria-label={
+          isAuthenticated
+            ? `Signed-in user, ${user?.email || user?.displayName || 'account'}`
+            : 'No signed-in user'
+        }
       >
         <div className="min-w-0 text-right">
           <p className="seclens-muted truncate text-[10px] font-medium uppercase tracking-[0.08em]">Signed in</p>
-          <p className="seclens-text truncate text-sm font-medium leading-tight">{mockUser.email}</p>
+          <p className="seclens-text truncate text-sm font-medium leading-tight">
+            {isAuthenticated ? user?.email || user?.displayName || 'Authenticated user' : 'Not signed in'}
+          </p>
         </div>
-        <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-cyan-400/35 bg-gradient-to-br from-[rgba(10,114,239,0.55)] to-[rgba(86,204,242,0.28)] text-[11px] font-semibold tracking-tight text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]"
-          aria-hidden="true"
-        >
-          {avatarInitials}
-        </span>
+        {user?.photoURL ? (
+          <img
+            src={user.photoURL}
+            alt="Signed-in user avatar"
+            className="h-9 w-9 shrink-0 rounded-full border border-cyan-400/35 object-cover"
+          />
+        ) : (
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-cyan-400/35 bg-gradient-to-br from-[rgba(10,114,239,0.55)] to-[rgba(86,204,242,0.28)] text-[11px] font-semibold tracking-tight text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]"
+            aria-hidden="true"
+          >
+            {avatarInitials}
+          </span>
+        )}
+        {isAuthenticated ? (
+          <div className="flex items-center gap-2">
+            <button type="button" className="seclens-muted text-sm underline" onClick={onSignOut}>
+              Sign out
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   )

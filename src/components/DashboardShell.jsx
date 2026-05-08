@@ -255,6 +255,47 @@ function toSentenceCase(value) {
   return `${text[0].toUpperCase()}${text.slice(1)}`
 }
 
+function buildPromptFromRecommendation(item, dimensionLabel) {
+  const target = String(item?.evidenceTarget || '').split(':')[0] || 'reviewed files'
+  const title = `Review ${dimensionLabel} recommendation`
+  const prompt = `Review ${target} for this risk pattern: ${item?.text || 'Follow recommendation'}. Propose minimal safe fixes if present.`
+  return { title, target, prompt, expectedOutcome: 'Repo-specific review guidance and minimal remediation options.' }
+}
+
+function buildSuggestedTestFromRecommendation(item, dimensionLabel) {
+  const target = String(item?.evidenceTarget || '').split(':')[0] || 'reviewed files'
+  const title = `Suggested test for ${dimensionLabel}`
+  const prompt = `Create a focused test that verifies whether this risk pattern exists: ${item?.text || 'Follow recommendation'}`
+  return { title, target, prompt, testType: 'integration', testGoal: item?.text || 'Verify recommendation scope.' }
+}
+
+async function copyText(value) {
+  const text = String(value || '')
+  if (!text) return false
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+  } catch {
+    // Fall through to execCommand fallback.
+  }
+  try {
+    const area = document.createElement('textarea')
+    area.value = text
+    area.setAttribute('readonly', '')
+    area.style.position = 'absolute'
+    area.style.left = '-9999px'
+    document.body.appendChild(area)
+    area.select()
+    const copied = document.execCommand('copy')
+    document.body.removeChild(area)
+    return copied
+  } catch {
+    return false
+  }
+}
+
 function overallStatusCopy(status) {
   if (status === 'review_needed') {
     return 'We found issues or gaps that should be addressed before you treat this repository as release-ready.'
@@ -278,10 +319,10 @@ function summaryCards(summary) {
       tooltip: 'How many planned security dimensions finished review in this run.',
     },
     {
-      label: 'Findings',
+      label: 'Advisory Items',
       value: totals.findingsAdmitted || 0,
       accent: 'red',
-      tooltip: 'Confirmed security issues admitted with evidence citations.',
+      tooltip: 'Potential problem areas admitted with evidence citations.',
     },
     {
       label: 'Controls',
@@ -299,13 +340,13 @@ function summaryCards(summary) {
       label: 'Files Reviewed',
       value: totals.totalFilesExamined || 0,
       accent: 'violet',
-      tooltip: 'Unique security-relevant files examined in this run.',
+      tooltip: 'Unique files analyzed in this run for hardening-oriented review.',
     },
     {
-      label: 'High Confidence',
-      value: totals.highConfidenceDimensions || 0,
+      label: 'High-severity recommendations',
+      value: totals.recommendationsHigh || 0,
       accent: 'pink',
-      tooltip: 'Dimensions with high confidence based on retained evidence quality and coverage.',
+      tooltip: 'Hardening recommendations classified as high severity (address first).',
     },
   ]
 }
@@ -417,13 +458,16 @@ export function TrafficLightReportSection({ dashboard, className }) {
   )
 }
 
-function confidenceBars(summary) {
+function recommendationSeverityBars(summary) {
   const totals = summary?.totals || {}
-  const max = Math.max(1, totals.highConfidenceDimensions || 0, totals.mediumConfidenceDimensions || 0, totals.lowConfidenceDimensions || 0)
+  const high = totals.recommendationsHigh || 0
+  const medium = totals.recommendationsMedium || 0
+  const low = totals.recommendationsLow || 0
+  const max = Math.max(1, high, medium, low)
   return [
-    { label: 'High', count: totals.highConfidenceDimensions || 0, color: '#4dbd74' },
-    { label: 'Medium', count: totals.mediumConfidenceDimensions || 0, color: '#de8b1d' },
-    { label: 'Low', count: totals.lowConfidenceDimensions || 0, color: '#de1d8d' },
+    { label: 'High severity', count: high, color: '#4dbd74' },
+    { label: 'Medium severity', count: medium, color: '#de8b1d' },
+    { label: 'Lower severity', count: low, color: '#de1d8d' },
   ].map((item) => ({
     ...item,
     width: `${(item.count / max) * 100}%`,
@@ -490,7 +534,7 @@ function ScanProgressReportColumn({ dashboard }) {
               Completed: {completedCount}/{dimensions.length || 0}
             </span>
             <span className="mx-1.5" aria-hidden>
-              ·
+              -
             </span>
             <span title={runFinished ? 'Total run duration for this scan' : 'Elapsed since this scan started'}>{elapsedHms}</span>
           </p>
@@ -581,7 +625,7 @@ function IdleProgressReportColumn({ dashboard, dimensions }) {
                 Completed: {completedCount}/{ordered.length || 0}
               </span>
               <span className="mx-1.5" aria-hidden>
-                ·
+                -
               </span>
               <span title="Total run duration for the latest scan">{persistedRunDuration}</span>
             </p>
@@ -631,22 +675,25 @@ function IdleProgressReportColumn({ dashboard, dimensions }) {
 function CoverageConfidenceColumn({ dashboard, summary }) {
   const ingestion = dashboard?.telemetry?.ingestion || null
   const runStateLower = String(dashboard?.runState || '').toLowerCase()
-  const confidenceReady = runStateLower === 'completed'
-  const confidences = confidenceReady
-    ? confidenceBars(summary)
+  const severityReady = runStateLower === 'completed'
+  const severityRows = severityReady
+    ? recommendationSeverityBars(summary)
     : [
-        { label: 'High', count: 0, color: '#4dbd74', width: '0%' },
-        { label: 'Medium', count: 0, color: '#de8b1d', width: '0%' },
-        { label: 'Low', count: 0, color: '#de1d8d', width: '0%' },
+        { label: 'High severity', count: 0, color: '#4dbd74', width: '0%' },
+        { label: 'Medium severity', count: 0, color: '#de8b1d', width: '0%' },
+        { label: 'Lower severity', count: 0, color: '#de1d8d', width: '0%' },
       ]
   const totalFilesExamined = ingestion?.selectedFileCount ?? summary?.totals?.totalFilesExamined ?? 0
   const excludedNonGermane = ingestion?.nonGermaneExcludedCount ?? 0
   const eligibleFiles = ingestion?.totalEligibleFiles ?? totalFilesExamined
-  const filesWithNoIssue = summary?.totals?.filesExaminedWithoutIssue ?? 0
+  const totals = summary?.totals || {}
+  const recommendationTotal =
+    (totals.recommendationsHigh || 0) + (totals.recommendationsMedium || 0) + (totals.recommendationsLow || 0)
+  const filesWithRecommendationEvidence = totals.filesWithRecommendationEvidence ?? 0
 
   return (
     <article className="seclens-panel flex h-full min-h-[260px] flex-col px-6 py-6">
-      <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Coverage & Confidence</p>
+      <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Coverage & hardening focus</p>
       <div className="mt-5 flex min-h-0 flex-1 flex-col justify-between gap-5">
         <div>
           <div className="mb-2 flex items-center justify-between gap-2 text-sm">
@@ -654,7 +701,7 @@ function CoverageConfidenceColumn({ dashboard, summary }) {
               <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] bg-[color:rgba(10,114,239,0.12)] text-[var(--sl-info-text)]">
                 <IconFiles className="h-4 w-4" />
               </span>
-              <span className="min-w-0 leading-snug">Security-relevant files examined</span>
+              <span className="min-w-0 leading-snug">Files analyzed for hardening</span>
             </span>
             <span className="seclens-text shrink-0 tabular-nums">{totalFilesExamined}</span>
           </div>
@@ -670,11 +717,19 @@ function CoverageConfidenceColumn({ dashboard, summary }) {
             />
           </div>
           <p className="seclens-muted mt-2 text-sm">
-            {filesWithNoIssue} reviewed files did not surface a confirmed issue in this run.
+            {recommendationTotal === 0
+              ? 'No hardening recommendations were recorded in this run.'
+              : filesWithRecommendationEvidence > 0
+                ? `${filesWithRecommendationEvidence} analyzed file${
+                    filesWithRecommendationEvidence === 1 ? '' : 's'
+                  } include at least one recorded hardening recommendation (same list as below).`
+                : `${recommendationTotal} hardening recommendation${
+                    recommendationTotal === 1 ? '' : 's'
+                  } recorded - open the recommendation list for file targets where paths apply.`}
           </p>
           {excludedNonGermane > 0 ? (
             <p className="seclens-muted mt-2 text-sm">
-              {excludedNonGermane} non-relevant files were left out of the security review counts.
+              {excludedNonGermane} file{excludedNonGermane === 1 ? '' : 's'} outside the hardening scope were excluded from these counts.
             </p>
           ) : null}
         </div>
@@ -684,14 +739,14 @@ function CoverageConfidenceColumn({ dashboard, summary }) {
             <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] bg-[color:rgba(222,29,141,0.12)] text-[#de1d8d]">
               <IconChartConfidence className="h-4 w-4" />
             </span>
-            Confidence mix
+            Recommendation severity
           </div>
-          {confidences.map((item) => (
+          {severityRows.map((item) => (
             <div key={item.label}>
               <div className="mb-1 flex items-center justify-between gap-2 text-sm">
                 <span className="seclens-muted inline-flex items-center gap-2">
                   <span className="h-2 w-2 shrink-0 rounded-full ring-2 ring-[var(--sl-border-soft)]" style={{ background: item.color }} aria-hidden />
-                  {item.label} confidence
+                  {item.label}
                 </span>
                 <span className="seclens-text tabular-nums">{item.count}</span>
               </div>
@@ -705,9 +760,39 @@ function CoverageConfidenceColumn({ dashboard, summary }) {
         <div className="seclens-accent-pink rounded-[14px] px-4 py-4">
           <p className="seclens-text text-sm leading-6">
             {(summary?.totals?.findingsAdmitted || 0) > 0
-              ? 'Confirmed issues are backed by cited evidence and paired with concrete remediation guidance.'
-              : 'No confirmed launch-impacting issues were admitted in this run across the reviewed dimensions.'}
+              ? 'Recommendations in this run are backed by cited evidence and paired with concrete remediation guidance.'
+              : 'This analysis did not record hardening recommendations tied to cited evidence across the reviewed dimensions.'}
           </p>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function CriticalFileListSummary({ dashboard, summary }) {
+  const ingestion = dashboard?.telemetry?.ingestion || {}
+  const totalFiles = ingestion.totalEligibleFiles ?? summary?.totals?.totalFilesExamined ?? 0
+  const filesSelected = ingestion.selectedFileCount ?? summary?.totals?.totalFilesExamined ?? 0
+  const filesReviewed = summary?.totals?.totalFilesExamined ?? filesSelected
+  const filesOmitted = ingestion.omittedFileCount ?? summary?.totals?.omittedFilesRelevant ?? 0
+  const rows = [
+    { label: 'Total Files', value: totalFiles },
+    { label: 'Files Selected', value: filesSelected },
+    { label: 'Files reviewed', value: filesReviewed },
+    { label: 'Files omitted', value: filesOmitted },
+  ]
+
+  return (
+    <article className="seclens-panel px-6 py-6">
+      <div className="seclens-surface rounded-[16px] px-4 py-4">
+        <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Critical File List Summary</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {rows.map((row) => (
+            <div key={row.label} className="rounded-[12px] bg-[var(--sl-panel)] px-3 py-3">
+              <p className="seclens-subtle text-[10px] font-medium uppercase tracking-[0.08em]">{row.label}</p>
+              <p className="seclens-text mt-1 text-[18px] font-semibold tabular-nums">{row.value}</p>
+            </div>
+          ))}
         </div>
       </div>
     </article>
@@ -729,7 +814,29 @@ function PostureHero({ dashboard, isScanning }) {
     'Repository'
 
   const repoProfile = dashboard?.repoProfile || null
-  const profileList = Array.isArray(repoProfile?.profiles) ? repoProfile.profiles : []
+  const techStack = Array.isArray(repoProfile?.technologyStack) ? repoProfile.technologyStack : []
+  const architectureSignals = Array.isArray(repoProfile?.architectureSignals) ? repoProfile.architectureSignals : []
+  const applicationPurposeText =
+    String(repoProfile?.applicationPurpose || '').trim() ||
+    String(repoProfile?.profileSummary || '').trim() ||
+    (typeof repo?.description === 'string' && repo.description.trim()) ||
+    ''
+  const applicationPurposeDisplay =
+    applicationPurposeText ||
+    'No project description was found in README, architecture or design documentation, or package.json for this run. Re-run a GitHub scan to load those files.'
+  const stackProvenanceParts = []
+  if (repoProfile?.technologyStackFromPackageJson?.length) stackProvenanceParts.push('package.json dependencies')
+  if (repoProfile?.technologyStackFromDocumentation?.length) stackProvenanceParts.push('documentation keywords')
+  if (repoProfile?.technologyStackFromPaths?.length) stackProvenanceParts.push('toolchain paths')
+  const stackProvenanceLine =
+    stackProvenanceParts.length > 0 ? `Sources: ${stackProvenanceParts.join(' - ')}.` : null
+  const layoutConfidenceTier =
+    repoProfile?.architectureConfidence ??
+    (repoProfile?.confidence != null ? repoProfile.confidence : null) ??
+    'unknown'
+  const stackConfidenceTier =
+    repoProfile?.stackConfidence ??
+    (techStack.length >= 3 ? 'high' : techStack.length >= 1 ? 'medium' : 'low')
   const runStateLower = String(dashboard?.runState || '').toLowerCase()
   const applicabilityReadyToRate = runStateLower === 'completed'
   const applicabilityUnavailable = runStateLower === 'failed'
@@ -821,17 +928,61 @@ function PostureHero({ dashboard, isScanning }) {
         </div>
       </div>
 
-      {profileList.length ? (
-        <article className="seclens-panel px-6 py-6">
-          <div className="seclens-surface rounded-[16px] px-4 py-4">
-            <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Repository Profile</p>
-            <p className="seclens-text mt-2 text-sm">
-              {profileList.join(', ')} ({repoProfile?.confidence || 'unknown'} confidence)
-            </p>
-            <p className="seclens-muted mt-2 text-sm">{repoProfile?.rationale || 'Profile rationale unavailable.'}</p>
+      <article className="seclens-panel px-6 py-6">
+        <div className="seclens-surface rounded-[16px] px-4 py-4">
+          <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Repository Profile</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="rounded-[12px] bg-[var(--sl-panel)] px-3 py-3">
+              <p className="seclens-subtle text-[10px] font-medium uppercase tracking-[0.08em]">Repository name</p>
+              <p className="seclens-text mt-1 text-sm break-all">{repoLabel}</p>
+            </div>
+            <div className="rounded-[12px] bg-[var(--sl-panel)] px-3 py-3">
+              <p className="seclens-subtle text-[10px] font-medium uppercase tracking-[0.08em]">Branch / Ref</p>
+              <p className="seclens-text mt-1 text-sm">{repo?.scannedRef || repo?.defaultBranch || 'unknown'}</p>
+            </div>
           </div>
-        </article>
-      ) : null}
+          <div className="mt-3 rounded-[12px] bg-[var(--sl-panel)] px-3 py-3">
+            <p className="seclens-subtle text-[10px] font-medium uppercase tracking-[0.08em]">What this project is</p>
+            <p className="seclens-text mt-2 text-sm leading-relaxed whitespace-pre-line">{applicationPurposeDisplay}</p>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="rounded-[12px] bg-[var(--sl-panel)] px-3 py-3">
+              <p className="seclens-subtle text-[10px] font-medium uppercase tracking-[0.08em]">Detected stack</p>
+              <p className="seclens-text mt-1 text-sm">{techStack.join(', ') || 'Not determined from package.json, docs, or config paths'}</p>
+              {stackProvenanceLine ? (
+                <p className="seclens-muted mt-1.5 text-[11px] leading-snug">{stackProvenanceLine}</p>
+              ) : null}
+            </div>
+            <div className="rounded-[12px] bg-[var(--sl-panel)] px-3 py-3">
+              <p className="seclens-subtle text-[10px] font-medium uppercase tracking-[0.08em]">Inference certainty</p>
+              <div className="seclens-text mt-2 space-y-1.5 text-sm">
+                <p>
+                  <span className="seclens-muted">Layout surfaces:</span>{' '}
+                  <span className="capitalize">{layoutConfidenceTier}</span>
+                </p>
+                <p>
+                  <span className="seclens-muted">Toolchain &amp; dependencies:</span>{' '}
+                  <span className="capitalize">{stackConfidenceTier}</span>
+                </p>
+                <p className="seclens-muted text-[11px] leading-snug">
+                  Layout reflects folder and routing patterns in the tree. Toolchain combines parsed package.json dependencies, technology keywords in scanned markdown, and manifest filenames.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 rounded-[12px] bg-[var(--sl-panel)] px-3 py-3">
+            <p className="seclens-subtle text-[10px] font-medium uppercase tracking-[0.08em]">Architecture</p>
+            <p className="seclens-text mt-2 text-sm leading-relaxed">
+              {repoProfile?.rationale ||
+                (architectureSignals.length
+                  ? `Path-based layout signals: ${architectureSignals.join(', ')}.`
+                  : 'Path-based technology assessment is not available for this run.')}
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <CriticalFileListSummary dashboard={dashboard} summary={summary} />
 
       <div className={cn('grid gap-4', applicabilityRows.length > 0 ? 'xl:grid-cols-2 xl:items-stretch' : '')}>
         {applicabilityRows.length > 0 ? (
@@ -876,22 +1027,28 @@ function DimensionTable({ dimensions, selectedDimensionId, onSelectDimension }) 
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="seclens-surface grid grid-cols-[minmax(0,1fr)_90px_70px_90px_110px_100px] gap-x-2 border-b border-[var(--sl-border-soft)] px-5 py-3 text-[11px] font-medium uppercase tracking-[0.12em] seclens-subtle">
+        <div className="seclens-surface grid grid-cols-[minmax(0,1fr)_96px_108px_88px_72px_84px_84px_104px] gap-x-2 border-b border-[var(--sl-border-soft)] px-5 py-3 text-[11px] font-medium uppercase leading-tight tracking-[0.12em] seclens-subtle">
           <div>Dimension</div>
           <div>Status</div>
-          <div>Findings</div>
-          <div>Controls</div>
-          <div>Reviewed Paths</div>
-          <div>Confidence</div>
+          <div className="min-w-0">Applicability</div>
+          <div className="min-w-0">Advisory</div>
+          <div>Recs</div>
+          <div>Prompts</div>
+          <div>Tests</div>
+          <div className="min-w-0 text-right">Confidence</div>
         </div>
         {dimensions.map((dimension) => {
           const definition = DIMENSION_CATALOG.find((item) => item.id === dimension.dimensionId)
           const isSelected = selectedDimensionId === dimension.dimensionId
+          const recommendationCount = dimension.recommendations.length
+          const promptsCount = recommendationCount
+          const testsCount = recommendationCount
+          const applicabilityStatus = dimension?.applicability?.status === 'not_applicable' ? 'Not app' : 'Applicable'
           return (
             <div
               key={dimension.dimensionId}
               className={cn(
-                'grid cursor-pointer grid-cols-[minmax(0,1fr)_90px_70px_90px_110px_100px] gap-x-2 border-b border-[var(--sl-border-soft)] px-5 py-4 transition-colors hover:bg-[var(--sl-panel-muted)]',
+                'grid cursor-pointer grid-cols-[minmax(0,1fr)_96px_108px_88px_72px_84px_84px_104px] gap-x-2 border-b border-[var(--sl-border-soft)] px-5 py-4 transition-colors hover:bg-[var(--sl-panel-muted)]',
                 isSelected ? 'bg-[var(--sl-panel-muted)]' : ''
               )}
               title={`Show ${dimension.label} in the detail panel`}
@@ -905,7 +1062,7 @@ function DimensionTable({ dimensions, selectedDimensionId, onSelectDimension }) 
                   <div className="min-w-0 flex-1">
                     <p className="seclens-text text-sm font-medium leading-snug">{dimension.label}</p>
                     <p className="seclens-muted mt-1 line-clamp-3 text-sm leading-relaxed break-words">
-                      {dimension.summary.whatRemainsUnclear || dimension.summary.whatLooksStrong}
+                      {dimension.coverage.coverageSummary}
                     </p>
                   </div>
                 </div>
@@ -915,12 +1072,19 @@ function DimensionTable({ dimensions, selectedDimensionId, onSelectDimension }) 
                   {STATUS_CHIP_LABELS[dimension.status]}
                 </span>
               </div>
-              <div className="seclens-text pt-1 text-sm tabular-nums">{dimension.findings.length}</div>
-              <div className="seclens-text pt-1 text-sm tabular-nums">
-                {dimension.observedControls.length}/{dimension.unverifiedControls.length}
+              <div className="seclens-text min-w-0 pt-1 text-sm tabular-nums">
+                {applicabilityStatus}
               </div>
-              <div className="seclens-text pt-1 text-sm tabular-nums">{dimension.evidence.reviewedPaths.length}</div>
-              <div className={cn('pt-1 text-sm font-medium tracking-[0.08em]', confidenceTone(dimension.coverage.confidence))}>
+              <div className="seclens-text min-w-0 pt-1 text-sm tabular-nums">{dimension.findings.length}</div>
+              <div className="seclens-text pt-1 text-sm tabular-nums">{recommendationCount}</div>
+              <div className="seclens-text pt-1 text-sm tabular-nums">{promptsCount}</div>
+              <div className="seclens-text pt-1 text-sm tabular-nums">{testsCount}</div>
+              <div
+                className={cn(
+                  'min-w-0 pt-1 text-right text-sm font-medium tracking-[0.08em]',
+                  confidenceTone(dimension.coverage.confidence)
+                )}
+              >
                 {toSentenceCase(dimension.coverage.confidence)}
               </div>
             </div>
@@ -935,7 +1099,9 @@ function DetailPanel({ dimension }) {
   if (!dimension) {
     return (
       <div className="seclens-panel flex min-h-0 flex-col justify-center px-6 py-6 xl:h-full">
-        <p className="seclens-muted text-sm">Select a dimension to inspect its evidence, uncertainty, and next actions.</p>
+        <p className="seclens-muted text-sm">
+          Select a dimension to inspect coverage, potential problem areas, and evidence.
+        </p>
       </div>
     )
   }
@@ -1010,30 +1176,217 @@ function DetailPanel({ dimension }) {
   )
 }
 
-function RecommendationQueue({ items }) {
+const DIMENSION_ACTION_SUBTABS = Object.freeze([
+  { id: 'recommendations', label: 'Prioritized recommendations' },
+  { id: 'prompts', label: 'AI prompts' },
+  { id: 'tests', label: 'Tests' },
+  { id: 'plan', label: 'Plan' },
+])
+
+function DimensionActionsWorkbench({ dimensions, recommendationQueue, selectedDimensionId, onSelectDimension }) {
+  const [copyState, setCopyState] = useState('')
+  const [detailTab, setDetailTab] = useState('recommendations')
+
+  const orderedDimensions = useMemo(() => {
+    const list = [...(dimensions || [])]
+    list.sort((left, right) => catalogOrderForDimensionId(left.dimensionId) - catalogOrderForDimensionId(right.dimensionId))
+    return list
+  }, [dimensions])
+
+  const activeDimensionId =
+    selectedDimensionId && orderedDimensions.some((d) => d.dimensionId === selectedDimensionId)
+      ? selectedDimensionId
+      : orderedDimensions[0]?.dimensionId || null
+
+  const activeDimension = orderedDimensions.find((d) => d.dimensionId === activeDimensionId) || null
+
+  useEffect(() => {
+    setDetailTab('recommendations')
+  }, [activeDimensionId])
+
+  const handleCopy = async (key, value) => {
+    const copied = await copyText(value)
+    if (!copied) return
+    setCopyState(key)
+    window.setTimeout(() => setCopyState(''), 1600)
+  }
+
+  const queueForDimension = useMemo(() => {
+    if (!activeDimensionId) return []
+    return (recommendationQueue || []).filter((item) => item.dimensionId === activeDimensionId)
+  }, [recommendationQueue, activeDimensionId])
+
+  const recommendationsFull = activeDimension?.recommendations || []
+  const prompts = recommendationsFull.map((item) => buildPromptFromRecommendation(item, activeDimension.label))
+  const tests = recommendationsFull.map((item) => buildSuggestedTestFromRecommendation(item, activeDimension.label))
+
+  if (!orderedDimensions.length) {
+    return null
+  }
+
   return (
-    <div className="seclens-panel px-6 py-6">
-      <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Recommendation Queue</p>
-      <h3 className="seclens-text mt-2 text-[22px] font-semibold tracking-tight">Prioritized next actions</h3>
-      <div className="mt-4 space-y-3">
-        {items.length ? (
-          items.slice(0, 6).map((item) => (
-            <div key={item.id} className="seclens-surface rounded-[16px] p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-[color:rgba(10,114,239,0.12)] px-2.5 py-1 text-[11px] font-medium text-[var(--sl-info-text)]">
-                  {item.priority}
+    <section className="seclens-panel overflow-hidden">
+      <div className="seclens-border-soft border-b px-5 py-4">
+        <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Actions by dimension</p>
+        <h3 className="seclens-text mt-1 text-[22px] font-semibold tracking-tight">Recommendations, prompts, tests &amp; plan</h3>
+        <p className="seclens-muted mt-2 text-sm leading-relaxed">
+          Choose a dimension, then open a tab for prioritized queue items, copy-paste AI prompts, suggested tests, or a concise remediation plan.
+        </p>
+      </div>
+
+      <div className="border-b border-[var(--sl-border-soft)] px-5 pt-4">
+        <div className="flex flex-wrap gap-2 pb-3" role="tablist" aria-label="Dimensions">
+          {orderedDimensions.map((dimension) => {
+            const definition = DIMENSION_CATALOG.find((item) => item.id === dimension.dimensionId)
+            const tabLabel = dimension.shortLabel || definition?.shortLabel || dimension.label
+            const isActive = dimension.dimensionId === activeDimensionId
+            return (
+              <button
+                key={dimension.dimensionId}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors',
+                  isActive ? 'bg-[var(--sl-text)] text-[var(--sl-panel)]' : 'seclens-muted bg-[var(--sl-panel-muted)] hover:seclens-text'
+                )}
+                onClick={() => onSelectDimension(dimension.dimensionId)}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <span className={cn('inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]', dimensionIconTone(definition?.icon))}>
+                    <DimensionGlyph icon={definition?.icon} />
+                  </span>
+                  {tabLabel}
                 </span>
-                <span className="seclens-subtle text-xs uppercase tracking-[0.12em]">{item.dimensionLabel}</span>
-              </div>
-              <p className="seclens-text mt-3 text-sm leading-6">{item.text}</p>
-              <p className="seclens-muted mt-2 text-[13px]">{item.evidenceTarget}</p>
-            </div>
-          ))
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="px-5 pt-4">
+        <div className="flex flex-wrap gap-2 border-b border-[var(--sl-border-soft)] pb-3" role="tablist" aria-label="Action type">
+          {DIMENSION_ACTION_SUBTABS.map((tab) => {
+            const isOpen = detailTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isOpen}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors',
+                  isOpen
+                    ? 'bg-[color:rgba(10,114,239,0.14)] text-[var(--sl-info-text)] ring-1 ring-[color:rgba(10,114,239,0.35)]'
+                    : 'seclens-muted bg-[var(--sl-panel-muted)] hover:seclens-text'
+                )}
+                onClick={() => setDetailTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="min-h-0 px-5 py-5">
+        {!activeDimension ? (
+          <p className="seclens-muted text-sm">Select a dimension above.</p>
+        ) : detailTab === 'recommendations' ? (
+          <div className="space-y-3">
+            {queueForDimension.length ? (
+              queueForDimension.map((item) => (
+                <div key={item.id} className="seclens-surface rounded-[16px] p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-[color:rgba(10,114,239,0.12)] px-2.5 py-1 text-[11px] font-medium text-[var(--sl-info-text)]">
+                      {item.priority}
+                    </span>
+                    <span className="seclens-subtle text-xs uppercase tracking-[0.12em]">{item.dimensionLabel}</span>
+                  </div>
+                  <p className="seclens-text mt-3 text-sm leading-6">{item.text}</p>
+                  <p className="seclens-muted mt-2 text-[13px]">{item.evidenceTarget}</p>
+                </div>
+              ))
+            ) : (
+              <p className="seclens-muted text-sm">No prioritized recommendations for this dimension in the queue yet.</p>
+            )}
+          </div>
+        ) : detailTab === 'prompts' ? (
+          <div className="space-y-3">
+            {prompts.length ? (
+              prompts.map((item, index) => (
+                <div key={`${item.title}-${index}`} className="seclens-surface rounded-[16px] p-4">
+                  <p className="seclens-text text-sm font-medium">{item.title}</p>
+                  <p className="seclens-muted mt-1 text-xs">Target files: {item.target}</p>
+                  <code className="mt-2 block whitespace-pre-wrap rounded-[10px] bg-[var(--sl-panel-muted)] px-3 py-2 text-[12px] leading-relaxed seclens-text">
+                    {item.prompt}
+                  </code>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="seclens-muted text-xs">{item.expectedOutcome}</p>
+                    <button
+                      type="button"
+                      className="seclens-button-secondary px-3 py-1.5 text-xs"
+                      onClick={() => handleCopy(`prompt-${activeDimensionId}-${index}`, item.prompt)}
+                    >
+                      {copyState === `prompt-${activeDimensionId}-${index}` ? 'Copied' : 'Copy prompt'}
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="seclens-muted text-sm">No AI IDE prompts were generated for this dimension yet.</p>
+            )}
+          </div>
+        ) : detailTab === 'tests' ? (
+          <div className="space-y-3">
+            {tests.length ? (
+              tests.map((item, index) => (
+                <div key={`${item.title}-${index}`} className="seclens-surface rounded-[16px] p-4">
+                  <p className="seclens-text text-sm font-medium">{item.title}</p>
+                  <p className="seclens-muted mt-1 text-xs">
+                    Test type: {item.testType} - Target files: {item.target}
+                  </p>
+                  <p className="seclens-text mt-2 text-sm">{item.testGoal}</p>
+                  <code className="mt-2 block whitespace-pre-wrap rounded-[10px] bg-[var(--sl-panel-muted)] px-3 py-2 text-[12px] leading-relaxed seclens-text">
+                    {item.prompt}
+                  </code>
+                  <div className="mt-2 flex justify-end">
+                    <button
+                      type="button"
+                      className="seclens-button-secondary px-3 py-1.5 text-xs"
+                      onClick={() => handleCopy(`test-${activeDimensionId}-${index}`, item.prompt)}
+                    >
+                      {copyState === `test-${activeDimensionId}-${index}` ? 'Copied' : 'Copy test prompt'}
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="seclens-muted text-sm">No suggested tests were generated for this dimension yet.</p>
+            )}
+          </div>
         ) : (
-          <p className="seclens-muted text-sm">No synthesized recommendations are available yet.</p>
+          <div className="seclens-surface rounded-[16px] p-4">
+            <p className="seclens-subtle text-[11px] font-medium uppercase tracking-[0.12em]">Remediation plan</p>
+            {queueForDimension.length ? (
+              <ol className="mt-4 list-decimal space-y-4 pl-5">
+                {queueForDimension.map((item) => (
+                  <li key={item.id} className="seclens-text text-sm leading-6 marker:font-medium marker:text-[var(--sl-info-text)]">
+                    <span className="mr-2 inline-block rounded-full bg-[color:rgba(10,114,239,0.1)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--sl-info-text)]">
+                      {item.priority}
+                    </span>
+                    {item.text}
+                    <p className="seclens-muted mt-2 text-[13px]">{item.evidenceTarget}</p>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="seclens-muted mt-3 text-sm">No remediation steps are queued for this dimension yet.</p>
+            )}
+          </div>
         )}
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -1232,7 +1585,12 @@ export default function DashboardShell({
                   <DetailPanel dimension={selectedDimension} />
                 </div>
               </div>
-              <RecommendationQueue items={dashboard?.recommendationQueue || []} />
+              <DimensionActionsWorkbench
+                dimensions={filteredDimensions}
+                recommendationQueue={dashboard?.recommendationQueue || []}
+                selectedDimensionId={selectedDimension?.dimensionId}
+                onSelectDimension={onSelectDimension}
+              />
             </section>
           </>
         )}

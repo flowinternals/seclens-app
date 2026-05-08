@@ -4,33 +4,33 @@ function PrivacyPolicy() {
       <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Privacy Policy</h3>
       <div className="space-y-4 text-gray-700 dark:text-gray-300">
         <p>
-          <strong>Last Updated:</strong> October 31, 2025
+          <strong>Last Updated:</strong> May 2, 2026
         </p>
-        
+
         <section>
           <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Information We Collect</h4>
           <p>
-            SecLens is designed with privacy in mind. We do not collect, store, or process any personal information from users. 
-            When you use SecLens to analyze a GitHub repository:
+            SecLens collects only the information required to operate the advisory service, secure access, and support admin
+            diagnostics.
           </p>
           <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
-            <li>We do not require account creation or login</li>
-            <li>We do not store your repository URLs or analysis results</li>
-            <li>We do not use cookies for tracking purposes</li>
-            <li>We do not collect any personal data</li>
+            <li>Account details via Firebase Auth (for example email, display name, and UID)</li>
+            <li>Repository metadata submitted for runs (for example repository URL, branch, and commit where available)</li>
+            <li>Run telemetry needed for reliability and troubleshooting (status, reason codes, warnings, errors, and usage metrics)</li>
+            <li>Basic security and abuse-control signals such as request/rate-limit events</li>
           </ul>
         </section>
 
         <section>
           <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">How We Process Data</h4>
           <p>
-            When you submit a GitHub repository URL for analysis:
+            When you submit a repository for review:
           </p>
           <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
-            <li>The repository URL is sent to our serverless functions for analysis</li>
-            <li>Analysis is performed using OpenAI's API</li>
-            <li>Results are returned to your browser and displayed on your screen</li>
-            <li>No data is stored on our servers after the analysis completes</li>
+            <li>Selected repository data is processed by SecLens serverless services</li>
+            <li>Analysis is performed using supported AI providers (including OpenAI where configured)</li>
+            <li>Run-level telemetry is persisted so run outcomes can be audited and diagnosed</li>
+            <li>Admin-only diagnostic views are restricted using role-based access controls</li>
           </ul>
         </section>
 
@@ -41,6 +41,7 @@ function PrivacyPolicy() {
           </p>
           <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
             <li><strong>Vercel:</strong> Hosting and serverless functions</li>
+            <li><strong>Firebase:</strong> Authentication, role management support, and data storage</li>
             <li><strong>OpenAI:</strong> Security analysis processing</li>
             <li><strong>Google reCAPTCHA:</strong> Bot protection</li>
           </ul>
@@ -52,21 +53,31 @@ function PrivacyPolicy() {
         <section>
           <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Data Security</h4>
           <p>
-            We implement comprehensive security measures to protect any data processed during analysis:
+            We implement controls to protect data used by the service:
           </p>
           <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
             <li>All API communications use HTTPS encryption</li>
-            <li>Input sanitization prevents injection attacks</li>
-            <li>Rate limiting prevents abuse</li>
-            <li>No persistent storage of analysis results</li>
+            <li>Input validation and sanitization protections are applied</li>
+            <li>Rate limiting and abuse controls are enforced</li>
+            <li>Role-based access controls restrict admin diagnostics</li>
+            <li>Access to telemetry and account-linked data follows least-privilege principles</li>
           </ul>
         </section>
 
         <section>
-          <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Your Rights</h4>
+          <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Retention and Access</h4>
           <p>
-            Since we do not collect or store personal information, there is no personal data to access, modify, or delete. 
-            However, if you have any concerns about your privacy while using SecLens, please contact us.
+            Account profile records and run telemetry are retained for product operation, diagnostics, and security auditing.
+            Access to admin telemetry is restricted to authorized admin users. Non-admin users are limited to user-safe views.
+          </p>
+        </section>
+
+        <section>
+          <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Product Scope Disclaimer</h4>
+          <p>
+            SecLens is a repository security advisory tool. It does not prove the presence or absence of vulnerabilities.
+            Recommendations, prompts, and suggested tests are based on selected repository files and should be reviewed by a
+            developer or security engineer before changes are made.
           </p>
         </section>
 

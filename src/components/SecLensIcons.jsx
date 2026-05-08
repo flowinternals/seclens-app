@@ -15,7 +15,7 @@ export function IconDownload({ className = 'h-[18px] w-[18px]', 'aria-hidden': a
   )
 }
 
-/** Dashboard — four-tile grid. */
+/** Dashboard - four-tile grid. */
 export function IconDashboard({ className = 'h-5 w-5', 'aria-hidden': ariaHidden = true }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" aria-hidden={ariaHidden}>
@@ -27,7 +27,7 @@ export function IconDashboard({ className = 'h-5 w-5', 'aria-hidden': ariaHidden
   )
 }
 
-/** Export — arrow into tray. */
+/** Export - arrow into tray. */
 export function IconExportTray({ className = 'h-5 w-5', 'aria-hidden': ariaHidden = true }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden={ariaHidden}>
@@ -38,7 +38,7 @@ export function IconExportTray({ className = 'h-5 w-5', 'aria-hidden': ariaHidde
   )
 }
 
-/** Consolidated report — document with fold and emphasis lines. */
+/** Consolidated report - document with fold and emphasis lines. */
 export function IconReportDoc({ className = 'h-5 w-5', 'aria-hidden': ariaHidden = true }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden={ariaHidden}>
@@ -50,7 +50,7 @@ export function IconReportDoc({ className = 'h-5 w-5', 'aria-hidden': ariaHidden
   )
 }
 
-/** Documentation — closed book spread (two boards + spine). */
+/** Documentation - closed book spread (two boards + spine). */
 export function IconBookOpen({ className = 'h-5 w-5', 'aria-hidden': ariaHidden = true }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinejoin="round" aria-hidden={ariaHidden}>
@@ -82,6 +82,33 @@ export function IconMoonNight({ className = 'h-5 w-5', 'aria-hidden': ariaHidden
         stroke="currentColor"
         strokeWidth="1.5"
       />
+    </svg>
+  )
+}
+
+/** Admin tools - shield with star. */
+export function IconAdminShield({ className = 'h-5 w-5', 'aria-hidden': ariaHidden = true }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" aria-hidden={ariaHidden}>
+      <path
+        d="M12 2.5 4.75 5.4v5.35c0 5.12 2.86 8.9 7.25 10.75 4.39-1.85 7.25-5.63 7.25-10.75V5.4L12 2.5z"
+        fill="currentColor"
+        fillOpacity="0.12"
+        strokeLinejoin="round"
+      />
+      <path d="m12 8 1.02 2.06 2.27.33-1.65 1.6.39 2.26L12 13.2l-2.03 1.07.39-2.26-1.65-1.6 2.27-.33L12 8z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+/** Billing - card with signal accent. */
+export function IconBillingCard({ className = 'h-5 w-5', 'aria-hidden': ariaHidden = true }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" aria-hidden={ariaHidden}>
+      <rect x="2.75" y="5.25" width="18.5" height="13.5" rx="2.3" fill="currentColor" fillOpacity="0.1" />
+      <path d="M2.75 9h18.5" strokeLinecap="round" />
+      <path d="M6.5 14.25h5.5" strokeLinecap="round" />
+      <path d="M17.25 14.75a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5z" fill="currentColor" stroke="none" />
     </svg>
   )
 }
