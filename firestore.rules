@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Custom claims avoid Firestore reads (no circular get on /users/{uid}).
+    function hasAdminClaim() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    function roleStringIsAdmin(r) {
+      return r is string && r.lower() == 'admin';
+    }
+
+    // Missing or null `role`, or non-string values, normalize to `user` for comparison.
+    function normalizedStoredUserRole() {
+      return resource.data.keys().hasAny(['role']) && resource.data.role != null && resource.data.role is string
+        ? resource.data.role.lower()
+        : 'user';
+    }
+
+    function normalizedRequestUserRole() {
+      return request.resource.data.keys().hasAny(['role']) &&
+        request.resource.data.role != null &&
+        request.resource.data.role is string
+        ? request.resource.data.role.lower()
+        : 'user';
+    }
+
+    // Read another user's /users/{targetUid} doc - get() is only on the caller's profile, never the resource path.
+    function canReadOtherUserProfile(targetUid) {
+      return isSignedIn() &&
+        request.auth.uid != targetUid &&
+        (
+          hasAdminClaim() ||
+          (
+            exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+            roleStringIsAdmin(
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '')
+            )
+          )
+        );
+    }
+
+    function isRunsReader() {
+      return hasAdminClaim() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          roleStringIsAdmin(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '')));
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow read: if canReadOtherUserProfile(uid);
+
+      allow create: if isOwner(uid) && (
+        normalizedRequestUserRole() == 'user' ||
+        (hasAdminClaim() && normalizedRequestUserRole() == 'admin')
+      );
+
+      // Never OR isAdmin() with a get() on this same uid - that recurses. Cross-user admin updates use a separate rule.
+      allow update: if isOwner(uid) && (
+        hasAdminClaim() ||
+        normalizedRequestUserRole() == normalizedStoredUserRole()
+      );
+      allow update: if canReadOtherUserProfile(uid);
+
+      allow delete: if false;
+    }
+
+    match /users/{uid}/billing/subscription {
+      allow read: if isOwner(uid);
+      allow read: if canReadOtherUserProfile(uid);
+      // Subscription state is server-managed via verified Stripe webhooks and backend APIs.
+      allow write: if false;
+    }
+
+    match /runs/{runId} {
+      allow read: if isRunsReader();
+      allow write: if false;
+    }
+  }
+}
