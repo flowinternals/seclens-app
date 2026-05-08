@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { allowPartialCriticalShortlistCoverage } from '../../lib/server/ingestionCaps.js'
 
-describe('ingestionCaps — critical shortlist coverage policy (DEFECT-003)', () => {
+describe('ingestionCaps - critical shortlist coverage policy (DEFECT-003)', () => {
   afterEach(() => {
     delete process.env.SECLENS_ALLOW_PROTECTED_COVERAGE_GAP
   })

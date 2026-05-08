@@ -1,0 +1,16 @@
+---
+description: Never invent placeholder data to silence failures
+alwaysApply: true
+---
+
+# No fake data to “green” failures
+
+Do **not** add synthetic recommendations, prompts, tests, telemetry, or other fabricated values so that a failing validator, quality gate, UI, or test appears to pass.
+
+Valid approaches instead:
+
+- Fix the underlying bug (prompts, parsing, admission, schema).
+- Surface real errors with accurate status or reason codes (`WARNING`, explicit `reasonCode`, HTTP errors).
+- Retry or repair flows where product intent supports it—not silent placeholders.
+
+Test fixtures and deliberately labeled mock secrets (e.g. `FAKE_TEST_SECRET_*`) in tests only are fine when clearly scoped to tests.

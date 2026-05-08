@@ -18,7 +18,12 @@
     "test:limit-pressure": "vitest run tests/repo-ingestion/limitPressureHarness.test.js tests/repo-ingestion/openaiPromptBudget.test.js tests/repo-ingestion/ingestionCaps.test.js",
     "test:watch": "vitest",
     "self-scan": "node scripts/self-scan-local.mjs",
-    "cr5:readiness": "node scripts/cr5-readiness-check.mjs"
+    "cr5:readiness": "node scripts/cr5-readiness-check.mjs",
+    "firebase:deploy:rules": "firebase deploy --only firestore:rules",
+    "firebase:deploy:hosting": "firebase deploy --only hosting",
+    "firebase:deploy:firestore": "firebase deploy --only firestore",
+    "firebase:emulators": "firebase emulators:start --only auth,firestore",
+    "firebase:auth:export": "firebase auth:export .firebase-auth-export.tmp.json --format json"
   },
   "repository": {
     "type": "git",
@@ -41,7 +46,8 @@
     "dompurify": "^3.3.0",
     "dotenv": "^16.4.5",
     "express": "^4.18.2",
-    "firebase": "^12.13.0",
+    "firebase": "^12.12.1",
+    "firebase-admin": "^13.8.0",
     "mammoth": "^1.12.0",
     "openai": "^6.7.0",
     "pdf-lib": "^1.17.1",
@@ -49,8 +55,9 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.15.0",
+    "react-router-dom": "^7.14.2",
     "remark-gfm": "^4.0.1",
+    "stripe": "^22.1.0",
     "styled-components": "^6.1.19"
   },
   "devDependencies": {
@@ -59,6 +66,7 @@
     "autoprefixer": "^10.4.21",
     "concurrently": "^8.2.2",
     "eslint": "^10.2.1",
+    "firebase-tools": "^14.24.2",
     "globals": "^17.5.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.18",

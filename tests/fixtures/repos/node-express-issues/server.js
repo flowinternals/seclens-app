@@ -1,5 +1,5 @@
 /**
- * Golden fixture — intentional weak patterns for report tests.
+ * Golden fixture - intentional weak patterns for report tests.
  * Fake secret is explicitly non-credential per architect guardrail.
  */
 import express from 'express'

@@ -67,6 +67,8 @@ describe('dimension dashboard pipeline', () => {
     })
 
     expect(dashboard.summary.totals.findingsAdmitted).toBe(1)
+    expect(dashboard.summary.totals.recommendationsHigh).toBeGreaterThanOrEqual(1)
+    expect(dashboard.summary.totals.filesWithRecommendationEvidence).toBeGreaterThanOrEqual(1)
     expect(dashboard.summary.totals.observedControls).toBe(1)
     expect(dashboard.summary.overallStatus).toBe('review_needed')
     expect(dashboard.recommendationQueue.length).toBeGreaterThanOrEqual(1)

@@ -4,7 +4,7 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import { buildLocalEvidenceSnapshot } from '../../lib/server/localIngestion.js'
 
-describe('localIngestion — critical shortlist fail-closed (DEFECT-003)', () => {
+describe('localIngestion - critical shortlist fail-closed (DEFECT-003)', () => {
   function makeTruncationFixtureDir() {
     const dir = join(tmpdir(), `seclens-critical-gap-${Date.now()}`)
     mkdirSync(join(dir, '.github', 'workflows'), { recursive: true })

@@ -20,7 +20,7 @@ describe('resolveScanRef (DEFECT-001)', () => {
     expect(r.degraded).toBe(false)
   })
 
-  it('uses only default branch when metadata resolved — no main/master when develop ref succeeds', async () => {
+  it('uses only default branch when metadata resolved - no main/master when develop ref succeeds', async () => {
     const urls = []
     const fetchWithAuth = vi.fn(async (url) => {
       urls.push(url)
@@ -38,7 +38,7 @@ describe('resolveScanRef (DEFECT-001)', () => {
     expect(urls.some((u) => u.includes('/git/ref/heads/master'))).toBe(false)
   })
 
-  it('uses same branch via branches API when ref fails — still does not try main/master', async () => {
+  it('uses same branch via branches API when ref fails - still does not try main/master', async () => {
     const urls = []
     const fetchWithAuth = vi.fn(async (url) => {
       urls.push(url)
@@ -97,7 +97,7 @@ describe('resolveScanRef (DEFECT-001)', () => {
     expect(r.degraded).toBe(false)
   })
 
-  it('throws when default branch cannot be resolved — does not fall back to main', async () => {
+  it('throws when default branch cannot be resolved - does not fall back to main', async () => {
     const urls = []
     const fetchWithAuth = vi.fn(async (url) => {
       urls.push(url)

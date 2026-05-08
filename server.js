@@ -20,18 +20,18 @@ console.log('Loading environment from:', envPath)
 
 // Check if file exists
 if (fs.existsSync(envPath)) {
-  console.log('✓ .env.local file exists')
+  console.log('OK .env.local file exists')
   
   // Try loading .env.local first
   const envResult = dotenv.config({ path: envPath })
   if (envResult.error) {
-    console.log('⚠️  Warning: Could not load .env.local:', envResult.error.message)
+    console.log('WARNING Could not load .env.local:', envResult.error.message)
   } else {
     if (envResult.parsed && Object.keys(envResult.parsed).length > 0) {
-      console.log('✓ Loaded .env.local successfully with dotenv')
+      console.log('OK Loaded .env.local successfully with dotenv')
       console.log('   Variables loaded:', Object.keys(envResult.parsed).join(', '))
     } else {
-      console.log('⚠️  .env.local file exists but dotenv parsed nothing, trying manual parse...')
+      console.log('WARNING .env.local file exists but dotenv parsed nothing, trying manual parse...')
       // Try reading file directly
       try {
         const fileContent = fs.readFileSync(envPath, 'utf-8')
@@ -57,21 +57,21 @@ if (fs.existsSync(envPath)) {
               if (!process.env[key]) {
                 process.env[key] = value
                 loadedCount++
-                console.log(`   ✓ Manually loaded: ${key}`)
+                console.log(`   OK Manually loaded: ${key}`)
               } else {
-                console.log(`   ⚠ Already set: ${key}`)
+                console.log(`   WARNING Already set: ${key}`)
               }
             } else {
-              console.log(`   ⚠ Invalid line ${index + 1}: empty key or value`)
+              console.log(`   WARNING Invalid line ${index + 1}: empty key or value`)
             }
           } else {
-            console.log(`   ⚠ Line ${index + 1} doesn't match pattern: ${JSON.stringify(cleanLine.substring(0, 50))}`)
+            console.log(`   WARNING Line ${index + 1} doesn't match pattern: ${JSON.stringify(cleanLine.substring(0, 50))}`)
           }
         })
         if (loadedCount > 0) {
-          console.log(`✓ Manually loaded ${loadedCount} environment variables`)
+          console.log(`OK Manually loaded ${loadedCount} environment variables`)
         } else {
-          console.log('⚠️  No variables could be parsed from file')
+          console.log('WARNING No variables could be parsed from file')
         }
       } catch (err) {
         console.log('   Error reading file:', err.message)
@@ -79,7 +79,7 @@ if (fs.existsSync(envPath)) {
     }
   }
 } else {
-  console.log('⚠️  .env.local file not found at:', envPath)
+  console.log('WARNING .env.local file not found at:', envPath)
 }
 
 // Also try loading from current directory (fallback)
@@ -151,6 +151,7 @@ app.use(cors({
 }))
 
 // Body parsing middleware with size limits to prevent large payload abuse
+app.use('/api/billing/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json({ limit: '200kb' }))
 app.use(express.urlencoded({ extended: true, limit: '200kb' }))
 
@@ -345,7 +346,7 @@ async function registerRoutes() {
         hasGitHubToken: !!(process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN)
       })
     })
-    console.log('✓ Registered /api/health')
+    console.log('OK Registered /api/health')
     
     // Analyze endpoint
     const analyzeHandler = await import('./api/analyze.js')
@@ -355,7 +356,7 @@ async function registerRoutes() {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
       res.status(204).end()
     })
-    console.log('✓ Registered /api/analyze')
+    console.log('OK Registered /api/analyze')
 
     const scanJobsHandler = await import('./api/scan-jobs.js')
     app.post('/api/scan-jobs', createVercelHandler(scanJobsHandler.default))
@@ -365,37 +366,106 @@ async function registerRoutes() {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
       res.status(204).end()
     })
-    console.log('✓ Registered /api/scan-jobs')
+    console.log('OK Registered /api/scan-jobs')
+
+    const adminRunsHandler = await import('./api/admin/runs.js')
+    app.get('/api/admin/runs', createVercelHandler(adminRunsHandler.default))
+    const adminRunDetailHandler = await import('./api/admin/runs/[runId].js')
+    app.get('/api/admin/runs/:runId', createVercelHandler(adminRunDetailHandler.default))
+    app.delete('/api/admin/runs/:runId', createVercelHandler(adminRunDetailHandler.default))
+    const adminRunPostMortemHandler = await import('./api/admin/runs/[runId]/post-mortem.js')
+    app.post('/api/admin/runs/:runId/post-mortem', createVercelHandler(adminRunPostMortemHandler.default))
+    app.options('/api/admin/runs', (req, res) => {
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      res.status(204).end()
+    })
+    app.options('/api/admin/runs/:runId', (req, res) => {
+      res.setHeader('Access-Control-Allow-Methods', 'GET, DELETE, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      res.status(204).end()
+    })
+    app.options('/api/admin/runs/:runId/post-mortem', (req, res) => {
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      res.status(204).end()
+    })
+    console.log('OK Registered /api/admin/runs')
+
+    const provisionAccountHandler = await import('./api/auth/provision-account.js')
+    app.post('/api/auth/provision-account', createVercelHandler(provisionAccountHandler.default))
+    app.options('/api/auth/provision-account', (req, res) => {
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+      res.status(204).end()
+    })
+    console.log('OK Registered /api/auth/provision-account')
+
+    const billingSubscriptionHandler = await import('./api/billing/subscription.js')
+    app.get('/api/billing/subscription', createVercelHandler(billingSubscriptionHandler.default))
+    app.options('/api/billing/subscription', (req, res) => {
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      res.status(204).end()
+    })
+    console.log('OK Registered /api/billing/subscription')
+
+    const billingCheckoutSessionHandler = await import('./api/billing/checkout-session.js')
+    app.post('/api/billing/checkout-session', createVercelHandler(billingCheckoutSessionHandler.default))
+    app.options('/api/billing/checkout-session', (req, res) => {
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      res.status(204).end()
+    })
+    console.log('OK Registered /api/billing/checkout-session')
+
+    const billingPortalSessionHandler = await import('./api/billing/portal-session.js')
+    app.post('/api/billing/portal-session', createVercelHandler(billingPortalSessionHandler.default))
+    app.options('/api/billing/portal-session', (req, res) => {
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      res.status(204).end()
+    })
+    console.log('OK Registered /api/billing/portal-session')
+
+    const billingWebhookHandler = await import('./api/billing/webhook.js')
+    app.post('/api/billing/webhook', createVercelHandler(billingWebhookHandler.default))
+    app.options('/api/billing/webhook', (req, res) => {
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Stripe-Signature')
+      res.status(204).end()
+    })
+    console.log('OK Registered /api/billing/webhook')
 
     // Download endpoints
     const markdownHandler = await import('./api/download/markdown.js')
     app.post('/api/download/markdown', createVercelHandler(markdownHandler.default))
     app.options('/api/download/markdown', (req, res) => {
       res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
       res.status(204).end()
     })
-    console.log('✓ Registered /api/download/markdown')
+    console.log('OK Registered /api/download/markdown')
 
     const textHandler = await import('./api/download/text.js')
     app.post('/api/download/text', createVercelHandler(textHandler.default))
     app.options('/api/download/text', (req, res) => {
       res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
       res.status(204).end()
     })
-    console.log('✓ Registered /api/download/text')
+    console.log('OK Registered /api/download/text')
 
     const pdfHandler = await import('./api/download/pdf.js')
     app.post('/api/download/pdf', createVercelHandler(pdfHandler.default))
     app.options('/api/download/pdf', (req, res) => {
       res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
       res.status(204).end()
     })
-    console.log('✓ Registered /api/download/pdf')
+    console.log('OK Registered /api/download/pdf')
 
-    console.log('✓ All API routes registered')
+    console.log('OK All API routes registered')
   } catch (error) {
     console.error('Error registering routes:', error)
     console.error('Error stack:', error.stack)
@@ -409,22 +479,22 @@ async function startServer() {
     await registerRoutes()
 
     app.listen(PORT, () => {
-      console.log(`\n🚀 Local API server running on http://localhost:${PORT}`)
-      console.log(`📡 API endpoints available:`)
+      console.log(`\nLocal API server running on http://localhost:${PORT}`)
+      console.log(`API endpoints available:`)
       console.log(`   POST http://localhost:${PORT}/api/analyze`)
       console.log(`   POST http://localhost:${PORT}/api/download/markdown`)
       console.log(`   POST http://localhost:${PORT}/api/download/text`)
       console.log(`   POST http://localhost:${PORT}/api/download/pdf`)
-      console.log(`\n💡 Environment check:`)
+      console.log(`\nEnvironment check:`)
       if (!process.env.OPENAI_API_KEY) {
-        console.log(`⚠️  WARNING: OPENAI_API_KEY is not set!`)
+        console.log(`WARNING OPENAI_API_KEY is not set!`)
       } else {
-        console.log(`✓ OPENAI_API_KEY is configured`)
+        console.log(`OK OPENAI_API_KEY is configured`)
       }
       if (process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN) {
-        console.log(`✓ GitHub token detected`)
+        console.log(`OK GitHub token detected`)
       } else {
-        console.log('⚠️  GITHUB_TOKEN not set (higher GitHub API limits unavailable)')
+        console.log('WARNING GITHUB_TOKEN not set (higher GitHub API limits unavailable)')
       }
       console.log()
     })
