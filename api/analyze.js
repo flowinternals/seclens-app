@@ -13,6 +13,9 @@ import { ReportQualityGateError } from '../lib/server/reportQualityGateError.js'
 import { buildScanJobLifecycleTelemetry, buildTelemetry } from '../lib/server/scanTelemetryPayload.js'
 import { tryAppendScanTelemetryLog } from '../lib/server/scanTelemetryLogAppend.js'
 import { enforceProductionAccessGuard } from '../lib/server/productionAccessGuard.js'
+import { githubAccessFailureHttp } from '../lib/server/githubAccessHttp.js'
+import { authenticateRequest } from '../lib/server/adminAuth.js'
+import { logProtectedEndpointRejection, sendAuthFailureJson } from '../lib/server/apiAuth.js'
 
 export default async function handler(req, res) {
   // Sanitized logging - no sensitive data in production
@@ -86,6 +89,17 @@ export default async function handler(req, res) {
     if (!enforceProductionAccessGuard({ req, res, origin, isOriginAllowed })) {
       return
     }
+
+    const authResult = await authenticateRequest(req)
+    if (!authResult.ok) {
+      logProtectedEndpointRejection({
+        req,
+        endpoint: '/api/analyze',
+        statusCode: authResult.status || 401,
+        reasonCode: authResult.reasonCode,
+      })
+      return sendAuthFailureJson(res, authResult)
+    }
     
     console.log('Processing POST request...')
     // Rate limiting
@@ -109,7 +123,7 @@ export default async function handler(req, res) {
     res.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining.toString())
     
     // Validate request body
-    const { repositoryUrl, githubToken, analysisModel } = req.body || {}
+    const { repositoryUrl, githubToken, analysisModel, includePassFamilies } = req.body || {}
     
     // Debug logging for production issues
     if (!isDev) {
@@ -179,22 +193,7 @@ export default async function handler(req, res) {
         console.error('Repository fetch error: Failed to fetch repository')
       }
       
-      // Specific private/permission errors
-      const msg = error.message || ''
-      if (msg.includes('private') || msg.includes('access is denied') || msg.includes('403')) {
-        return res.status(403).json({ 
-          error: 'Access to repository denied. Ensure the token has repo read access to this repository.'
-        })
-      }
-      if (msg.includes('invalid or expired (401)') || msg.includes('401')) {
-        return res.status(401).json({ 
-          error: 'GitHub token invalid or expired.'
-        })
-      }
-      if (msg.includes('not found')) {
-        return res.status(404).json({ error: 'Repository not found.' })
-      }
-      if (error.code === 'BRANCH_REF_RESOLUTION_FAILED') {
+      if (error?.code === 'BRANCH_REF_RESOLUTION_FAILED') {
         return res.status(422).json({
           error:
             'SecLens can access the repository metadata, but could not resolve the selected branch/ref. Check that the branch exists and, for private repositories, that the token has Contents: Read-only permission.',
@@ -206,14 +205,9 @@ export default async function handler(req, res) {
           }),
         })
       }
-      
-      return res.status(500).json({ 
-        error: 'An error occurred while fetching the repository. Please try again later.',
-        ...(process.env.NODE_ENV === 'development' && { 
-          details: error.message,
-          stack: error.stack 
-        })
-      })
+
+      const { status, body } = githubAccessFailureHttp(error)
+      return res.status(status).json(body)
     }
     
     // Analyze security
@@ -222,7 +216,7 @@ export default async function handler(req, res) {
     let reportValidation
     let analysisResult
     try {
-      analysisResult = await analyzeSecurity(repoData, { analysisModel })
+      analysisResult = await analyzeSecurity(repoData, { analysisModel, includePassFamilies })
       report = analysisResult.report
       reportContractVersion = analysisResult.reportContractVersion
       reportValidation = analysisResult.reportValidation
@@ -308,7 +302,7 @@ export default async function handler(req, res) {
       requestStartedAtMs,
     })
 
-    // Return success response (includes telemetry JSON; merge lifecycle so GUI runs match scan-job contract — DEFECT-004)
+    // Return success response (includes telemetry JSON; merge lifecycle so GUI runs match scan-job contract - DEFECT-004)
     const telemetryPayload = buildTelemetry(analysisResult, repoData, requestStartedAtMs)
     const lifecycle = buildScanJobLifecycleTelemetry({
       outcome: 'completed',
@@ -320,6 +314,11 @@ export default async function handler(req, res) {
       report,
       reportContractVersion,
       reportValidation,
+      ...(analysisResult.advisoryContractVersion
+        ? { advisoryContractVersion: analysisResult.advisoryContractVersion }
+        : {}),
+      ...(analysisResult.advisoryValidation ? { advisoryValidation: analysisResult.advisoryValidation } : {}),
+      ...(analysisResult.advisoryOutput ? { advisoryOutput: analysisResult.advisoryOutput } : {}),
       telemetry: { ...lifecycle, ...telemetryPayload },
       ...(analysisResult.dashboard ? { dashboard: analysisResult.dashboard } : {}),
       repository: {
