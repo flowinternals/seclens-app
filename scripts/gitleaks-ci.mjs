@@ -15,11 +15,15 @@ const ADVISORY_FINGERPRINTS = new Set([
   // Intentional fixture-only fake secret from Stage 1 history.
   '551bba9255f40d1af0eea3d40be39dae1d366bb7:tests/fixtures/repos/node-express-issues/server.js:generic-secret:10',
   // Historical false positives: identifier/env-var references, not credential values.
-  'e2f3afad30a2f646747e4afebeaa6cf2fd6a345d:api/auth/provision-account.js:generic-secret:89',
-  '42109695e3f72528ead8df5db3e183c4d3549a24:api/auth/provision-account.js:generic-secret:89',
-  '7061d547803b5e699603482df2e3e2192d1e9921:api/auth/provision-account.js:generic-secret:89',
-  '304053a7eddbe1163d939fb439ec536b2c635516:api/auth/provision-account.js:generic-secret:89',
   '304053a7eddbe1163d939fb439ec536b2c635516:api/billing/webhook.js:generic-secret:73',
+])
+
+// Some fixtures are stable by file/line, but their Fingerprint changes with
+// different commits (e.g. branch splits, rebases, merge commits in CI). Treat
+// these locations as advisory regardless of commit SHA to avoid brittle
+// per-SHA allowlists.
+const ADVISORY_LOCATIONS = new Set([
+  'api/auth/provision-account.js:generic-secret:89',
 ])
 
 function resolveGitleaksBinary() {
@@ -49,7 +53,13 @@ function isCanaryFinding(f) {
 
 function isAdvisoryFixtureFinding(f) {
   const fingerprint = f.Fingerprint || ''
-  return ADVISORY_FINGERPRINTS.has(fingerprint)
+  if (ADVISORY_FINGERPRINTS.has(fingerprint)) return true
+
+  const file = f.File || ''
+  const ruleId = f.RuleID || ''
+  const line = typeof f.StartLine === 'number' ? String(f.StartLine) : ''
+  const locKey = `${file}:${ruleId}:${line}`
+  return ADVISORY_LOCATIONS.has(locKey)
 }
 
 function githubNotice(message) {
