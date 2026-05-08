@@ -2,7 +2,11 @@
 
 ## What is SecLens?
 
-SecLens is a web application that scans a GitHub repository and produces an evidence-based security report, plus metadata and export options.
+SecLens is a web application that scans a GitHub repository and produces an evidence-based **security advisory** (structured Markdown), plus metadata and export options. It is designed as an advisor-not a tool that proves vulnerabilities or complete coverage.
+
+## Do I need an account?
+
+Yes for normal product use. You **sign in** with SecLens (Firebase Authentication) to start scans and downloads.
 
 ## Who is SecLens for?
 
@@ -37,11 +41,19 @@ A successful scan can return:
 
 ## Can I export the report?
 
-Yes. Current export formats are:
+Yes, when signed in. Export formats:
 
 - Markdown
 - text
-- PDF
+- PDF - requires an **active Pro** subscription where Stripe billing is enabled
+
+## Are there limits on how many scans I can run?
+
+Yes. Accounts have a **rolling 30-day** limit on advisory runs (**Free** vs **Pro** quotas differ). If you hit the limit, wait for the window to roll, upgrade where offered, or contact support.
+
+## What is Pro?
+
+**Pro** is a paid plan (Stripe) that unlocks higher advisory run limits, larger per-file ingestion allowances where applicable, and **PDF** export. Exact entitlements depend on your deployment's billing configuration.
 
 ## Is the report always complete?
 
