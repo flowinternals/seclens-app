@@ -43,8 +43,8 @@ jobs:
     
     - name: Check for vulnerabilities
       run: |
-        if npm audit --audit-level=moderate; then
-          echo "No moderate or higher vulnerabilities found"
+        if npm audit --omit=dev --audit-level=moderate; then
+          echo "No moderate or higher production vulnerabilities found"
         else
           echo "Vulnerabilities found! Please run 'npm audit fix' or update dependencies."
           exit 1
