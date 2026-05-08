@@ -54,6 +54,13 @@ secrets.json
 credentials.json
 config.json
 
+# Firebase CLI
+.firebase-auth-export*.json
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
 # Vercel
 .vercel
 

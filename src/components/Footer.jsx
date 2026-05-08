@@ -2,7 +2,7 @@ function Footer({ onOpenPrivacy, onOpenTerms }) {
   return (
     <footer className="seclens-panel mt-auto px-4 py-4">
       <div className="seclens-muted flex flex-wrap items-center justify-center gap-4 text-sm">
-          <span className="seclens-subtle">© 2025 Sagesilver Pty Ltd</span>
+          <span className="seclens-subtle">(c) 2025 Sagesilver Pty Ltd</span>
           <span className="seclens-subtle">|</span>
           <button
             type="button"

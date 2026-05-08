@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "firebase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "firebase-tools@latest",
+        "mcp",
+        "--dir",
+        "D:/Active/flowinternals-seclens-app",
+        "--only",
+        "core,auth,firestore,messaging,remoteconfig,crashlytics,dataconnect,database,developerknowledge,apptesting"
+      ]
+    }
+  }
+}

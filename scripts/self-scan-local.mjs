@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Local working-tree self-scan — writes normalized evidence bundle JSON for comparison between runs.
+ * Local working-tree self-scan - writes normalized evidence bundle JSON for comparison between runs.
  * Usage: node scripts/self-scan-local.mjs [path-to-repo-root]
- * Env: SECLENS_SELF_SCAN_OUT — output directory (default: <repo>/.seclens-self-scan)
+ * Env: SECLENS_SELF_SCAN_OUT - output directory (default: <repo>/.seclens-self-scan)
  */
 
 import 'dotenv/config'

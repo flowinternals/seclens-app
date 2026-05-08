@@ -4,9 +4,16 @@
  */
 
 import { corsHeaders } from '../../lib/server/cors.js'
-import { markdownToPlainText, generateFilename, setDownloadHeaders, handleDownloadError } from '../../lib/server/downloadUtils.js'
+import {
+  appendMandatoryDisclaimer,
+  markdownToPlainText,
+  generateFilename,
+  setDownloadHeaders,
+  handleDownloadError,
+} from '../../lib/server/downloadUtils.js'
 import { validateString, validateRepoName } from '../../lib/server/validation.js'
 import { enforceProductionAccessGuard } from '../../lib/server/productionAccessGuard.js'
+import { hasProAccess, requireAuthWithBilling } from '../../lib/server/billing.js'
 
 export default async function handler(req, res) {
   const origin = req.headers.origin
@@ -27,6 +34,12 @@ export default async function handler(req, res) {
   }
   
   try {
+    const authContext = await requireAuthWithBilling(req, res)
+    if (!authContext) return
+    if (!hasProAccess(authContext.subscription)) {
+      return res.status(403).json({ error: 'PDF export requires an active Pro subscription.' })
+    }
+
     const { report, repository } = req.body
     
     // Validate inputs
@@ -45,7 +58,7 @@ export default async function handler(req, res) {
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
     
     // Sanitize and convert markdown to plain text for PDF
-    const sanitizedText = markdownToPlainText(reportCheck.value)
+    const sanitizedText = markdownToPlainText(appendMandatoryDisclaimer(reportCheck.value))
     
     // Add title
     page.drawText('SecLens Security Report', {
