@@ -4,21 +4,50 @@ import GlowingButton from './GlowingButton'
 
 const STORAGE_KEY = 'seclens-scan-form'
 
+const DOT_SLOTS = 3
+
 function AnimatedLoadingLabel({ label }) {
   const [dotCount, setDotCount] = useState(1)
 
   useEffect(() => {
     setDotCount(1)
     const timer = window.setInterval(() => {
-      setDotCount((current) => (current >= 3 ? 1 : current + 1))
+      setDotCount((current) => (current >= DOT_SLOTS ? 1 : current + 1))
     }, 420)
     return () => window.clearInterval(timer)
-  }, [])
+  }, [label])
 
   return (
-    <span aria-live="polite" aria-atomic="true">
-      {label}
-      <span className="inline-block w-[1.2em] text-left">{'.'.repeat(dotCount)}</span>
+    <span
+      aria-live="polite"
+      aria-atomic="true"
+      className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-0 whitespace-nowrap"
+    >
+      <span>{label}</span>
+      {/* Fixed 3x1ch grid so dot animation never changes layout width */}
+      <span className="inline-flex w-[3ch] shrink-0 select-none justify-start font-mono leading-none" aria-hidden="true">
+        {Array.from({ length: DOT_SLOTS }, (_, i) => (
+          <span key={i} className="inline-block w-[1ch] text-left">
+            {dotCount > i ? '.' : '\u00a0'}
+          </span>
+        ))}
+      </span>
+    </span>
+  )
+}
+
+/** Same grid as AnimatedLoadingLabel so idle vs scanning keeps identical layout metrics */
+function RunScanIdleLabel() {
+  return (
+    <span className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-0 whitespace-nowrap">
+      <span>Run scan</span>
+      <span
+        className="inline-flex w-[3ch] shrink-0 select-none justify-start font-mono leading-none"
+        style={{ visibility: 'hidden' }}
+        aria-hidden="true"
+      >
+        ...
+      </span>
     </span>
   )
 }
@@ -28,9 +57,6 @@ function InputPanel({
   isLoading,
   compact = false,
   loadingLabel = 'Scan running',
-  onExport,
-  canExport = false,
-  isExporting = false,
   className = '',
 }) {
   const [url, setUrl] = useState(() => {
@@ -95,17 +121,9 @@ function InputPanel({
     })
   }
 
-  const showExport = typeof onExport === 'function'
-
   const runScanTitle = isLoading
-    ? `${loadingLabel} — disabled until the current scan step completes`
+    ? `${loadingLabel} - disabled until the current scan step completes`
     : 'Submit the repository URL and start a SecLens dimension review'
-
-  const exportTitle = isExporting
-    ? 'Export in progress — wait for the download to finish'
-    : !canExport
-      ? 'Export disabled until the consolidated report is launch-ready'
-      : 'Export consolidated report as Markdown (.md file)'
 
   return (
     <div className={`seclens-panel px-5 py-5${className ? ` ${className}` : ''}`}>
@@ -114,9 +132,6 @@ function InputPanel({
         {!compact ? (
           <>
             <h2 className="seclens-text mt-1 text-lg font-semibold tracking-tight">Repository intake</h2>
-            <p className="seclens-muted mt-2 text-sm leading-6">
-              Launch a new dimension review and watch the dashboard populate as each security domain completes.
-            </p>
           </>
         ) : null}
       </div>
@@ -157,7 +172,7 @@ function InputPanel({
           title={
             isLoading
               ? 'Private repository (cannot change while a scan is running)'
-              : 'Enable when the repo is private — you can supply a GitHub token below for clone access'
+              : 'Enable when the repo is private - you can supply a GitHub token below for clone access'
           }
         >
           <input
@@ -189,7 +204,7 @@ function InputPanel({
               title={
                 isLoading
                   ? 'GitHub token (locked while a scan is running)'
-                  : 'Personal access token with repo read access — used only for this scan request'
+                  : 'Personal access token with repo read access - used only for this scan request'
               }
               className="seclens-input h-12 w-full min-w-0 rounded-[12px] px-4 font-mono text-[15px] outline-none transition sm:text-[16px]"
               disabled={isLoading}
@@ -197,30 +212,18 @@ function InputPanel({
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex w-full flex-wrap items-center justify-center gap-3">
           <GlowingButton
             type="submit"
             disabled={isLoading}
+            loading={isLoading}
             borderVariant="rainbow"
-            className="min-w-[10.5rem] shrink-0"
+            scanLockCh={32}
             aria-label="Run scan"
             title={runScanTitle}
           >
-            {isLoading ? <AnimatedLoadingLabel label={loadingLabel} /> : 'Run scan'}
+            {isLoading ? <AnimatedLoadingLabel label={loadingLabel} /> : <RunScanIdleLabel />}
           </GlowingButton>
-          {showExport ? (
-            <span className="inline-flex shrink-0" title={exportTitle}>
-              <button
-                type="button"
-                onClick={() => onExport()}
-                disabled={!canExport || isExporting}
-                className="seclens-button-secondary h-12 shrink-0 px-5"
-                aria-label={isExporting ? 'Exporting report' : 'Export consolidated report as Markdown'}
-              >
-                {isExporting ? 'Exporting…' : 'Export'}
-              </button>
-            </span>
-          ) : null}
         </div>
       </form>
     </div>

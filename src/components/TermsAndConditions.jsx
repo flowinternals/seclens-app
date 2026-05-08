@@ -4,9 +4,9 @@ function TermsAndConditions() {
       <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Terms & Conditions</h3>
       <div className="space-y-4 text-gray-700 dark:text-gray-300">
         <p>
-          <strong>Last Updated:</strong> October 31, 2025
+          <strong>Last Updated:</strong> May 2, 2026
         </p>
-        
+
         <section>
           <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Acceptance of Terms</h4>
           <p>
@@ -18,14 +18,14 @@ function TermsAndConditions() {
         <section>
           <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Service Description</h4>
           <p>
-            SecLens is a free web application that provides on-demand security analysis for public GitHub repositories. 
+            SecLens is a repository security advisory application for GitHub repositories.
             The service:
           </p>
           <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
-            <li>Analyzes public GitHub repositories for security vulnerabilities</li>
-            <li>Provides security reports and recommendations</li>
+            <li>Profiles repositories and reviews selected files across security dimensions</li>
+            <li>Provides potential problem areas, recommendations, AI IDE prompts, and suggested tests</li>
             <li>Allows users to download reports in multiple formats</li>
-            <li>Does not store or persist any analysis results</li>
+            <li>Stores run telemetry required for reliability, auditing, and admin diagnostics</li>
           </ul>
         </section>
 
@@ -37,6 +37,7 @@ function TermsAndConditions() {
             <li>Attempt to abuse, overload, or disrupt the service</li>
             <li>Use automated tools to make excessive requests</li>
             <li>Use the service for any illegal or unauthorized purpose</li>
+            <li>Attempt to bypass authentication, route guards, or role-based access controls</li>
           </ul>
         </section>
 
@@ -46,11 +47,20 @@ function TermsAndConditions() {
             SecLens is provided "as is" without warranties of any kind. We do not guarantee:
           </p>
           <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
-            <li>Accuracy or completeness of security analysis reports</li>
+            <li>Accuracy or completeness of advisory outputs in every repository context</li>
             <li>Detection of all security vulnerabilities</li>
             <li>Continuous availability or uptime</li>
             <li>Performance characteristics for any specific repository</li>
           </ul>
+        </section>
+
+        <section>
+          <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Advisory-Only Scope</h4>
+          <p>
+            SecLens is a repository security advisory tool. It does not prove the presence or absence of vulnerabilities.
+            Recommendations, prompts, and suggested tests are based on selected repository files and should be reviewed by a
+            developer or security engineer before changes are made.
+          </p>
         </section>
 
         <section>
