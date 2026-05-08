@@ -15,6 +15,7 @@ const ADVISORY_FINGERPRINTS = new Set([
   // Intentional fixture-only fake secret from Stage 1 history.
   '551bba9255f40d1af0eea3d40be39dae1d366bb7:tests/fixtures/repos/node-express-issues/server.js:generic-secret:10',
   // Historical false positives: identifier/env-var references, not credential values.
+  'e2f3afad30a2f646747e4afebeaa6cf2fd6a345d:api/auth/provision-account.js:generic-secret:89',
   '304053a7eddbe1163d939fb439ec536b2c635516:api/auth/provision-account.js:generic-secret:89',
   '304053a7eddbe1163d939fb439ec536b2c635516:api/billing/webhook.js:generic-secret:73',
 ])
