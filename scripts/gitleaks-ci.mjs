@@ -127,6 +127,16 @@ if (advisoryFixtureFindings.length > 0) {
 }
 
 if (otherFindings.length > 0) {
+  // Emit structured details for CI troubleshooting so we can quickly
+  // identify and allowlist intentional fixtures without weakening rules.
+  console.error('\nNon-advisory gitleaks finding fingerprints:')
+  for (const f of otherFindings) {
+    const fp = f.Fingerprint || '<no-fingerprint>'
+    const file = f.File || '<no-file>'
+    const ruleId = f.RuleID || '<no-rule>'
+    const line = typeof f.StartLine === 'number' ? String(f.StartLine) : '<no-line>'
+    console.error(`- ${fp} | ${file} | ${ruleId} | ${line}`)
+  }
   console.error(
     `\nGitleaks reported ${otherFindings.length} other finding(s). Fix or allowlist before merge.\n`
   )
