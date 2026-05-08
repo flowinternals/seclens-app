@@ -17,6 +17,7 @@ const ADVISORY_FINGERPRINTS = new Set([
   // Historical false positives: identifier/env-var references, not credential values.
   'e2f3afad30a2f646747e4afebeaa6cf2fd6a345d:api/auth/provision-account.js:generic-secret:89',
   '42109695e3f72528ead8df5db3e183c4d3549a24:api/auth/provision-account.js:generic-secret:89',
+  '7061d547803b5e699603482df2e3e2192d1e9921:api/auth/provision-account.js:generic-secret:89',
   '304053a7eddbe1163d939fb439ec536b2c635516:api/auth/provision-account.js:generic-secret:89',
   '304053a7eddbe1163d939fb439ec536b2c635516:api/billing/webhook.js:generic-secret:73',
 ])
