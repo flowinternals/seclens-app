@@ -2,22 +2,24 @@
 
 ## Overview
 
-SecLens is a web application that analyzes a GitHub repository and produces a structured security report oriented toward **launch-readiness style** risk and hygiene. It is designed to give you a fast, **evidence-based snapshot** of repository risk without replacing a full manual review.
+SecLens is a web application that analyzes a GitHub repository and produces a structured **security advisory** oriented toward **launch-readiness style** risk and hygiene. It profiles the repo, reviews security dimensions, and surfaces potential issues and recommendations-without claiming confirmed vulnerabilities or exhaustive coverage.
+
+You **sign in** with a SecLens account (Firebase Authentication). Scans run as **jobs**: the backend processes the repository while you wait, then you review the completed advisory output.
 
 SecLens is most useful when you want to:
 
 - get an initial security read on a repository
 - review likely weaknesses in application or configuration code
 - capture a reusable report for sharing or follow-up work
-- compare results across repeated scans
+- compare results across repeated scans (within your plan's **rolling advisory run limits**)
 
 ## What SecLens analyzes
 
-SecLens analyzes repository content fetched from GitHub and builds a report from selected evidence. The application also returns repository metadata and ingestion details that help explain what was scanned.
+SecLens analyzes repository content fetched from GitHub and builds an advisory report from **bounded, selected evidence**. The application returns repository metadata and ingestion details that explain what was scanned.
 
 The scan output can include:
 
-- a Markdown security report (versioned **report contract**; validated before you see it)
+- a Markdown advisory report (versioned **report / advisory contract**; validated before you see it)
 - repository URL, owner, name, language, default branch, scanned ref, and scanned SHA
 - ingestion strategy metadata (for example **Stage 02**, `strategyVersion` **v2**)
 - selected and omitted file counts
@@ -51,6 +53,12 @@ Good practice:
 - avoid using a personal token with unnecessary write or admin access
 - rotate the token if you suspect it has been exposed elsewhere
 
+## Accounts and plans
+
+- **Sign in** is required to start scans and use exports in normal use.
+- **Advisory run quota:** each account has a rolling 30-day limit on starting scans (higher limits on **Pro** where enabled).
+- **Exports:** Markdown and plain text are available to signed-in users. **PDF** typically requires an active **Pro** subscription-use **Account -> Billing** when billing is configured.
+
 ## How to run a scan
 
 ### 1. Enter the repository URL
@@ -69,7 +77,7 @@ If the repository is private, enable the private repository option and supply a 
 
 ### 3. Start the scan
 
-Submit the scan request. SecLens sends the repository information to its backend, fetches repository content from GitHub, selects evidence for analysis, and generates the report.
+Submit the scan request. SecLens creates a **scan job**, then fetches repository content from GitHub, selects evidence within caps, and runs the advisory pipeline until the job completes (or fails). Stay on the page until the run finishes unless your client supports background polling.
 
 ### 4. Review the result
 
@@ -86,13 +94,13 @@ SecLens supports exporting the completed report as:
 
 - Markdown
 - plain text
-- PDF
+- PDF (**Pro** subscription required where Stripe billing is enabled)
 
-These exports are generated from the completed report currently visible in the application.
+These exports are generated from the completed report currently visible in the application and require an active session.
 
 ## How to read the report
 
-A SecLens report should be treated as a scoped analysis, not an absolute proof that a repository is secure or insecure.
+A SecLens advisory should be treated as a **scoped** analysis, not proof of vulnerabilities or full security posture.
 
 Pay attention to:
 
@@ -178,6 +186,8 @@ Best for:
 - sharing with stakeholders
 - attaching to reviews or assessments
 - keeping a presentation-friendly copy
+
+PDF export requires an **active Pro subscription** when billing is enabled. If PDF is unavailable, use Markdown or text, or check **Billing** for subscription status.
 
 ## Privacy and sensitive data guidance
 

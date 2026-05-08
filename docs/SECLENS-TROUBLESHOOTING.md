@@ -1,5 +1,40 @@
 # SecLens Troubleshooting
 
+## Cannot sign in or session expired
+
+### What it usually means
+
+Firebase Authentication rejected the request, or your browser session is no longer valid.
+
+### What to do
+
+- sign out and sign in again
+- clear site data only if you understand the impact on saved sessions
+- confirm your deployment's Firebase client env vars match the intended project
+
+## Advisory run limit reached (429)
+
+### What it usually means
+
+You have exceeded the **rolling 30-day** advisory run quota for your plan (**Free** vs **Pro**).
+
+### What to do
+
+- wait until older runs fall outside the window
+- upgrade to **Pro** if your deployment offers it and you need a higher limit
+- contact support if the limit seems incorrect
+
+## PDF export forbidden or billing error
+
+### What it usually means
+
+**PDF** requires an active **Pro** subscription in deployments with Stripe enabled.
+
+### What to do
+
+- open **Account -> Billing** and confirm subscription status
+- use Markdown or text export if PDF is not available on your plan
+
 ## Repository URL is rejected
 
 ### What it usually means
@@ -84,13 +119,14 @@ The generated report did not pass internal validation checks.
 
 ### What it usually means
 
-The export request could not complete, or the report payload was not available in the expected format.
+The export request could not complete, you are not authenticated, or the report payload was not available in the expected format.
 
 ### What to do
 
-- make sure the report finished generating before downloading
+- confirm you are **signed in** and your session is valid
+- make sure the scan **job completed** before downloading
 - retry the export
-- try another export format
+- try another export format (PDF requires **Pro** where billing applies)
 - rerun the scan if the report state appears stale or incomplete
 
 ## The report seems incomplete
