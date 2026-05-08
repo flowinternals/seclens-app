@@ -33,7 +33,7 @@ function minimalValidReport() {
 - **Ref:** unknown
 - **Generated:** 2026-04-28T12:00:00.000Z
 - **Languages:** JavaScript
-- **Summary Risk:** Low — limited scan scope.
+- **Summary Risk:** Low - limited scan scope.
 
 ${sections}
 `
@@ -53,7 +53,7 @@ function fullReportWithKeyFindingsBody(keyFindingsInner) {
 - **Ref:** unknown
 - **Generated:** 2026-04-28T12:00:00.000Z
 - **Languages:** JavaScript
-- **Summary Risk:** Low — limited scan scope.
+- **Summary Risk:** Low - limited scan scope.
 
 ${sections}
 `
@@ -96,7 +96,7 @@ describe('validateReport', () => {
   it('accepts High finding with exploit path and required fields', () => {
     const inner = `### [High] Unsafe Route
 
-**Category:** A01:2021 — Broken Access Control
+**Category:** A01:2021 - Broken Access Control
 **Evidence:** \`server/routes/admin.js\`
 **Exploit path:** An unauthenticated caller can POST to /admin/delete because the handler does not verify session, leading to destructive action as coded in the excerpt.
 **Why it matters:** Unauthorized state change.
@@ -464,8 +464,8 @@ describe('validateReport', () => {
 **Fix (recommended):** Keep tokens in secure stores and rotate regularly.
 `
     const report = fullReportWithKeyFindingsBody(inner).replace(
-      '**Summary Risk:** Low — limited scan scope.',
-      '**Summary Risk:** Medium — potential for misconfiguration and insufficient access control in server operations.'
+      '**Summary Risk:** Low - limited scan scope.',
+      '**Summary Risk:** Medium - potential for misconfiguration and insufficient access control in server operations.'
     )
     const r = validateReport(report)
     expect(hasSummaryRiskInconsistentWithFindings(report, inner)).toBe(true)
@@ -481,8 +481,8 @@ describe('validateReport', () => {
 **Fix (recommended):** Keep tokens in secure stores and rotate regularly.
 `
     const report = fullReportWithKeyFindingsBody(inner).replace(
-      '**Summary Risk:** Low — limited scan scope.',
-      '**Summary Risk:** Medium — due to limited scanned coverage in this run (40 selected, many omitted), residual risk may be understated by the observed Low findings.'
+      '**Summary Risk:** Low - limited scan scope.',
+      '**Summary Risk:** Medium - due to limited scanned coverage in this run (40 selected, many omitted), residual risk may be understated by the observed Low findings.'
     )
     const r = validateReport(report)
     expect(hasSummaryRiskInconsistentWithFindings(report, inner)).toBe(false)
@@ -491,8 +491,8 @@ describe('validateReport', () => {
 
   it('flags summary risk Medium when Key Findings admits no findings without bounded rationale', () => {
     const report = fullReportWithKeyFindingsBody(`No findings were identified within the scanned scope.`).replace(
-      '**Summary Risk:** Low — limited scan scope.',
-      '**Summary Risk:** Medium — user-management and authorization concerns remain.'
+      '**Summary Risk:** Low - limited scan scope.',
+      '**Summary Risk:** Medium - user-management and authorization concerns remain.'
     )
     const r = validateReport(report)
     expect(hasSummaryRiskInconsistentWithFindings(report, 'No findings were identified within the scanned scope.')).toBe(
@@ -655,7 +655,7 @@ ${dimensionProgressBlock}
 
 1. x
 
-## Confidence & Coverage
+## Coverage & recommendation severity
 
 - x
 
@@ -712,7 +712,7 @@ SecLens completed 5 of 8 planned security dimensions for this repository. This r
 
 1. x
 
-## Confidence & Coverage
+## Coverage & recommendation severity
 
 - x
 

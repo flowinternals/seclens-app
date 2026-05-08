@@ -73,4 +73,19 @@ describe('multi-pass analysis planning', () => {
     expect(plan.passes.some((p) => p.family === 'validation_input_trust_boundaries')).toBe(true)
     expect(plan.passes.some((p) => p.family === 'rate_limiting_abuse_controls')).toBe(true)
   })
+
+  it('supports proving-slice planning for a single selected family', () => {
+    const bundle = mockBundle([
+      'functions/src/auth/session.ts',
+      'functions/src/invite/validateInvite.ts',
+      'functions/src/rateLimit/limit.ts',
+    ])
+    const plan = buildMultiPassPlan(bundle, {
+      includePassFamilies: ['auth_session_authorization'],
+    })
+    expect(plan.analysisPassCount).toBe(1)
+    expect(plan.passes[0].family).toBe('auth_session_authorization')
+    expect(plan.clusterSkipReasons.invite_token_claims).toBe('not_selected_in_run_plan')
+    expect(plan.clusterSkipReasons.rate_limiting_abuse_controls).toBe('not_selected_in_run_plan')
+  })
 })
