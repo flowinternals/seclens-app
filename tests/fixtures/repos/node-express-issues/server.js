@@ -15,7 +15,9 @@ app.get('/health', (_req, res) => {
 
 app.post('/echo', (req, res) => {
   const body = req.body
-  res.send(`Echo: ${JSON.stringify(body)}`)
+  // Intentional weak fixture for advisory tests: reflect as JSON (not HTML) so
+  // the pattern remains detectable without introducing a live XSS sink.
+  res.type('application/json').send(JSON.stringify({ echo: body }))
 })
 
 app.listen(3000, () => {

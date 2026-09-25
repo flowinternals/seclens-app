@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import dotenv from 'dotenv'
 import fs from 'fs'
+import { formatSafeRequestLogLine, sanitizeLogLine } from './lib/server/sanitizeLog.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -155,15 +156,9 @@ app.use('/api/billing/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json({ limit: '200kb' }))
 app.use(express.urlencoded({ extended: true, limit: '200kb' }))
 
-// Request logging middleware - sanitized for production
+// Request logging middleware — URL/method sanitized against log injection (CR/LF)
 app.use((req, res, next) => {
-  const isDev = process.env.NODE_ENV === 'development'
-  if (isDev) {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`)
-  } else {
-    // Minimal logging in production - no sensitive data
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`)
-  }
+  console.log(`[${new Date().toISOString()}] ${formatSafeRequestLogLine(req)}`)
   next()
 })
 
@@ -275,20 +270,19 @@ function createVercelHandler(handler) {
     }
 
     try {
-      // Sanitized logging - no sensitive data in production
+      // Sanitized logging - no sensitive data / no CR-LF injection in production
       const isDev = process.env.NODE_ENV === 'development'
       if (isDev) {
         const sanitized = sanitizeForLogging(vercelReq)
         console.log('Calling handler with:', {
-          method: sanitized.method,
-          url: sanitized.url,
+          method: sanitizeLogLine(sanitized.method, 16),
+          url: sanitizeLogLine(sanitized.url, 200),
           hasBody: !!sanitized.body,
           body: sanitized.body,
           headers: sanitized.headers
         })
       } else {
-        // Minimal logging in production
-        console.log(`[${vercelReq.method}] ${vercelReq.url}`)
+        console.log(`[${formatSafeRequestLogLine(vercelReq)}]`)
       }
       
       const result = await handler(vercelReq, vercelRes)

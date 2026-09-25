@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { mkdirSync, writeFileSync, rmSync } from 'fs'
+import { mkdirSync, writeFileSync, rmSync, mkdtempSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { buildLocalEvidenceSnapshot } from '../../lib/server/localIngestion.js'
 
 describe('localIngestion - critical shortlist fail-closed (DEFECT-003)', () => {
   function makeTruncationFixtureDir() {
-    const dir = join(tmpdir(), `seclens-critical-gap-${Date.now()}`)
+    const dir = mkdtempSync(join(tmpdir(), 'seclens-critical-gap-'))
     mkdirSync(join(dir, '.github', 'workflows'), { recursive: true })
     mkdirSync(join(dir, 'functions', 'src'), { recursive: true })
     mkdirSync(join(dir, 'lib'), { recursive: true })

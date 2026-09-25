@@ -1,13 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { mkdirSync, writeFileSync, rmSync } from 'fs'
+import { writeFileSync, rmSync, mkdtempSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { buildLocalEvidenceSnapshot } from '../../lib/server/localIngestion.js'
 
 describe('local self-scan artifact (DEFECT-001)', () => {
   it('returns a normalized bundle with selection, evidence snippets, and coverage', () => {
-    const dir = join(tmpdir(), `seclens-self-scan-test-${Date.now()}`)
-    mkdirSync(dir, { recursive: true })
+    const dir = mkdtempSync(join(tmpdir(), 'seclens-self-scan-test-'))
     writeFileSync(join(dir, 'package.json'), '{"name":"x"}')
     writeFileSync(join(dir, 'README.md'), '# hi')
 

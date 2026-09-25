@@ -1,0 +1,5 @@
+name: "SecLens CodeQL config"
+
+paths-ignore:
+  # Golden fixtures intentionally contain weak patterns for advisory tests.
+  - tests/fixtures/**

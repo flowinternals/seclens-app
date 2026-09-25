@@ -44,11 +44,6 @@ function catalogOrderForDimensionId(dimensionId) {
   return definition?.order ?? Number.MAX_SAFE_INTEGER
 }
 
-function isTerminalDimensionProgress(progress) {
-  const normalized = String(progress || '').toLowerCase()
-  return normalized === 'completed' || normalized === 'ready' || normalized === 'failed'
-}
-
 function normalizeProgress(progress) {
   const normalized = String(progress || '').toLowerCase()
   if (normalized === 'failed') return 'failed'
