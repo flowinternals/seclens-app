@@ -10,6 +10,8 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db } from './firebaseClient'
 
 const googleProvider = new GoogleAuthProvider()
+// Always show the Google account chooser so Chrome's active session is not auto-selected.
+googleProvider.setCustomParameters({ prompt: 'select_account' })
 const USER_ROLE = 'user'
 
 /** Normalize Firestore / legacy role strings so Console typos like "Admin" still match. */

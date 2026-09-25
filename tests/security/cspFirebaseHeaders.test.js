@@ -56,12 +56,19 @@ describe('vercel.json CSP Firebase allowlist (DEFECT-MVP5-002)', () => {
       'https://accounts.google.com',
       'https://seclens-app.firebaseapp.com',
       'wss://firestore.googleapis.com',
+      'https://vercel.live',
+      'wss://ws-us3.pusher.com',
     ])
 
-    assertContainsAll(scriptSrc, ['https://apis.google.com', 'https://accounts.google.com'])
+    assertContainsAll(scriptSrc, [
+      'https://apis.google.com',
+      'https://accounts.google.com',
+      'https://vercel.live',
+    ])
     assertContainsAll(frameSrc, [
       'https://accounts.google.com',
       'https://seclens-app.firebaseapp.com',
+      'https://vercel.live',
     ])
     assertContainsAll(formAction, [
       "'self'",
