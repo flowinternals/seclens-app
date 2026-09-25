@@ -64,9 +64,9 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@vitejs/plugin-react": "^6.1.1",
-    "autoprefixer": "^10.4.21",
-    "concurrently": "^8.2.2",
-    "eslint": "^10.2.1",
+    "autoprefixer": "^10.6.1",
+    "concurrently": "^10.0.5",
+    "eslint": "^10.11.0",
     "firebase-tools": "^15.31.0",
     "globals": "^17.5.0",
     "postcss": "^8.5.6",
