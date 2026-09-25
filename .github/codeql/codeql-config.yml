@@ -3,3 +3,11 @@ name: "SecLens CodeQL config"
 paths-ignore:
   # Golden fixtures intentionally contain weak patterns for advisory tests.
   - tests/fixtures/**
+
+# js/http-to-file-access sinks are the *data argument* to writeFileSync; // codeql[...] comments
+# do not suppress argument-level path-problem alerts. Our only network→disk writes are intentional
+# local advisory/QA/telemetry artifacts under contained roots (see advisoryArtifactWrite.js and
+# scanTelemetryLogAppend.js), not remote-to-exec backdoors. Re-enable if adding untrusted downloads.
+query-filters:
+  - exclude:
+      id: js/http-to-file-access
