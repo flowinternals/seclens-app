@@ -59,7 +59,7 @@ describe('POST /api/admin/runs/:runId/post-mortem', () => {
   })
 
   it('returns post-mortem payload for admins', async () => {
-    const { default: handler } = await import('../../api/admin/runs/[runId]/post-mortem.js')
+    const { default: handler } = await import('../../lib/server/adminRunsHandler.js')
     authorizeAdminRequestMock.mockResolvedValue({
       ok: true,
       uid: 'admin-uid',
@@ -96,7 +96,7 @@ describe('POST /api/admin/runs/:runId/post-mortem', () => {
   })
 
   it('merges in-memory dashboard so advisory contract replay is not skipped', async () => {
-    const { default: handler } = await import('../../api/admin/runs/[runId]/post-mortem.js')
+    const { default: handler } = await import('../../lib/server/adminRunsHandler.js')
     authorizeAdminRequestMock.mockResolvedValue({
       ok: true,
       uid: 'admin-uid',
@@ -150,7 +150,7 @@ describe('POST /api/admin/runs/:runId/post-mortem', () => {
   })
 
   it('returns 401 when unauthorized', async () => {
-    const { default: handler } = await import('../../api/admin/runs/[runId]/post-mortem.js')
+    const { default: handler } = await import('../../lib/server/adminRunsHandler.js')
     authorizeAdminRequestMock.mockResolvedValue({
       ok: false,
       status: 401,
