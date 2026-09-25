@@ -43,5 +43,5 @@
       "destination": "/index.html"
     }
   ],
-  "installCommand": "npm install"
+  "installCommand": "rm -rf node_modules && npm install --include=optional && npm install --no-save --force @rolldown/binding-linux-x64-gnu@1.2.11 @rolldown/binding-linux-x64-musl@1.2.11 lightningcss-linux-x64-gnu@1.33.0 lightningcss-linux-x64-musl@1.33.0"
 }
