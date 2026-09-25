@@ -7,7 +7,7 @@ import { rateLimit } from '../lib/server/rateLimit.js'
 import { corsHeaders } from '../lib/server/cors.js'
 import { fetchRepositoryContent } from '../lib/server/github.js'
 import { analyzeSecurity } from '../lib/server/openai.js'
-import { sanitizeLogData, sanitizeHeaders } from '../lib/server/sanitizeLog.js'
+import { sanitizeLogData, sanitizeHeaders, formatSafeRequestLogLine } from '../lib/server/sanitizeLog.js'
 import { isGitHubComHostUrlString, sanitizeGitHubUrl } from '../lib/server/sanitize.js'
 import { ReportQualityGateError } from '../lib/server/reportQualityGateError.js'
 import { buildScanJobLifecycleTelemetry, buildTelemetry } from '../lib/server/scanTelemetryPayload.js'
@@ -18,23 +18,21 @@ import { authenticateRequest } from '../lib/server/adminAuth.js'
 import { logProtectedEndpointRejection, sendAuthFailureJson } from '../lib/server/apiAuth.js'
 
 export default async function handler(req, res) {
-  // Sanitized logging - no sensitive data in production
+  // Sanitized logging - no sensitive data / no CR-LF injection in production
   const isDev = process.env.NODE_ENV === 'development'
   if (isDev) {
     console.log('=== ANALYZE HANDLER CALLED ===')
-    console.log('Method:', req.method)
-    console.log('URL:', req.url)
+    console.log('Method:', formatSafeRequestLogLine({ method: req.method, url: '' }).trim())
+    console.log('URL:', formatSafeRequestLogLine({ method: '', url: req.url }).trim())
     console.log('Has body:', !!req.body)
     const sanitized = sanitizeLogData({ body: req.body, headers: req.headers })
     console.log('Body (sanitized):', sanitized.body)
     console.log('Origin:', sanitizeHeaders(req.headers)['origin'] || 'none')
   } else {
-    // Minimal logging in production
-    console.log(`[${req.method}] ${req.url}`)
+    console.log(`[${formatSafeRequestLogLine(req)}]`)
   }
   
   // Ensure we always send a response
-  let responseSent = false
   const requestStartedAtMs = Date.now()
   
   try {
@@ -358,8 +356,7 @@ export default async function handler(req, res) {
         }
       })
       
-      if (!res.headersSent && !responseSent) {
-        responseSent = true
+      if (!res.headersSent) {
         res.status(500).json({ 
           error: 'An unexpected error occurred. Please try again later.',
           ...(process.env.NODE_ENV === 'development' && { 
@@ -374,9 +371,8 @@ export default async function handler(req, res) {
         console.error('Response error stack:', responseError.stack)
       }
       // Last resort - try to send a basic response
-      if (!res.headersSent && !responseSent) {
+      if (!res.headersSent) {
         try {
-          responseSent = true
           res.status(500).json({ error: 'Internal server error' })
         } catch (finalError) {
           if (process.env.NODE_ENV === 'development') {
