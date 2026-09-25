@@ -115,6 +115,19 @@ The generated report did not pass internal validation checks.
 - retry the scan
 - if the problem persists, treat it as an application issue rather than a repository-access issue
 
+## Scan fails with missing OpenAI configuration
+
+### What it usually means
+
+The server process does not have `OPENAI_API_KEY` set, or the production Vercel variable was not available to the runtime after a change.
+
+### What to check
+
+- local `.env.local` has `OPENAI_API_KEY` for development
+- production Vercel lists `OPENAI_API_KEY` as a **Secret** (Hidden), not a revealable Config variable
+- after creating or rotating the Secret, a production redeploy completed
+- the variable is not prefixed with `VITE_` and does not appear in the client bundle
+
 ## Download fails
 
 ### What it usually means

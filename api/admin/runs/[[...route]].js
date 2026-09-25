@@ -15,6 +15,16 @@ function getRouteParts(req) {
     return [req.query.route.trim()]
   }
 
+  // Local Express / legacy handlers pass ?runId=… (and post-mortem via URL path).
+  if (typeof req.query?.runId === 'string' && req.query.runId.trim()) {
+    const parts = [req.query.runId.trim()]
+    const path = String(req.url || '').split('?')[0]
+    if (path.endsWith('/post-mortem') || path.includes('/post-mortem')) {
+      parts.push('post-mortem')
+    }
+    return parts
+  }
+
   const parts = String(req.url || '')
     .split('?')[0]
     .split('/')
@@ -66,7 +76,7 @@ export default async function handler(req, res) {
   // GET /api/admin/runs
   if (parts.length === 0 && req.method === 'GET') {
     const persistedRuns = await listRecentRuns(50)
-    const runs = persistedRuns.length > 0 ? persistedRuns : listRecentScanJobs(50)
+    const runs = persistedRuns.length > 0 ? persistedRuns : await listRecentScanJobs(50)
     return res.status(200).json({
       runs,
       count: runs.length,
@@ -85,7 +95,7 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' })
     }
     const persistedRun = await getRunById(runId)
-    const memoryRun = getScanJobResponse(runId)
+    const memoryRun = await getScanJobResponse(runId)
     const run = mergePersistedRunWithInMemoryJob(persistedRun, memoryRun)
     if (!run) {
       return res.status(404).json({ error: 'Run not found' })
@@ -100,7 +110,7 @@ export default async function handler(req, res) {
   // GET /api/admin/runs/:runId
   if (req.method === 'GET') {
     const persistedRun = await getRunById(runId)
-    const memoryRun = getScanJobResponse(runId)
+    const memoryRun = await getScanJobResponse(runId)
     const run = mergePersistedRunWithInMemoryJob(persistedRun, memoryRun)
     if (!run) {
       return res.status(404).json({ error: 'Run not found' })
@@ -114,13 +124,13 @@ export default async function handler(req, res) {
   // DELETE /api/admin/runs/:runId
   if (req.method === 'DELETE') {
     const persistedRun = await getRunById(runId)
-    const memoryRun = getScanJobResponse(runId)
+    const memoryRun = await getScanJobResponse(runId)
     if (!persistedRun && !memoryRun) {
       return res.status(404).json({ error: 'Run not found' })
     }
 
     const persistResult = await deleteRunById(runId)
-    const removedMemory = deleteScanJob(runId)
+    const removedMemory = await deleteScanJob(runId)
 
     const persistedDeleted = persistResult.deleted === true
     const inMemoryDeleted = removedMemory === true

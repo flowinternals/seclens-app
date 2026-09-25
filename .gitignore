@@ -70,6 +70,9 @@ ui-debug.log
 # Live validation JSON snapshots (GUI / API scan jobs in dev)
 .seclens-live-validation/
 
+# Local quality-gate debug dumps (may contain full security reports)
+.seclens-quality-gate/
+
 # Temporary files
 *.tmp
 *.temp
@@ -78,9 +81,17 @@ ui-debug.log
 secrets-scan*
 secrets-scan-test-file.txt
 gitleaks-report.json
+gitleaks-report-*.json
+gitleaks-report-git.json
+gitleaks.exe
 ss.bat
 
 # Security secrets directory (Assets workspace)
 **/security/secrets/**
 **/Assets/security/secrets/**
 
+# Defect / security finding write-ups belong in the Assets workspace, not this repo
+DEFECT-*.md
+**/Defects/**
+
+.env*

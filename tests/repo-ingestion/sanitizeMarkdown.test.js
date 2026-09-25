@@ -14,6 +14,13 @@ describe('sanitizeMarkdown (dangerous URL schemes)', () => {
     expect(sanitizeMarkdown('[x](javascript&#58;alert(1))')).toBe('[x](#)')
   })
 
+  it('neutralizes javascript scheme obfuscated with null bytes and other C0 controls', () => {
+    expect(sanitizeMarkdown('[x](java\u0000script:alert(1))')).toBe('[x](#)')
+    expect(sanitizeMarkdown('[x](java\u0001script:alert(1))')).toBe('[x](#)')
+    expect(sanitizeMarkdown('[x](java\u001fscript:alert(1))')).toBe('[x](#)')
+    expect(sanitizeMarkdown('[x](java\u00a0script:alert(1))')).toBe('[x](#)')
+  })
+
   it('preserves http(s), mailto, relative, and fragment targets', () => {
     expect(sanitizeMarkdown('[ok](https://example.com)')).toBe('[ok](https://example.com)')
     expect(sanitizeMarkdown('[ok](HTTP://example.com/path)')).toBe('[ok](HTTP://example.com/path)')

@@ -84,5 +84,14 @@ service cloud.firestore {
       allow read: if isRunsReader();
       allow write: if false;
     }
+
+    // Scan job poll state is server-managed via Admin SDK (DEFECT-MVP5-001).
+    match /scanJobs/{jobId} {
+      allow read, write: if false;
+    }
+
+    match /scanJobIdempotency/{docId} {
+      allow read, write: if false;
+    }
   }
 }

@@ -26,13 +26,14 @@ Copy `.env.example` to `.env.local` and set values. Never commit `.env.local` or
 
 **Required for a working authenticated app**
 
-- `OPENAI_API_KEY`
+- `OPENAI_API_KEY` (server-only; never `VITE_`-prefixed)
 - Firebase **client** vars (`VITE_FIREBASE_*`) for the SPA
 - Firebase **Admin** vars (`FIREBASE_SERVICE_ACCOUNT_JSON` or `FIREBASE_PROJECT_ID` + `FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY`) so the API can verify ID tokens and access Firestore
 
 **Required for production deployments**
 
 - `CORS_ALLOWLIST` - comma-separated allowed browser origins
+- On Vercel, store `OPENAI_API_KEY` (and other credentials) as a **Sensitive Secret** (`vercel env add … --sensitive`), production-scoped, not a revealable Config variable. After any credential change, redeploy so runtime picks it up, and rotate keys that were previously revealable.
 
 **Common optional / feature-specific**
 
@@ -94,8 +95,6 @@ npm run preview
 ```
 
 ## API Overview
-
-For route-by-route classification (auth, webhooks, admin), see **`docs/api-endpoint-inventory.md`**.
 
 Typical flows:
 

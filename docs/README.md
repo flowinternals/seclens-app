@@ -16,9 +16,6 @@ This folder contains end-user and operator-facing documentation for the SecLens 
 - [FAQ](./SECLENS-FAQ.md)  
   Scope, privacy, limits, plans, and exports.
 
-- [API endpoint inventory](./api-endpoint-inventory.md)  
-  Server-side route classification (public / authenticated / admin / webhooks) for operators and integrators.
-
 ## Audience
 
 These docs are written for:

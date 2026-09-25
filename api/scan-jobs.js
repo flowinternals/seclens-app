@@ -81,16 +81,27 @@ export default async function handler(req, res) {
         }
       }
 
-      const job = await createScanJob({
+      const idempotencyKeyHeader = req.headers?.['idempotency-key'] || req.headers?.['Idempotency-Key']
+      const idempotencyKey =
+        typeof idempotencyKeyHeader === 'string' && idempotencyKeyHeader.trim()
+          ? idempotencyKeyHeader.trim().slice(0, 200)
+          : typeof req.body?.idempotencyKey === 'string' && req.body.idempotencyKey.trim()
+            ? req.body.idempotencyKey.trim().slice(0, 200)
+            : null
+
+      const created = await createScanJob({
         repositoryUrl,
         githubToken: typeof githubToken === 'string' && githubToken.trim() ? githubToken.trim() : undefined,
         analysisModel: resolvedRequestedModel || undefined,
         requestedAnalysisModel: requestedAnalysisModel || null,
         triggeredBy,
         ingestionCaps,
+        idempotencyKey,
       })
 
-      if (triggeredBy?.uid && db) {
+      const { idempotentReplay, ...job } = created
+
+      if (triggeredBy?.uid && db && !idempotentReplay) {
         try {
           await recordAdvisoryRunStart(db, triggeredBy.uid)
         } catch {
@@ -128,7 +139,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'jobId query parameter is required' })
     }
 
-    const job = getScanJobResponse(jobId)
+    const job = await getScanJobResponse(jobId)
     if (!job) {
       return res.status(404).json({ error: 'Scan job not found' })
     }

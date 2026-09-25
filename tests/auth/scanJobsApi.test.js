@@ -129,7 +129,7 @@ describe('/api/scan-jobs', () => {
       uid: 'user-b',
       claims: {},
     })
-    getScanJobResponseMock.mockReturnValue({
+    getScanJobResponseMock.mockResolvedValue({
       jobId: 'job-1',
       status: 'running',
       triggeredBy: { uid: 'user-a', email: null, displayName: null },
@@ -154,7 +154,7 @@ describe('/api/scan-jobs', () => {
       uid: 'user-a',
       claims: {},
     })
-    getScanJobResponseMock.mockReturnValue({
+    getScanJobResponseMock.mockResolvedValue({
       jobId: 'job-1',
       triggeredBy: { uid: 'user-a', email: null, displayName: null },
     })
@@ -169,5 +169,41 @@ describe('/api/scan-jobs', () => {
 
     expect(res.statusCode).toBe(200)
     expect(res.payload.jobId).toBe('job-1')
+  })
+
+  it('POST passes idempotency key and strips replay flag from response', async () => {
+    const { default: handler } = await import('../../api/scan-jobs.js')
+    authenticateRequestMock.mockResolvedValue({
+      ok: true,
+      uid: 'user-1',
+      claims: { uid: 'user-1' },
+    })
+    buildTriggeredByProfileMock.mockResolvedValue({
+      uid: 'user-1',
+      email: 'a@b.com',
+      displayName: 'Test',
+    })
+    createScanJobMock.mockResolvedValue({
+      jobId: 'job-1',
+      status: 'queued',
+      dashboard: {},
+      repository: { displayName: 'foo/bar' },
+      idempotentReplay: true,
+    })
+
+    const req = {
+      method: 'POST',
+      headers: { authorization: 'Bearer fake', 'idempotency-key': 'k1' },
+      body: { repositoryUrl: 'https://github.com/foo/bar' },
+    }
+    const res = createMockRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(202)
+    expect(createScanJobMock).toHaveBeenCalledWith(
+      expect.objectContaining({ idempotencyKey: 'k1' })
+    )
+    expect(res.payload.jobId).toBe('job-1')
+    expect(res.payload.idempotentReplay).toBeUndefined()
   })
 })
