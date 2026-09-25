@@ -59,6 +59,11 @@ describe('sanitizeMarkdown (dangerous URL schemes)', () => {
     expect(sanitizeMarkdown('<scr<script>ipt>1</script>')).toBe('<scr')
   })
 
+  it('strips closing script tags with whitespace before > (bad-tag-filter)', () => {
+    expect(sanitizeMarkdown('x</script >y')).toBe('xy')
+    expect(sanitizeMarkdown('<script>1</script >')).toBe('')
+  })
+
   it('strips iframes with attributes and leaves safe tags', () => {
     expect(sanitizeMarkdown('<p>ok</p><iframe src="https://e"></iframe>')).toBe('<p>ok</p>')
     expect(sanitizeMarkdown('before<IFRAME src=x></IFRAME>after')).toBe('beforeafter')
