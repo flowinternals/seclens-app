@@ -204,7 +204,8 @@ function createVercelHandler(handler) {
       method: req.method,
       headers: req.headers,
       body: req.body,
-      query: req.query,
+      // Merge Express route params so handlers can read :runId via query.runId
+      query: { ...req.query, ...req.params },
       url: req.url,
       ip: req.ip || req.socket?.remoteAddress
     }
@@ -368,13 +369,11 @@ async function registerRoutes() {
     })
     console.log('OK Registered /api/scan-jobs')
 
-    const adminRunsHandler = await import('./api/admin/runs.js')
+    const adminRunsHandler = await import('./lib/server/adminRunsHandler.js')
     app.get('/api/admin/runs', createVercelHandler(adminRunsHandler.default))
-    const adminRunDetailHandler = await import('./api/admin/runs/[runId].js')
-    app.get('/api/admin/runs/:runId', createVercelHandler(adminRunDetailHandler.default))
-    app.delete('/api/admin/runs/:runId', createVercelHandler(adminRunDetailHandler.default))
-    const adminRunPostMortemHandler = await import('./api/admin/runs/[runId]/post-mortem.js')
-    app.post('/api/admin/runs/:runId/post-mortem', createVercelHandler(adminRunPostMortemHandler.default))
+    app.get('/api/admin/runs/:runId', createVercelHandler(adminRunsHandler.default))
+    app.delete('/api/admin/runs/:runId', createVercelHandler(adminRunsHandler.default))
+    app.post('/api/admin/runs/:runId/post-mortem', createVercelHandler(adminRunsHandler.default))
     app.options('/api/admin/runs', (req, res) => {
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')

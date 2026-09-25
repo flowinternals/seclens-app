@@ -59,7 +59,7 @@ describe('GET /api/admin/runs', () => {
   })
 
   it('returns 401 when auth token is missing/invalid', async () => {
-    const { default: handler } = await import('../../api/admin/runs.js')
+    const { default: handler } = await import('../../lib/server/adminRunsHandler.js')
     authorizeAdminRequestMock.mockResolvedValue({
       ok: false,
       status: 401,
@@ -75,7 +75,7 @@ describe('GET /api/admin/runs', () => {
   })
 
   it('returns 403 for non-admin users', async () => {
-    const { default: handler } = await import('../../api/admin/runs.js')
+    const { default: handler } = await import('../../lib/server/adminRunsHandler.js')
     authorizeAdminRequestMock.mockResolvedValue({
       ok: false,
       status: 403,
@@ -91,7 +91,7 @@ describe('GET /api/admin/runs', () => {
   })
 
   it('returns run list for admins', async () => {
-    const { default: handler } = await import('../../api/admin/runs.js')
+    const { default: handler } = await import('../../lib/server/adminRunsHandler.js')
     authorizeAdminRequestMock.mockResolvedValue({
       ok: true,
       uid: 'admin-uid',
