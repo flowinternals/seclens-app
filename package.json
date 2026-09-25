@@ -82,5 +82,9 @@
     "uuid": "11.1.1",
     "tar": "7.5.22",
     "@opentelemetry/core": "2.8.0"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-linux-x64-gnu": "^1.2.11",
+    "@rolldown/binding-linux-x64-musl": "^1.2.11"
   }
 }
