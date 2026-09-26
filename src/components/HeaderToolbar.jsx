@@ -1,4 +1,4 @@
-import { IconAdminShield, IconBillingCard, IconBookOpen, IconDashboard, IconMoonNight, IconReportDoc, IconSunBright } from './SecLensIcons'
+import { IconAdminShield, IconBillingCard, IconBookOpen, IconDashboard, IconHistoryClock, IconMoonNight, IconReportDoc, IconSunBright } from './SecLensIcons'
 import { formatUsdPerMillionTokens } from '../../lib/shared/openaiModels'
 
 function initialsFromUser({ email, displayName }) {
@@ -34,6 +34,8 @@ function toolbarIconButton(tone, { active = false, disabled = false } = {}) {
       'border-cyan-400/45 bg-gradient-to-br from-[rgba(10,114,239,0.38)] to-[rgba(86,204,242,0.16)] text-[#d5f4ff] hover:border-cyan-300/60 hover:from-[rgba(10,114,239,0.5)] hover:to-[rgba(86,204,242,0.24)]',
     billing:
       'border-pink-400/45 bg-gradient-to-br from-[rgba(222,29,141,0.38)] to-[rgba(255,116,200,0.16)] text-[#ffd9ef] hover:border-pink-300/60 hover:from-[rgba(222,29,141,0.5)] hover:to-[rgba(255,116,200,0.24)]',
+    history:
+      'border-sky-400/45 bg-gradient-to-br from-[rgba(14,165,233,0.38)] to-[rgba(125,211,252,0.14)] text-[#d7f2ff] hover:border-sky-300/60 hover:from-[rgba(14,165,233,0.5)] hover:to-[rgba(125,211,252,0.22)]',
     themeSun:
       'border-amber-200/45 bg-gradient-to-br from-[rgba(255,200,112,0.38)] to-[rgba(255,236,200,0.14)] text-[#fff8e7] hover:border-amber-100/55 hover:from-[rgba(255,200,112,0.5)] hover:to-[rgba(255,236,200,0.22)]',
     themeMoon:
@@ -60,9 +62,11 @@ export default function HeaderToolbar({
   isAdmin = false,
   isAdminPanelOpen = false,
   isBillingOpen = false,
+  isHistoryOpen = false,
   onToggleAdminPanel,
   onSignOut,
   onOpenBilling,
+  onOpenHistory,
 }) {
   const avatarInitials = initialsFromUser({
     email: user?.email,
@@ -113,6 +117,17 @@ export default function HeaderToolbar({
       {isAuthenticated ? (
         <button
           type="button"
+          onClick={onOpenHistory}
+          className={toolbarIconButton('history', { active: isHistoryOpen })}
+          aria-label="Open past runs"
+          title="Open past runs"
+        >
+          <IconHistoryClock className="h-5 w-5" />
+        </button>
+      ) : null}
+      {isAuthenticated ? (
+        <button
+          type="button"
           onClick={onOpenBilling}
           className={toolbarIconButton('billing', { active: isBillingOpen })}
           aria-label="Open billing drawer"
@@ -140,6 +155,7 @@ export default function HeaderToolbar({
           onChange={(event) => onModelChange?.(event.target.value)}
           className="seclens-input h-10 min-w-0 flex-1 rounded-xl px-3 text-xs sm:text-sm"
           aria-label="Select OpenAI analysis model"
+          data-testid="analysis-model-select"
         >
           {modelOptions.map((model) => (
             <option key={model.id} value={model.id}>

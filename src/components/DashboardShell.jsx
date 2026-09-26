@@ -21,6 +21,7 @@ const STATUS_CHIP_LABELS = {
 const PROGRESS_CHIP_LABELS = {
   progressing: 'Progressing',
   completed: 'Completed',
+  incomplete: 'Incomplete',
   failed: 'Failed',
 }
 
@@ -47,7 +48,7 @@ function catalogOrderForDimensionId(dimensionId) {
 function normalizeProgress(progress) {
   const normalized = String(progress || '').toLowerCase()
   if (normalized === 'failed') return 'failed'
-  if (normalized === 'partial') return 'failed'
+  if (normalized === 'partial') return 'incomplete'
   if (normalized === 'completed' || normalized === 'ready') return 'completed'
   return 'progressing'
 }
@@ -192,6 +193,10 @@ function progressTone(progress) {
     return 'text-[var(--sl-info-text)] bg-[color:rgba(10,114,239,0.12)]'
   }
   if (progress === 'failed') return 'text-[var(--sl-danger-text)] bg-[var(--sl-danger-bg)]'
+  // Incomplete must not share Completed green — coverage gap, not success (CR-012 / UI honesty)
+  if (progress === 'incomplete') {
+    return 'text-[var(--sl-warn-text)] bg-[color:rgba(222,139,29,0.14)]'
+  }
   return 'text-[var(--sl-success-text)] bg-[color:rgba(31,122,63,0.14)]'
 }
 
@@ -727,6 +732,13 @@ function CoverageConfidenceColumn({ dashboard, summary }) {
               {excludedNonGermane} file{excludedNonGermane === 1 ? '' : 's'} outside the hardening scope were excluded from these counts.
             </p>
           ) : null}
+          {dashboard?.telemetry?.coverageHonestyCallout ? (
+            <p className="seclens-muted mt-2 text-sm leading-6">{dashboard.telemetry.coverageHonestyCallout}</p>
+          ) : (
+            <p className="seclens-muted mt-2 text-sm leading-6">
+              Hotspot-scoped security review of selected security surfaces. This is not a full-repository vulnerability attestation.
+            </p>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -1562,7 +1574,12 @@ export default function DashboardShell({
   }, [activeView, docsEntries, docsSlug])
 
   return (
-    <div className="min-h-[760px]">
+    <div
+      className="min-h-[760px]"
+      data-testid="scan-dashboard"
+      data-run-state={String(dashboard?.runState || 'unknown')}
+      data-report-ready={dashboard?.consolidatedReportAvailable ? 'true' : 'false'}
+    >
       <div>
         {(activeView === 'dashboard' || activeView === 'dimensions') && (
           <>

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildMultiPassPlan, passFamilyForPath, shouldFailForPassFailures } from '../../lib/server/multiPassAnalysis.js'
+import { RESIDUAL_PASS_FAMILY } from '../../lib/server/coverageHonesty.js'
 
 function mockBundle(paths) {
   return {
@@ -50,12 +51,20 @@ describe('multi-pass analysis planning', () => {
     )
   })
 
-  it('does not create a separate misc supporting pass for unmatched evidence', () => {
+  it('routes unmatched evidence to residual supporting-context pass (CR-012 Q4)', () => {
     const bundle = mockBundle(['docs/architecture/overview.md'])
     const plan = buildMultiPassPlan(bundle)
-    const misc = plan.passes.find((p) => p.family === 'misc_supporting_context')
-    expect(misc).toBeUndefined()
+    const residual = plan.passes.find((p) => p.family === RESIDUAL_PASS_FAMILY || p.residual)
+    expect(residual).toBeTruthy()
     expect(plan.analysisPassCount).toBe(0)
+    expect(plan.assignment.residualReasonCode).toBe('UNMAPPED_SUPPORTING_CONTEXT')
+  })
+
+  it('does not route design-system tokens into invite via diagnostic classifier (CR-012 Stage 2)', () => {
+    expect(passFamilyForPath('src/design/tokens/invite-colors.ts')).toBe(RESIDUAL_PASS_FAMILY)
+    expect(passFamilyForPath('src/components/CardBody.tsx')).not.toBe(
+      'data_store_access_persistence_controls'
+    )
   })
 
   it('routes camelCase rate limiter files to the rate-limiting pass (DEFECT-004)', () => {
@@ -87,5 +96,84 @@ describe('multi-pass analysis planning', () => {
     expect(plan.passes[0].family).toBe('auth_session_authorization')
     expect(plan.clusterSkipReasons.invite_token_claims).toBe('not_selected_in_run_plan')
     expect(plan.clusterSkipReasons.rate_limiting_abuse_controls).toBe('not_selected_in_run_plan')
+  })
+
+  it('uses the deterministic security surface assignment before residual (Stage 0 precedence)', () => {
+    const bundle = mockBundle([
+      'src/design/tokens/invite-colors.ts',
+      'src/components/CardBody.tsx',
+      'server/auth/session.ts',
+    ])
+    const plan = buildMultiPassPlan(bundle, {
+      securitySurfacePlan: {
+        surfacePathsByDimension: {
+          invite_token_claims: ['src/design/tokens/invite-colors.ts'],
+          data_access_persistence: ['src/components/CardBody.tsx'],
+          auth_session_authorization: ['server/auth/session.ts'],
+        },
+      },
+      applyQuotas: false,
+    })
+    expect(plan.passes.find((p) => p.family === 'invite_token_claims').evidencePaths).toEqual([
+      'src/design/tokens/invite-colors.ts',
+    ])
+    expect(plan.passes.find((p) => p.family === 'data_store_access_persistence_controls').evidencePaths).toEqual([
+      'src/components/CardBody.tsx',
+    ])
+    expect(plan.assignment.source).toContain('security_surface_plan')
+    expect(plan.assignment.surfacedPathsAssigned).toBe(3)
+  })
+
+  it('places unmapped selected evidence in residual with UNMAPPED_SUPPORTING_CONTEXT', () => {
+    const bundle = mockBundle(['lib/utils/helpers.ts', 'server/auth/session.ts'])
+    const plan = buildMultiPassPlan(bundle, {
+      securitySurfacePlan: {
+        surfacePathsByDimension: {
+          auth_session_authorization: ['server/auth/session.ts'],
+        },
+      },
+      applyQuotas: false,
+    })
+    const residual = plan.passes.find((p) => p.residual)
+    expect(residual.evidencePaths).toContain('lib/utils/helpers.ts')
+    expect(residual.reasonCode).toBe('UNMAPPED_SUPPORTING_CONTEXT')
+    expect(plan.assignment.residualPaths).toContain('lib/utils/helpers.ts')
+  })
+
+  it('applies deterministic per-dimension quotas (CR-012 Q8/Q9)', () => {
+    const paths = Array.from({ length: 20 }, (_, i) => `server/auth/mod_${String(i).padStart(2, '0')}.ts`)
+    const bundle = mockBundle(paths)
+    const plan = buildMultiPassPlan(bundle, {
+      securitySurfacePlan: {
+        surfacePathsByDimension: {
+          auth_session_authorization: paths,
+        },
+      },
+      ingestionCaps: { maxFiles: 8, maxTotalBytes: 512 * 1024 },
+      applyQuotas: true,
+    })
+    const auth = plan.passes.find((p) => p.family === 'auth_session_authorization')
+    expect(auth.evidencePaths.length).toBeLessThanOrEqual(plan.assignment.quota.maxPaths)
+    expect(plan.assignment.omittedByQuota.length).toBeGreaterThan(0)
+    expect(plan.assignment.omittedByQuota[0].reasonCode).toBe('OMITTED_BY_DIMENSION_QUOTA')
+  })
+
+  it('produces identical assigned path lists for identical inputs (Stage 4 fixture identity)', () => {
+    const paths = ['server/auth/a.ts', 'server/auth/b.ts', 'lib/utils/x.ts']
+    const opts = {
+      securitySurfacePlan: {
+        surfacePathsByDimension: {
+          auth_session_authorization: ['server/auth/a.ts', 'server/auth/b.ts'],
+        },
+      },
+      ingestionCaps: { maxFiles: 48, maxTotalBytes: 2 * 1024 * 1024 },
+      applyQuotas: true,
+    }
+    const a = buildMultiPassPlan(mockBundle(paths), opts)
+    const b = buildMultiPassPlan(mockBundle(paths), opts)
+    expect(a.passes.map((p) => [p.family, p.evidencePaths])).toEqual(
+      b.passes.map((p) => [p.family, p.evidencePaths])
+    )
+    expect(a.assignment.omittedByQuota).toEqual(b.assignment.omittedByQuota)
   })
 })

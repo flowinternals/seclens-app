@@ -28,11 +28,15 @@ describe('OpenAI Chat Completions request contracts', () => {
     }
   })
 
-  it('builds GPT-5 payloads with max_completion_tokens and no temperature', () => {
+  it('builds GPT-5 / GPT-6 reasoning payloads with max_completion_tokens and no temperature', () => {
     const gpt5Ids = catalogIdsByFamily(OPENAI_CHAT_COMPLETION_REQUEST_FAMILY.GPT5_REASONING)
     expect(gpt5Ids.length).toBeGreaterThan(0)
     expect(gpt5Ids).toContain('gpt-5')
     expect(gpt5Ids).toContain('gpt-5.5')
+    expect(gpt5Ids).toContain('gpt-6-astra')
+    expect(gpt5Ids).toContain('gpt-6-sol')
+    expect(gpt5Ids).toContain('gpt-6-luna')
+    expect(gpt5Ids).toContain('gpt-5.6-sol')
 
     for (const modelId of gpt5Ids) {
       const params = buildOpenAIChatCompletionCreateParams({

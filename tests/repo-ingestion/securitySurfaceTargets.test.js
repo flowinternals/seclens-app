@@ -61,7 +61,7 @@ describe('securitySurfaceTargets (DEFECT-003)', () => {
     expect(selection.selected.length).toBeGreaterThan(12)
   })
 
-  it('DEFECT-003 seclens-style repo: api/, lib/server/, docs on critical shortlist; maxFiles only caps backfill', () => {
+  it('DEFECT-003 seclens-style repo: api/, lib/server/ on critical shortlist; docs denylisted (CR-012); maxFiles caps backfill', () => {
     const paths = [
       'api/analyze.js',
       'api/scan-jobs.js',
@@ -85,11 +85,12 @@ describe('securitySurfaceTargets (DEFECT-003)', () => {
       'api/scan-jobs.js',
       'lib/server/scanJobs.js',
       'lib/server/rateLimit.js',
-      'README.md',
-      'docs/SECLENS-USER-GUIDE.md',
     ]) {
       expect(plan.criticalShortlist).toContain(p)
     }
+    // CR-012 Q7: documentation-only paths are denylisted from security surface buckets
+    expect(plan.criticalShortlist).not.toContain('README.md')
+    expect(plan.criticalShortlist).not.toContain('docs/SECLENS-USER-GUIDE.md')
     const selection = selectPathsByTiers(paths, 2, { repoProfile: mixed, securitySurfacePlan: plan })
     expect(selection.protectedCoverageGap).toBe(false)
     expect(selection.selected).toContain('api/analyze.js')

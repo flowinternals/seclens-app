@@ -5,6 +5,7 @@ import { TrafficLightReportSection } from './components/DashboardShell'
 import HeaderToolbar from './components/HeaderToolbar'
 import AdminTelemetrySidebar from './components/AdminTelemetrySidebar'
 import BillingSidebar from './components/BillingSidebar'
+import PastRunsSidebar from './components/PastRunsSidebar'
 import Footer from './components/Footer'
 import Modal from './components/Modal'
 import PrivacyPolicy from './components/PrivacyPolicy'
@@ -79,8 +80,11 @@ function App() {
   const [showTermsModal, setShowTermsModal] = useState(false)
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false)
   const [isBillingOpen, setIsBillingOpen] = useState(false)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const [activeView, setActiveView] = useState('dashboard')
   const [selectedDimensionId, setSelectedDimensionId] = useState(null)
+  const [historyRunId, setHistoryRunId] = useState(null)
+  const [historyNotice, setHistoryNotice] = useState(null)
   const [selectedModel, setSelectedModel] = useState(() => {
     if (typeof window === 'undefined') return DEFAULT_OPENAI_MODEL_ID
     const stored = window.localStorage.getItem(MODEL_STORAGE_KEY)
@@ -130,17 +134,22 @@ function App() {
   useEffect(() => {
     if (!isAuthenticated) {
       setIsBillingOpen(false)
+      setIsHistoryOpen(false)
     }
   }, [isAuthenticated])
 
   const reportContent = report || dashboard?.report || null
   const runStateLower = String(dashboard?.runState || '').toLowerCase()
+  const hasScanError = Boolean(error && error.kind === 'scan')
   const isRunActive = Boolean(
-    !error &&
+    !hasScanError &&
       scanSessionActiveRef.current &&
       ['queued', 'fetching', 'running', 'synthesizing'].includes(runStateLower)
   )
   const scanButtonLabel = isRunActive ? buildScanButtonLabel(dashboard) : 'Run scan'
+
+  const setScanError = (message) => setError({ kind: 'scan', message })
+  const setExportError = (message) => setError({ kind: 'export', message })
 
   const schedulePoll = (delayMs = 1500) => {
     stopPolling()
@@ -174,7 +183,7 @@ function App() {
           stopPolling()
           jobIdRef.current = null
           scanSessionActiveRef.current = false
-          setError(data.error || 'The scan job failed.')
+          setScanError(data.error || 'The scan job failed.')
           return
         }
 
@@ -182,6 +191,14 @@ function App() {
           stopPolling()
           jobIdRef.current = null
           scanSessionActiveRef.current = false
+          setHistoryRunId(data.jobId || null)
+          if (data.historyArchive && data.historyArchive.ok === false && !data.historyArchive.skipped) {
+            setHistoryNotice(
+              'Scan completed, but this run could not be saved to Past runs. You can still export from this session.'
+            )
+          } else {
+            setHistoryNotice(null)
+          }
           setActiveView('dashboard')
           return
         }
@@ -191,14 +208,14 @@ function App() {
         stopPolling()
         jobIdRef.current = null
         scanSessionActiveRef.current = false
-        setError(pollError.message || 'Failed to poll scan status.')
+        setScanError(pollError.message || 'Failed to poll scan status.')
       }
     }, delayMs)
   }
 
   const handleScan = async (input) => {
     if (!isAuthenticated) {
-      setError('Sign in to run an advisory scan.')
+      setScanError('Sign in to run an advisory scan.')
       scanSessionActiveRef.current = false
       return
     }
@@ -207,6 +224,8 @@ function App() {
     jobIdRef.current = null
     setError(null)
     setReport(null)
+    setHistoryRunId(null)
+    setHistoryNotice(null)
     setActiveView('dashboard')
     scanSessionActiveRef.current = true
 
@@ -257,17 +276,42 @@ function App() {
       schedulePoll(data.polling?.intervalMs || 1500)
     } catch (scanError) {
       scanSessionActiveRef.current = false
-      setError(scanError.message || 'An error occurred while starting the scan.')
+      setScanError(scanError.message || 'An error occurred while starting the scan.')
       setDashboard(IDLE_BOOTSTRAP.dashboard)
       setRepository(IDLE_BOOTSTRAP.repository)
       setSelectedDimensionId(null)
     }
   }
 
+  const handleOpenHistoryRun = async (runId) => {
+    const idToken = await getIdToken()
+    const response = await fetch(`/api/history/${encodeURIComponent(runId)}`, {
+      headers: {
+        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+      },
+    })
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data?.error || `Could not open saved run (${response.status})`)
+    }
+
+    stopPolling()
+    jobIdRef.current = null
+    scanSessionActiveRef.current = false
+    setError(null)
+    setHistoryRunId(runId)
+    setHistoryNotice('Opened from Past runs — viewing a saved result (no new scan).')
+    setDashboard(data.dashboard || IDLE_BOOTSTRAP.dashboard)
+    setReport(data.report || null)
+    setRepository(data.repository || IDLE_BOOTSTRAP.repository)
+    setSelectedDimensionId(data.dashboard?.selectedDimensionId || null)
+    setActiveView('dashboard')
+  }
+
   const handleDownload = async (format) => {
-    if (!reportContent) return
+    if (!reportContent && !historyRunId) return
     if (!isAuthenticated) {
-      setError('Sign in to export reports.')
+      setExportError('Sign in to export reports.')
       return
     }
 
@@ -275,17 +319,30 @@ function App() {
 
     try {
       const idToken = await getIdToken()
-      const response = await fetch(`/api/download/${format}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          report: reportContent,
-          repository,
-        }),
-      })
+      let response
+      if (historyRunId) {
+        // Server-authoritative export: do not trust client report body for history runs.
+        response = await fetch(`/api/history/${encodeURIComponent(historyRunId)}/download`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ format }),
+        })
+      } else {
+        response = await fetch(`/api/download/${format}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            report: reportContent,
+            repository,
+          }),
+        })
+      }
 
       if (!response.ok) {
         const contentType = response.headers.get('content-type')
@@ -312,14 +369,15 @@ function App() {
       anchor.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(anchor)
+      if (error?.kind === 'export') setError(null)
     } catch (downloadError) {
-      setError(downloadError.message || `Failed to download ${format.toUpperCase()} file.`)
+      setExportError(downloadError.message || `Failed to download ${format.toUpperCase()} file.`)
     } finally {
       setIsDownloading(false)
     }
   }
 
-  const showIntakeTrafficRow = !error && (activeView === 'dashboard' || activeView === 'dimensions')
+  const showIntakeTrafficRow = !hasScanError && (activeView === 'dashboard' || activeView === 'dimensions')
 
   return (
     <div className="seclens-bg min-h-screen seclens-text" data-theme={theme}>
@@ -347,11 +405,30 @@ function App() {
             isAdmin={isAdmin}
             isAdminPanelOpen={isAdminPanelOpen}
             isBillingOpen={isBillingOpen}
+            isHistoryOpen={isHistoryOpen}
             onToggleAdminPanel={() => setIsAdminPanelOpen((current) => !current)}
             onOpenBilling={() => setIsBillingOpen(true)}
+            onOpenHistory={() => setIsHistoryOpen(true)}
             onSignOut={signOutUser}
           />
         </header>
+
+        {historyNotice ? (
+          <div
+            className="seclens-panel flex flex-wrap items-start justify-between gap-3 border border-[color-mix(in_srgb,var(--sl-info-text)_35%,transparent)] px-4 py-3"
+            data-testid="history-notice"
+            role="status"
+          >
+            <p className="seclens-muted min-w-0 flex-1 text-sm leading-6">{historyNotice}</p>
+            <button
+              type="button"
+              className="seclens-button-secondary shrink-0 text-sm"
+              onClick={() => setHistoryNotice(null)}
+            >
+              Dismiss
+            </button>
+          </div>
+        ) : null}
 
         <div
           className={
@@ -363,7 +440,7 @@ function App() {
           <div className={showIntakeTrafficRow ? 'min-w-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col' : 'contents'}>
             <InputPanel
               onScan={handleScan}
-              isLoading={isRunActive && !error}
+              isLoading={isRunActive && !hasScanError}
               loadingLabel={scanButtonLabel}
               className={showIntakeTrafficRow ? 'h-full min-h-0 lg:flex lg:flex-col' : ''}
             />
@@ -380,6 +457,9 @@ function App() {
           repository={repository}
           report={report}
           error={error}
+          onDismissExportError={() => {
+            if (error?.kind === 'export') setError(null)
+          }}
           onDownload={handleDownload}
           isDownloading={isDownloading}
           activeView={activeView}
@@ -388,7 +468,7 @@ function App() {
           onSelectDimension={setSelectedDimensionId}
           onExport={() => handleDownload('markdown')}
           canExport={Boolean(reportContent && dashboard?.consolidatedReportAvailable)}
-          isScanning={isRunActive && !error}
+          isScanning={isRunActive && !hasScanError}
         />
 
         <Footer
@@ -415,6 +495,11 @@ function App() {
 
       <AdminTelemetrySidebar isOpen={isAdminPanelOpen && isAuthenticated && isAdmin} onClose={() => setIsAdminPanelOpen(false)} />
       <BillingSidebar isOpen={isBillingOpen && isAuthenticated} onClose={() => setIsBillingOpen(false)} />
+      <PastRunsSidebar
+        isOpen={isHistoryOpen && isAuthenticated}
+        onClose={() => setIsHistoryOpen(false)}
+        onOpenRun={handleOpenHistoryRun}
+      />
     </div>
   )
 }

@@ -45,7 +45,7 @@ Yes, when signed in. Export formats:
 
 - Markdown
 - text
-- PDF - requires an **active Pro** subscription where Stripe billing is enabled
+- PDF
 
 ## Are there limits on how many scans I can run?
 
@@ -53,7 +53,7 @@ Yes. Accounts have a **rolling 30-day** limit on advisory runs (**Free** vs **Pr
 
 ## What is Pro?
 
-**Pro** is a paid plan (Stripe) that unlocks higher advisory run limits, larger per-file ingestion allowances where applicable, and **PDF** export. Exact entitlements depend on your deployment's billing configuration.
+**Pro** is a paid plan (Stripe) that unlocks higher advisory run limits and larger per-file ingestion allowances where applicable. Exact entitlements depend on your deployment's billing configuration.
 
 ## Is the report always complete?
 

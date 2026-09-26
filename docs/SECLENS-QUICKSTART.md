@@ -30,8 +30,7 @@ Each account has a **rolling 30-day** limit on how many advisory runs can be sta
 
 After a successful scan:
 
-- **Markdown** and **plain text** - available from the export actions when signed in.
-- **PDF** - requires an active **Pro** subscription (billing is managed under **Account -> Billing** where enabled).
+- **Markdown**, **plain text**, and **PDF** - available from the export actions when signed in.
 
 ## What to expect in the result
 
@@ -55,7 +54,7 @@ Start here:
 - repository not accessible: confirm the URL and visibility.
 - private repo access denied: retry with a valid read-access token.
 - report failed quality checks: retry the scan.
-- **PDF** rejected: confirm Pro subscription is active; try Markdown or text.
+- **PDF** export failed: confirm you are signed in and the report finished loading; retry or use Markdown/text.
 - download failed: regenerate or retry export after the report is fully loaded.
 
 For more detail, see:

@@ -158,7 +158,7 @@ export default function BillingPage() {
             <div className="rounded-md border border-white/10 p-4 text-sm">
               <p className="font-medium">Plan entitlements</p>
               <ul className="seclens-muted mt-2 list-disc pl-5">
-                <li>Free: 10 advisory runs / 30 days, 3 MB file cap, Markdown/Text exports</li>
+                <li>Free: 10 advisory runs / 30 days, 3 MB file cap, Markdown/Text/PDF exports</li>
                 <li>Pro: 200 advisory runs / 30 days, 25 MB file cap, Markdown/Text/PDF exports</li>
               </ul>
             </div>

@@ -1,0 +1,10 @@
+rules_version = '2';
+// Scan-history artifacts are private. Clients must never read/write Storage.
+// All access is Admin SDK via authenticated /api/history endpoints (CR-010).
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

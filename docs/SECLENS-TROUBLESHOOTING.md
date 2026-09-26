@@ -24,16 +24,17 @@ You have exceeded the **rolling 30-day** advisory run quota for your plan (**Fre
 - upgrade to **Pro** if your deployment offers it and you need a higher limit
 - contact support if the limit seems incorrect
 
-## PDF export forbidden or billing error
+## PDF export failed
 
 ### What it usually means
 
-**PDF** requires an active **Pro** subscription in deployments with Stripe enabled.
+PDF generation failed on the server, the session expired, or the report was not fully available in the current session.
 
 ### What to do
 
-- open **Account -> Billing** and confirm subscription status
-- use Markdown or text export if PDF is not available on your plan
+- confirm you are signed in and retry the export
+- wait until the scan job has completed and the report is visible
+- use Markdown or text export if PDF still fails
 
 ## Repository URL is rejected
 
@@ -139,7 +140,7 @@ The export request could not complete, you are not authenticated, or the report 
 - confirm you are **signed in** and your session is valid
 - make sure the scan **job completed** before downloading
 - retry the export
-- try another export format (PDF requires **Pro** where billing applies)
+- try another export format (Markdown, text, or PDF)
 - rerun the scan if the report state appears stale or incomplete
 
 ## The report seems incomplete

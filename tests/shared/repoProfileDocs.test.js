@@ -33,6 +33,34 @@ describe('extractOpeningProseFromMarkdown', () => {
     expect(t).toMatch(/Second paragraph/i)
     expect(t).not.toMatch(/Getting started/i)
   })
+
+  it('stops at the first ## without hanging when only one lead paragraph exists (spekify-shaped README)', () => {
+    const md = [
+      '# Spekify',
+      '',
+      'AI-powered, template-driven project specification authoring.',
+      '',
+      '## Overview',
+      '',
+      'Spekify helps turn a rough idea into a structured specification pack.',
+      '',
+      '## What Spekify does',
+      '',
+      '### Template-first authoring',
+      '',
+      'Templates are the foundation.',
+    ].join('\n')
+    const t = extractOpeningProseFromMarkdown(md, { maxParagraphs: 4, maxChars: 2000 })
+    expect(t).toMatch(/AI-powered/i)
+    expect(t).not.toMatch(/Overview/i)
+    expect(t).not.toMatch(/Templates are the foundation/i)
+  })
+
+  it('returns empty quickly when the body starts at a ## heading', () => {
+    const md = '# Title\n\n## Overview\n\nBody under the section.\n'
+    const t = extractOpeningProseFromMarkdown(md, { maxParagraphs: 4, maxChars: 2000 })
+    expect(t).toBe('')
+  })
 })
 
 describe('enrichRepoProfileWithDocumentation', () => {

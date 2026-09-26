@@ -430,6 +430,27 @@ async function registerRoutes() {
     })
     console.log('OK Registered /api/billing/webhook')
 
+    const historyHandler = await import('./lib/server/historyHandler.js')
+    app.get('/api/history', createVercelHandler(historyHandler.default))
+    app.get('/api/history/:runId', createVercelHandler(historyHandler.default))
+    app.post('/api/history/:runId/download', createVercelHandler(historyHandler.default))
+    app.options('/api/history', (req, res) => {
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      res.status(204).end()
+    })
+    app.options('/api/history/:runId', (req, res) => {
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      res.status(204).end()
+    })
+    app.options('/api/history/:runId/download', (req, res) => {
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      res.status(204).end()
+    })
+    console.log('OK Registered /api/history')
+
     // Download endpoints
     const markdownHandler = await import('./api/download/markdown.js')
     app.post('/api/download/markdown', createVercelHandler(markdownHandler.default))

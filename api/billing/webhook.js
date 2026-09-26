@@ -3,7 +3,8 @@ import { enforceProductionAccessGuard } from '../../lib/server/productionAccessG
 import { logProtectedEndpointRejection } from '../../lib/server/apiAuth.js'
 import { getStripeClient } from '../../lib/server/stripe.js'
 import { getFirebaseAdminDb } from '../../lib/server/firebaseAdmin.js'
-import { setUserSubscription } from '../../lib/server/billing.js'
+import { setUserSubscription, hasProAccess } from '../../lib/server/billing.js'
+import { enforceHistoryRetention } from '../../lib/server/scanHistoryStore.js'
 
 export const config = {
   api: {
@@ -40,7 +41,7 @@ async function applySubscriptionEvent(db, payload) {
   if (!firebaseUid) return
   const firstItem = payload?.items?.data?.[0] || null
   const priceId = firstItem?.price?.id || null
-  await setUserSubscription(db, firebaseUid, {
+  const subscription = await setUserSubscription(db, firebaseUid, {
     stripeCustomerId: payload?.customer || null,
     stripeSubscriptionId: payload?.id || null,
     plan: resolvePlanFromPriceId(priceId),
@@ -48,6 +49,20 @@ async function applySubscriptionEvent(db, payload) {
     currentPeriodEnd: toIsoFromStripeUnix(payload?.current_period_end),
     cancelAtPeriodEnd: Boolean(payload?.cancel_at_period_end),
   })
+  // Downgrade / loss of Pro: prune to Free cap (CR-010). Upgrade never restores pruned runs.
+  if (!hasProAccess(subscription)) {
+    try {
+      await enforceHistoryRetention(firebaseUid, { subscription })
+    } catch (error) {
+      console.warn(
+        JSON.stringify({
+          event: 'scan_history_downgrade_prune_failed',
+          uid: firebaseUid,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      )
+    }
+  }
 }
 
 export default async function handler(req, res) {
@@ -136,11 +151,24 @@ export default async function handler(req, res) {
       const invoice = event.data.object
       const firebaseUid = invoice?.subscription_details?.metadata?.firebaseUid || invoice?.metadata?.firebaseUid || null
       if (firebaseUid) {
-        await setUserSubscription(db, firebaseUid, {
+        const subscription = await setUserSubscription(db, firebaseUid, {
           status: 'past_due',
           stripeCustomerId: invoice?.customer || null,
           stripeSubscriptionId: invoice?.subscription || null,
         })
+        if (!hasProAccess(subscription)) {
+          try {
+            await enforceHistoryRetention(firebaseUid, { subscription })
+          } catch (error) {
+            console.warn(
+              JSON.stringify({
+                event: 'scan_history_past_due_prune_failed',
+                uid: firebaseUid,
+                error: error instanceof Error ? error.message : String(error),
+              })
+            )
+          }
+        }
       }
     }
   } catch (error) {

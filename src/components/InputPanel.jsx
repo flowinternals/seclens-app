@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { containsSecretMaskGlyph, maskSecret } from '../utils/maskSecret'
 import { sanitizeGitHubUrl } from '../utils/sanitize'
 import GlowingButton from './GlowingButton'
 
@@ -100,6 +101,25 @@ function InputPanel({
     )
   }, [url, isPrivate, token])
 
+  const handleTokenChange = (event) => {
+    const next = event.target.value
+    // Select-all + delete/backspace clears the real token.
+    if (!next) {
+      setToken('')
+      return
+    }
+    // Option A: never write masked display glyphs into token state.
+    // Whole-field paste/replace of a real secret has no mask glyph.
+    if (containsSecretMaskGlyph(next)) return
+    setToken(next)
+  }
+
+  const handleTokenPaste = (event) => {
+    event.preventDefault()
+    const pasted = (event.clipboardData?.getData('text') ?? '').replace(/\r?\n/g, '')
+    setToken(pasted)
+  }
+
   const handleSubmit = (event) => {
     event.preventDefault()
 
@@ -136,7 +156,7 @@ function InputPanel({
         ) : null}
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-5">
+      <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-5" data-testid="scan-form">
         <div className="min-w-0 w-full">
           <label htmlFor="repo-url" className="seclens-text mb-2 block text-sm font-medium">
             Repository URL
@@ -159,9 +179,15 @@ function InputPanel({
             disabled={isLoading}
             aria-invalid={error ? 'true' : 'false'}
             aria-describedby={error ? 'repo-url-error' : undefined}
+            data-testid="scan-repo-url"
           />
           {error ? (
-            <p id="repo-url-error" className="mt-2 text-sm text-[var(--sl-danger-text)]" role="alert">
+            <p
+              id="repo-url-error"
+              className="mt-2 text-sm text-[var(--sl-danger-text)]"
+              role="alert"
+              data-testid="scan-form-error"
+            >
               {error}
             </p>
           ) : null}
@@ -186,6 +212,7 @@ function InputPanel({
                 : 'Toggle when scanning a private GitHub repository'
             }
             className="h-4 w-4 shrink-0"
+            data-testid="scan-private-toggle"
           />
           Private repository
         </label>
@@ -198,16 +225,22 @@ function InputPanel({
             <input
               id="gh-token"
               type="text"
-              value={token}
-              onChange={(event) => setToken(event.target.value)}
+              value={maskSecret(token)}
+              onChange={handleTokenChange}
+              onPaste={handleTokenPaste}
               placeholder="ghp_... or github_pat_..."
               title={
                 isLoading
                   ? 'GitHub token (locked while a scan is running)'
-                  : 'Personal access token with repo read access - used only for this scan request'
+                  : 'Personal access token with repo read access - middle characters are hidden in this field; used only for this scan request. Paste a new token or clear the field to replace it.'
               }
               className="seclens-input h-12 w-full min-w-0 rounded-[12px] px-4 font-mono text-[15px] outline-none transition sm:text-[16px]"
               disabled={isLoading}
+              data-testid="scan-github-token"
+              autoComplete="off"
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="off"
             />
           </div>
         ) : null}
@@ -221,6 +254,7 @@ function InputPanel({
             scanLockCh={32}
             aria-label="Run scan"
             title={runScanTitle}
+            data-testid="scan-run-button"
           >
             {isLoading ? <AnimatedLoadingLabel label={loadingLabel} /> : <RunScanIdleLabel />}
           </GlowingButton>

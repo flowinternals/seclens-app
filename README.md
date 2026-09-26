@@ -2,7 +2,7 @@
 
 SecLens is a **repository security advisor** for GitHub: it profiles repos, runs a bounded evidence selection pipeline, and produces structured advisory reports (Markdown), plus exports. The product is positioned as **evidence-bound guidance**, not confirmed vulnerability detection.
 
-Users **sign in with Firebase Authentication**. Scans run as **asynchronous jobs** (`POST /api/scan-jobs`) with polling; **Firestore** stores billing and usage; **Stripe** powers Pro subscriptions. **PDF export** requires an active **Pro** subscription.
+Users **sign in with Firebase Authentication**. Scans run as **asynchronous jobs** (`POST /api/scan-jobs`) with polling; **Firestore** stores billing and usage; **Stripe** powers Pro subscriptions. Signed-in users can export reports as **Markdown**, **plain text**, or **PDF**.
 
 ## Quick Start
 
@@ -100,8 +100,7 @@ Typical flows:
 
 - **`POST /api/scan-jobs`** - start an advisory scan (Bearer Firebase ID token); returns a job id -> poll **`GET /api/scan-jobs?jobId=...`**
 - **`POST /api/analyze`** - legacy synchronous analysis (also authenticated)
-- **`POST /api/download/markdown`** / **`text`** - export current report (authenticated)
-- **`POST /api/download/pdf`** - PDF export (**Pro** subscription required)
+- **`POST /api/download/markdown`** / **`text`** / **`pdf`** - export current report (authenticated)
 
 Example **scan job** request body:
 

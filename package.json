@@ -17,12 +17,17 @@
     "test": "vitest run",
     "test:limit-pressure": "vitest run tests/repo-ingestion/limitPressureHarness.test.js tests/repo-ingestion/openaiPromptBudget.test.js tests/repo-ingestion/ingestionCaps.test.js",
     "test:watch": "vitest",
+    "test:oracle": "vitest run tests/oracle",
+    "test:e2e:spo": "playwright test -c tests/e2e/playwright.config.js",
+    "e2e:ensure-user": "node scripts/ensure-e2e-firebase-user.mjs",
+    "oracle:score:spo": "node scripts/oracle-score-spo.mjs",
+    "oracle:promote:spo": "node scripts/oracle-promote-spo.mjs",
     "self-scan": "node scripts/self-scan-local.mjs",
     "cr5:readiness": "node scripts/cr5-readiness-check.mjs",
-    "firebase:deploy:rules": "firebase deploy --only firestore:rules",
+    "firebase:deploy:rules": "firebase deploy --only firestore:rules,storage",
     "firebase:deploy:hosting": "firebase deploy --only hosting",
     "firebase:deploy:firestore": "firebase deploy --only firestore",
-    "firebase:emulators": "firebase emulators:start --only auth,firestore",
+    "firebase:emulators": "firebase emulators:start --only auth,firestore,storage",
     "firebase:auth:export": "firebase auth:export .firebase-auth-export.tmp.json --format json"
   },
   "repository": {
@@ -63,6 +68,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@vitejs/plugin-react": "^5.1.0",
     "autoprefixer": "^10.6.1",
     "concurrently": "^10.0.5",

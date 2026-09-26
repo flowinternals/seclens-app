@@ -31,7 +31,7 @@ These docs are written for:
 - **Firebase Authentication** is required for scans and exports in normal product use.
 - **Async scan jobs** (`POST /api/scan-jobs` + polling) are the primary workflow.
 - **Rolling advisory run limits** apply per account (Free vs **Pro**); see the user guide and FAQ.
-- **PDF** export requires an active **Pro** subscription (Stripe); Markdown and text exports are available to signed-in users per server policy.
+- Signed-in users can export **Markdown**, **plain text**, and **PDF**.
 - Reports are **evidence-bound** to selected files and caps; read coverage metadata before treating a run as exhaustive.
 - Successful responses can include **telemetry** (correlation ID, token usage) for support.
 

@@ -70,6 +70,12 @@ ui-debug.log
 # Live validation JSON snapshots (GUI / API scan jobs in dev)
 .seclens-live-validation/
 
+# Playwright e2e outputs (under tests/e2e)
+tests/e2e/test-results/
+tests/e2e/playwright-report/
+test-results/
+playwright-report/
+
 # Local quality-gate debug dumps (may contain full security reports)
 .seclens-quality-gate/
 

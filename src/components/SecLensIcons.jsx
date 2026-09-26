@@ -113,6 +113,16 @@ export function IconBillingCard({ className = 'h-5 w-5', 'aria-hidden': ariaHidd
   )
 }
 
+/** Past runs / history clock. */
+export function IconHistoryClock({ className = 'h-5 w-5', 'aria-hidden': ariaHidden = true }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" aria-hidden={ariaHidden}>
+      <circle cx="12" cy="12" r="8.25" fill="currentColor" fillOpacity="0.08" />
+      <path d="M12 7.75v4.5l3 1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export function IconGithubRepo({ className = 'h-[18px] w-[18px]', 'aria-hidden': ariaHidden = true }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke.default} aria-hidden={ariaHidden}>

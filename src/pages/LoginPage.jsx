@@ -88,13 +88,14 @@ export default function LoginPage() {
 
         <div className="auth-divider my-5 text-xs uppercase tracking-[0.08em]">or use email</div>
 
-        <form className="space-y-3" onSubmit={handleEmailLogin}>
+        <form className="space-y-3" onSubmit={handleEmailLogin} data-testid="login-form">
           <input
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Email"
             className="auth-input w-full px-3 py-2.5"
+            data-testid="login-email"
             required
           />
           <input
@@ -103,14 +104,24 @@ export default function LoginPage() {
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Password"
             className="auth-input w-full px-3 py-2.5"
+            data-testid="login-password"
             required
           />
-          <button type="submit" className="auth-primary-button h-10 w-full justify-center" disabled={isSubmitting}>
+          <button
+            type="submit"
+            className="auth-primary-button h-10 w-full justify-center"
+            disabled={isSubmitting}
+            data-testid="login-submit"
+          >
             Sign in
           </button>
         </form>
 
-        {error ? <p className="seclens-danger mt-4 rounded-md px-3 py-2 text-sm">{error}</p> : null}
+        {error ? (
+          <p className="seclens-danger mt-4 rounded-md px-3 py-2 text-sm" data-testid="login-error" role="alert">
+            {error}
+          </p>
+        ) : null}
 
         <div className="mt-5 flex items-center justify-between text-sm">
           <Link to="/register" className="auth-link">

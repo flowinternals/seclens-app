@@ -193,7 +193,7 @@ export default function BillingSidebar({ isOpen, onClose }) {
                   <div className="seclens-surface rounded-xl border border-[var(--sl-border-soft)] p-3 text-sm">
                     <p className="seclens-text font-medium">Plan entitlements</p>
                     <ul className="seclens-muted mt-2 list-disc pl-5">
-                      <li>Free: 10 advisory runs / 30 days, 3 MB file cap, Markdown/Text exports</li>
+                      <li>Free: 10 advisory runs / 30 days, 3 MB file cap, Markdown/Text/PDF exports</li>
                       <li>Pro: 200 advisory runs / 30 days, 25 MB file cap, Markdown/Text/PDF exports</li>
                     </ul>
                   </div>

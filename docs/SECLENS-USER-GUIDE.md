@@ -57,7 +57,7 @@ Good practice:
 
 - **Sign in** is required to start scans and use exports in normal use.
 - **Advisory run quota:** each account has a rolling 30-day limit on starting scans (higher limits on **Pro** where enabled).
-- **Exports:** Markdown and plain text are available to signed-in users. **PDF** typically requires an active **Pro** subscription-use **Account -> Billing** when billing is configured.
+- **Exports:** Markdown, plain text, and **PDF** are available to signed-in users.
 
 ## How to run a scan
 
@@ -94,7 +94,7 @@ SecLens supports exporting the completed report as:
 
 - Markdown
 - plain text
-- PDF (**Pro** subscription required where Stripe billing is enabled)
+- PDF
 
 These exports are generated from the completed report currently visible in the application and require an active session.
 
@@ -187,7 +187,7 @@ Best for:
 - attaching to reviews or assessments
 - keeping a presentation-friendly copy
 
-PDF export requires an **active Pro subscription** when billing is enabled. If PDF is unavailable, use Markdown or text, or check **Billing** for subscription status.
+PDF export is available to signed-in users alongside Markdown and text. If generation fails, retry after the report is fully loaded, or use another format.
 
 ## Privacy and sensitive data guidance
 

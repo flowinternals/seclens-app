@@ -93,5 +93,10 @@ service cloud.firestore {
     match /scanJobIdempotency/{docId} {
       allow read, write: if false;
     }
+
+    // User scan history metadata is server-managed (CR-010). Clients use /api/history.
+    match /users/{uid}/scanHistory/{runId} {
+      allow read, write: if false;
+    }
   }
 }
