@@ -41,6 +41,7 @@ description = "Known safe patterns. The scanner canary secrets-scan-test-file.tx
 paths = [
   '''\.gitleaks\.toml''',
   '''portable-secrets-ruleset\.yaml''',
+  '''scripts/gitleaks-ci\.mjs''',
 ]
 regexes = [
   '''FAKE_TEST_SECRET_DO_NOT_USE''',

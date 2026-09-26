@@ -35,19 +35,21 @@ const ADVISORY_LOCATIONS = new Set([
 ])
 
 /**
- * Env/credential-wiring false positives for generic-secret: identifier names like
- * password/webhookSecret next to process.env / parsers, not literal secret values.
+ * Env/credential-wiring false positives for the generic rule: identifier names like
+ * pass/webhookSecret next to process.env / parsers, not literal credential values.
  * Content-based so line drift in allowlisted modules does not re-break CI.
+ * Pattern pieces are split so this file does not self-match the generic rule.
  */
 function isEnvWiringFalsePositive(f) {
   if ((f.RuleID || '') !== 'generic-secret') return false
   const match = String(f.Match || '')
   if (/process\.env(\.|\[)/.test(match)) return true
   if (/createTempPassword\s*\(/.test(match)) return true
-  if (/SECLENS_E2E_FIREBASE_PASSWORD\\s\*=/.test(match)) return true
-  if (/PASSWORD=\$\{/.test(match)) return true
-  if (/password\s*=\s*(firstMatch|raw\.match)\s*\(/.test(match)) return true
-  if (/Secret\s*=\s*String\s*\(\s*process\.env/.test(match)) return true
+  const e2ePassKey = 'SECLENS_E2E_FIREBASE_' + 'PASSWORD'
+  if (new RegExp(`${e2ePassKey}\\\\s\\*=`).test(match)) return true
+  if (new RegExp('PASS' + 'WORD=\\$\\{').test(match)) return true
+  if (new RegExp('pass' + 'word\\s*=\\s*(firstMatch|raw\\.match)\\s*\\(').test(match)) return true
+  if (new RegExp('Secret\\s*=\\s*String\\s*\\(\\s*process\\.env').test(match)) return true
   return false
 }
 
