@@ -301,7 +301,11 @@ function App() {
     setError(null)
     setHistoryRunId(runId)
     setHistoryNotice('Opened from Past runs — viewing a saved result (no new scan).')
-    setDashboard(data.dashboard || IDLE_BOOTSTRAP.dashboard)
+    const restoredDashboard = data.dashboard || IDLE_BOOTSTRAP.dashboard
+    setDashboard({
+      ...restoredDashboard,
+      runCost: restoredDashboard?.runCost || data.runCost || null,
+    })
     setReport(data.report || null)
     setRepository(data.repository || IDLE_BOOTSTRAP.repository)
     setSelectedDimensionId(data.dashboard?.selectedDimensionId || null)

@@ -176,4 +176,22 @@ describe('multi-pass analysis planning', () => {
     )
     expect(a.assignment.omittedByQuota).toEqual(b.assignment.omittedByQuota)
   })
+
+  it('emits AQ9 allocation ledger and lifecycle counts', () => {
+    const plan = buildMultiPassPlan(mockBundle(['server/auth/session.ts', 'lib/utils/helpers.ts']), {
+      securitySurfacePlan: {
+        surfacePathsByDimension: {
+          auth_session_authorization: ['server/auth/session.ts'],
+        },
+      },
+      applyQuotas: false,
+    })
+    expect(Array.isArray(plan.assignment.allocationLedger)).toBe(true)
+    const auth = plan.assignment.allocationLedger.find((row) => row.dimensionId === 'auth_session_authorization')
+    expect(auth.assignedPaths).toContain('server/auth/session.ts')
+    expect(auth.surfacedPaths).toContain('server/auth/session.ts')
+    expect(plan.assignment.lifecycleCounts.planned).toBeGreaterThan(0)
+    expect(plan.assignment.lifecycleCounts.assigned).toBeGreaterThanOrEqual(1)
+    expect(plan.assignment.residualRoutingNote).toMatch(/not model-examined/)
+  })
 })

@@ -4,6 +4,10 @@ import {
   buildPassScopedCoverage,
   shouldDenylistFromSecuritySurface,
   computeDimensionQuotas,
+  buildCoverageHonestyCallout,
+  buildCapProvenanceRecords,
+  buildCapProvenanceCustomerNote,
+  buildAllocationLedgerExportSection,
   PARTIAL_REASON_CODES,
 } from '../../lib/server/coverageHonesty.js'
 import { buildAdvisoryOutput } from '../../lib/server/advisoryContractValidation.js'
@@ -59,6 +63,43 @@ describe('coverageHonesty (CR-012)', () => {
     expect(q.minPaths).toBe(4)
     expect(q.maxPaths).toBeGreaterThanOrEqual(4)
     expect(q.maxPaths).toBeLessThanOrEqual(48)
+  })
+  it('uses residual routing wording that does not claim model review (AQ6)', () => {
+    const note = buildCoverageHonestyCallout({
+      residualPaths: ['lib/utils/helpers.ts', 'src/ui/chrome.tsx'],
+    })
+    expect(note).toMatch(/routed as supporting context/i)
+    expect(note).toMatch(/not model-examined/i)
+    expect(note).not.toMatch(/reviewed as supporting context/i)
+  })
+
+  it('builds numeric cap provenance records (AQ8)', () => {
+    const records = buildCapProvenanceRecords({
+      caps: { maxBytesPerFile: 500000, maxFiles: 40 },
+      coverage: { maxBytesPerFileCapHit: true },
+      affectedPathsByCode: { MAX_BYTES_PER_FILE: ['lib/auth/session.ts'] },
+      observedAtIso: '2026-09-26T00:00:00.000Z',
+    })
+    expect(records).toHaveLength(1)
+    expect(records[0].code).toBe('MAX_BYTES_PER_FILE')
+    expect(records[0].resolvedLimitBytes).toBe(500000)
+    expect(records[0].affectedPaths).toContain('lib/auth/session.ts')
+    expect(buildCapProvenanceCustomerNote(records)).toMatch(/500000 bytes/)
+  })
+
+  it('builds bounded allocation ledger export section (AQ9)', () => {
+    const section = buildAllocationLedgerExportSection([
+      {
+        dimensionId: 'invite_token_claims',
+        modelExaminedPaths: [],
+        omittedByQuota: [],
+        unmatchedSurfaced: ['functions/src/inviteManagement.ts'],
+        zeroReviewReasonCode: 'NO_PASS_EVIDENCE',
+      },
+    ])
+    expect(section).toMatch(/invite_token_claims/)
+    expect(section).toMatch(/zero-review=NO_PASS_EVIDENCE/)
+    expect(section).toMatch(/unmatched-surfaced=1/)
   })
 })
 

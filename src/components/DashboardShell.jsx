@@ -2,6 +2,11 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useEffect, useMemo, useState } from 'react'
 import { DIMENSION_CATALOG } from '../../lib/shared/dimensions'
+import {
+  formatRunCostStripPrimary,
+  isRunCostAmountDisplayable,
+  normalizeRunCost,
+} from '../../lib/shared/runCostDisplay.js'
 import { getDefaultDocsSlug, getSeclensDocsEntries } from '../seclensDocsManifest.js'
 import { IconChartConfidence, IconFiles, IconGithubRepo } from './SecLensIcons'
 const STATUS_LABELS = {
@@ -806,6 +811,100 @@ function CriticalFileListSummary({ dashboard, summary }) {
   )
 }
 
+function RunCostStrip({ runCost }) {
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const normalized = normalizeRunCost(runCost)
+  const amountVisible = isRunCostAmountDisplayable(normalized)
+  const modelLabel = normalized.modelId || normalized.usedModelId || 'unknown'
+  const tokenLine = [
+    typeof normalized.totalTokens === 'number' ? `Total ${normalized.totalTokens.toLocaleString()}` : null,
+    typeof normalized.inputTokens === 'number' ? `In ${normalized.inputTokens.toLocaleString()}` : null,
+    typeof normalized.outputTokens === 'number' ? `Out ${normalized.outputTokens.toLocaleString()}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+  return (
+    <div className="seclens-surface mt-5 rounded-[14px] px-4 py-4" data-testid="run-cost-strip">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="seclens-subtle text-[10px] font-medium uppercase tracking-[0.12em]">
+            Estimated
+          </p>
+          <p className="seclens-text mt-1 text-[18px] font-semibold tracking-tight tabular-nums sm:text-[20px]">
+            {formatRunCostStripPrimary(normalized)}
+          </p>
+          <p className="seclens-muted mt-2 text-[13px] leading-6">
+            Model used: <span className="seclens-text font-mono text-[12px]">{modelLabel}</span>
+            {tokenLine ? (
+              <>
+                {' '}
+                · <span className="tabular-nums">{tokenLine}</span>
+              </>
+            ) : null}
+          </p>
+          <p className="seclens-muted mt-1 text-[12px] leading-5">
+            Based on configured provider list pricing. Not an invoice or statement of actual platform spend.
+            {!amountVisible && normalized.reasonCode
+              ? ` Reason: ${normalized.reasonCode}.`
+              : null}
+          </p>
+        </div>
+        <button
+          type="button"
+          className="seclens-subtle shrink-0 rounded-[10px] border border-[var(--sl-border-soft)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.08em] transition hover:bg-[var(--sl-panel-muted)]"
+          aria-expanded={detailsOpen}
+          onClick={() => setDetailsOpen((open) => !open)}
+        >
+          Cost and usage details
+        </button>
+      </div>
+      {detailsOpen ? (
+        <div className="mt-4 border-t border-[var(--sl-border-soft)] pt-4" data-testid="run-cost-details">
+          <dl className="grid gap-2 text-[13px] sm:grid-cols-2">
+            <div>
+              <dt className="seclens-subtle text-[10px] uppercase tracking-[0.1em]">Status</dt>
+              <dd className="seclens-text mt-1">{normalized.status}</dd>
+            </div>
+            <div>
+              <dt className="seclens-subtle text-[10px] uppercase tracking-[0.1em]">Basis</dt>
+              <dd className="seclens-text mt-1 break-all">{normalized.basis || '—'}</dd>
+            </div>
+            <div>
+              <dt className="seclens-subtle text-[10px] uppercase tracking-[0.1em]">Input tokens</dt>
+              <dd className="seclens-text mt-1 tabular-nums">
+                {typeof normalized.inputTokens === 'number' ? normalized.inputTokens.toLocaleString() : '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="seclens-subtle text-[10px] uppercase tracking-[0.1em]">Output tokens</dt>
+              <dd className="seclens-text mt-1 tabular-nums">
+                {typeof normalized.outputTokens === 'number' ? normalized.outputTokens.toLocaleString() : '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="seclens-subtle text-[10px] uppercase tracking-[0.1em]">Input cost</dt>
+              <dd className="seclens-text mt-1 tabular-nums">
+                {amountVisible && typeof normalized.inputCostUsd === 'number'
+                  ? `US$${normalized.inputCostUsd.toFixed(5)}`
+                  : '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="seclens-subtle text-[10px] uppercase tracking-[0.1em]">Output cost</dt>
+              <dd className="seclens-text mt-1 tabular-nums">
+                {amountVisible && typeof normalized.outputCostUsd === 'number'
+                  ? `US$${normalized.outputCostUsd.toFixed(5)}`
+                  : '—'}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function PostureHero({ dashboard, isScanning }) {
   const summary = dashboard?.summary
   const rawDimensions = dashboard?.dimensions || []
@@ -897,6 +996,9 @@ function PostureHero({ dashboard, isScanning }) {
                 </h2>
                 <p className="seclens-muted mt-4 text-[15px] leading-8">{overallStatusCopy(summary?.overallStatus || 'unknown')}</p>
               </div>
+              {runStateLower === 'completed' || runStateLower === 'failed' ? (
+                <RunCostStrip runCost={dashboard?.runCost || dashboard?.telemetry?.runCost || null} />
+              ) : null}
               <div className="mt-8 grid flex-1 grid-cols-2 content-start gap-3 sm:gap-4">
                 {summaryCards(summary).map((card) => {
                   const skin = postureSummaryMetricSkin(card.accent)

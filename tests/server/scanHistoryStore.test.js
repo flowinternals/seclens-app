@@ -100,6 +100,53 @@ describe('scanHistoryStore', () => {
     expect(loaded.repository?.githubToken).toBeUndefined()
   })
 
+  it('persists canonical runCost on archive metadata and artifact without relying on telemetry', async () => {
+    const runCost = {
+      currency: 'USD',
+      basis: 'estimated_provider_api_list_price',
+      status: 'estimated',
+      modelId: 'gpt-5-nano',
+      modelPriceVersion: 'abc123',
+      inputTokens: 100,
+      outputTokens: 50,
+      totalTokens: 150,
+      inputCostUsd: 0.00001,
+      outputCostUsd: 0.00002,
+      estimatedCostUsd: 0.00003,
+      inputCostPer1MUsd: 0.05,
+      outputCostPer1MUsd: 0.4,
+      calculatedAtIso: '2026-09-26T12:00:00.000Z',
+      pricingSource: 'openai_api_docs_pricing_standard_short_context',
+      pricingVerifiedAtIso: '2026-09-26T00:00:00.000Z',
+      pricingVerificationStatus: 'verified',
+    }
+    const job = makeEligibleJob({
+      jobId: 'run-cost-1',
+      runCost,
+      analysisModel: 'gpt-5-nano',
+      dashboard: {
+        runState: 'completed',
+        consolidatedReportAvailable: true,
+        selectedDimensionId: 'auth',
+        dimensions: [{ dimensionId: 'auth', label: 'Auth', progress: 'done', status: 'pass' }],
+        telemetry: { estimatedCostUsd: 9.99 },
+        runCost,
+      },
+    })
+    const archived = await archiveSuccessfulScanHistory(job)
+    expect(archived.ok).toBe(true)
+
+    const listed = await listUserScanHistory('user-a', { enforceRetention: false })
+    expect(listed.runs[0].runCost?.estimatedCostUsd).toBe(0.00003)
+    expect(listed.runs[0].runCost?.modelPriceVersion).toBe('abc123')
+
+    const loaded = await getUserScanHistoryArtifact('user-a', 'run-cost-1')
+    expect(loaded.ok).toBe(true)
+    expect(loaded.dashboard?.telemetry).toBeNull()
+    expect(loaded.runCost).toEqual(runCost)
+    expect(loaded.dashboard?.runCost).toEqual(runCost)
+  })
+
   it('does not archive failed jobs', async () => {
     const result = await archiveSuccessfulScanHistory(makeEligibleJob({ status: 'failed', jobId: 'fail-1' }))
     expect(result.ok).toBe(false)

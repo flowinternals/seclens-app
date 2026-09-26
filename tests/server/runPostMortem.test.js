@@ -79,6 +79,7 @@ describe('buildRunPostMortem', () => {
       status: 'SUCCESS',
       completedAt: new Date().toISOString(),
       repository: { owner: 'o', name: 'r', displayName: 'o/r', url: 'https://github.com/o/r' },
+      report: '# Security assessment\n\nReviewed evidence supports the recommendations below.',
       reportValidation: { ok: true },
       telemetry: {
         schemaVersion: 1,
@@ -91,6 +92,16 @@ describe('buildRunPostMortem', () => {
       modelUsageSummary: { totalTokens: 200 },
       dimensionSummary: { dimensionsReviewed: 1, totalDimensions: 1 },
       telemetryLogEntry: { timestampUtc: 'x', repo: 'o/r', profile: 'custom' },
+      runCost: {
+        status: 'estimated',
+        estimatedCostUsd: 0.01,
+        modelId: 'gpt-test',
+        modelPriceVersion: 'test',
+        basis: 'fixture',
+        inputTokens: 100,
+        outputTokens: 50,
+      },
+      analysisModel: 'gpt-test',
       dashboard: {
         runState: 'completed',
         repoProfile: {
