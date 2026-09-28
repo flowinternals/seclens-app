@@ -47,7 +47,7 @@
   },
   "homepage": "https://github.com/flowinternals/seclens-app#readme",
   "dependencies": {
-    "@vercel/functions": "^2.2.13",
+    "@vercel/functions": "^3.9.9",
     "cors": "^2.8.5",
     "dompurify": "^3.3.0",
     "dotenv": "^16.4.5",
