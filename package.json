@@ -76,7 +76,7 @@
     "firebase-tools": "^15.31.0",
     "globals": "^17.5.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.18",
+    "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vite": "^7.1.12",
     "vitest": "4.1.11"
